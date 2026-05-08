@@ -190,17 +190,17 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
       <path d="M6 20.5L16.8 4.2"/>
       <path d="M14.2 5c3.1-1.8 5.8-1.9 7.9-.5-.1 4.5-2.7 7.6-7.8 9.2l-3.2-3.1c.6-2.1 1.6-4 3.1-5.6z"
             fill="currentColor" stroke="none"/>
-      <path d="M7.2 18.8l2.4 2.4"/>
     </svg>
   ),
   bow: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
          strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 3C4.6 5.7 3 8.7 3 12s1.6 6.3 5 9"/>
-      <path d="M8 3L11.8 12 8 21"/>
-      <line x1="11.8" y1="12" x2="20.5" y2="12"/>
-      <path d="M17.4 9.5l3.1 2.5-3.1 2.5"/>
-      <path d="M12.7 10.2L10.8 12l1.9 1.8"/>
+      <path d="M18.5 3.5c3 2.6 4.5 5.6 4.5 8.5s-1.5 5.9-4.5 8.5"/>
+      <path d="M6.5 4v16"/>
+      <line x1="6.5" y1="12" x2="18.3" y2="12"/>
+      <path d="M6.5 9l-3 3 3 3"/>
+      <path d="M15.4 9.2l3 2.8-3 2.8"/>
+      <path d="M10.1 11.1h2.2"/>
     </svg>
   ),
   spear: () => (
@@ -322,12 +322,15 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
     </svg>
   ),
 
-  // predator fang
+  // vampire fang
   fang: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
          strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M15.2 3.5C18.6 4.6 21 7.7 21 11c0 3-1.4 5.9-3.9 8.1L12 22l-1.1-6.6c-.5-2.9.2-5.9 2-8.2.6-.9 1.4-1.6 2.3-2.2z"/>
-      <path d="M15.1 7.2c-1.7 2.2-2.6 4.8-2.4 7.7"/>
+      <path d="M5.2 8.4c2.2-1.8 4.8-2.8 6.8-2.8s4.6 1 6.8 2.8"/>
+      <path d="M6.2 10c1.7 2.5 3.5 4.4 5.8 7.4 2.3-3 4.1-4.9 5.8-7.4"/>
+      <path d="M8.4 10.1l1.8 7.7 1.8-7.7z" fill="currentColor" stroke="none"/>
+      <path d="M12 10.1l1.8 7.7 1.8-7.7z" fill="currentColor" stroke="none"/>
+      <path d="M7.3 14.8c1.7 1 3.2 1.5 4.7 1.5s3-.5 4.7-1.5"/>
     </svg>
   ),
 
