@@ -423,6 +423,7 @@ export default function App(): React.ReactElement {
         currentId={current.id}
         factions={factions}
         rarities={rarities}
+        keywords={keywords}
         onClose={() => setShowCollection(false)}
         onPick={onPickFromCollection}
         onDelete={onDeleteFromCollection}
