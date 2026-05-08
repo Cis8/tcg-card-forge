@@ -330,15 +330,37 @@
     overflow: hidden;
   }
 
-  /* On mobile, remove the max-height cap from the top section so it shrinks naturally */
-  .deck-editor[data-mobile-tab="stats"] .deck-right-top {
-    max-height: 40dvh;
+  /* On mobile, cap the collapsible stats section */
+  .deck-right-stats {
+    max-height: 35dvh;
+  }
+
+  /* 2-per-row picker grid on mobile */
+  .deck-picker-grid {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  /* Each card slot: half the grid width, clipped to card height */
+  .deck-picker-card-wrap {
+    width: calc((100% - 8px) / 2);
+    height: 225px;
+    overflow: hidden;
+  }
+
+  /* Scale full 340×488 CardPreview down to fit the 225px slot */
+  .deck-picker-card-inner {
+    transform: scale(0.46);
+    transform-origin: top left;
+    width: 340px;
+    height: 488px;
+    pointer-events: none; /* clicks handled by the wrap */
   }
 
   /* iOS zoom prevention for deck editor inputs */
-  .deck-search-input { font-size: 16px; }
-  .deck-name-input   { font-size: 16px; }
-  .deck-desc-input   { font-size: 16px; }
+  .deck-search-input  { font-size: 16px; }
+  .deck-name-input    { font-size: 16px; }
+  .deck-desc-input    { font-size: 16px; }
   .coll-filter-search { font-size: 16px; }
 
   /* Hover preview portal: hide on touch devices (hover doesn't apply) */

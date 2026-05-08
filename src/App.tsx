@@ -24,6 +24,15 @@ import {
 type AppView = { kind: 'card-editor' } | { kind: 'deck-editor'; deckId: string };
 type MobileTab = 'props' | 'preview' | 'appearance';
 
+function deckHash(deckId: string): string {
+  return `#deck/${encodeURIComponent(deckId)}`;
+}
+function deckIdFromHash(): string | null {
+  const m = window.location.hash.match(/^#deck\/(.+)$/);
+  if (!m) return null;
+  try { return decodeURIComponent(m[1]); } catch { return null; }
+}
+
 const STORAGE = {
   cards:          'tcg.cards.v2',
   current:        'tcg.current.v2',
@@ -169,10 +178,53 @@ export default function App(): React.ReactElement {
 
   // Deck / view state
   const [decks, setDecks] = useState<Deck[]>(() => load<Deck[]>(STORAGE.decks, []));
-  const [appView, setAppView] = useState<AppView>({ kind: 'card-editor' });
+  const decksRef = useRef(decks);
+  useEffect(() => { decksRef.current = decks; }, [decks]);
+
+  const [appView, setAppView] = useState<AppView>(() => {
+    const deckId = deckIdFromHash();
+    if (deckId) {
+      try {
+        const raw = localStorage.getItem(STORAGE.decks);
+        const saved = raw ? (JSON.parse(raw) as Deck[]) : [];
+        if (saved.find(d => d.id === deckId)) return { kind: 'deck-editor', deckId };
+      } catch { /* ignore */ }
+    }
+    return { kind: 'card-editor' };
+  });
   const [showDeckManager, setShowDeckManager] = useState(false);
 
   const closeOverflow = useCallback(() => setShowOverflow(false), []);
+
+  // Sync appView → URL hash
+  useEffect(() => {
+    if (appView.kind === 'deck-editor') {
+      const h = deckHash(appView.deckId);
+      if (window.location.hash !== h) window.history.pushState(null, '', h);
+    } else {
+      if (window.location.hash !== '') {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    }
+  }, [appView]);
+
+  // Popstate + hashchange → update appView (stable listener via ref)
+  useEffect(() => {
+    const sync = () => {
+      const deckId = deckIdFromHash();
+      setAppView(
+        deckId && decksRef.current.some(d => d.id === deckId)
+          ? { kind: 'deck-editor', deckId }
+          : { kind: 'card-editor' },
+      );
+    };
+    window.addEventListener('popstate', sync);
+    window.addEventListener('hashchange', sync);
+    return () => {
+      window.removeEventListener('popstate', sync);
+      window.removeEventListener('hashchange', sync);
+    };
+  }, []);
 
   useEffect(() => {
     if (!showOverflow) return;
@@ -367,8 +419,13 @@ export default function App(): React.ReactElement {
   const onOpenDeck = (deckId: string) =>
     setAppView({ kind: 'deck-editor', deckId });
 
-  const onCloseDeckEditor = () =>
-    setAppView({ kind: 'card-editor' });
+  const onCloseDeckEditor = () => {
+    if (window.location.hash.startsWith('#deck/')) {
+      window.history.back(); // popstate listener will call setAppView
+    } else {
+      setAppView({ kind: 'card-editor' });
+    }
+  };
 
   // Compute deck-editor content outside JSX to avoid hook-in-render issues
   const deckEditorContent = appView.kind === 'deck-editor' ? (() => {
