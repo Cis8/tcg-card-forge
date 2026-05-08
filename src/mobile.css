@@ -319,16 +319,23 @@
     border-right: none;
   }
   .deck-editor[data-mobile-tab="stats"] .deck-editor-right {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column;
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
+    overflow: hidden;
+  }
+
+  /* On mobile, remove the max-height cap from the top section so it shrinks naturally */
+  .deck-editor[data-mobile-tab="stats"] .deck-right-top {
+    max-height: 40dvh;
   }
 
   /* iOS zoom prevention for deck editor inputs */
   .deck-search-input { font-size: 16px; }
   .deck-name-input   { font-size: 16px; }
   .deck-desc-input   { font-size: 16px; }
+  .coll-filter-search { font-size: 16px; }
 
   /* Hover preview portal: hide on touch devices (hover doesn't apply) */
   .card-preview-hover-portal { display: none; }
