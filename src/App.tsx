@@ -13,6 +13,7 @@ import { RarityManager } from './rarity-manager';
 import { Collection } from './collection';
 import { DeckManager } from './deck-manager';
 import { DeckEditor } from './deck-editor';
+import { confirmDestructiveAction } from './confirm';
 
 import { exportSnapshot, downloadSnapshot, parseSnapshot, applySnapshot } from './io';
 import { Glyph } from './glyphs';
@@ -321,10 +322,11 @@ export default function App(): React.ReactElement {
 
   const onDeleteFromCollection = (id: string) => {
     const names = affectedDeckNames(decks, id);
-    if (names.length > 0) {
-      const list = names.slice(0, 3).join(', ') + (names.length > 3 ? ` +${names.length - 3} more` : '');
-      if (!confirm(`This card is in ${names.length} deck(s): ${list}.\nDeleting it will remove it from those decks. Continue?`)) return;
-    }
+    const list = names.slice(0, 3).join(', ') + (names.length > 3 ? ` +${names.length - 3} more` : '');
+    const message = names.length > 0
+      ? `Delete this card? It is used in ${names.length} deck(s): ${list}. Removing it will also remove it from those decks.`
+      : 'Delete this card?';
+    if (!confirmDestructiveAction(message)) return;
     setCards(all => all.filter(c => c.id !== id));
     setDecks(ds => deleteCardFromDecks(ds, id));
   };

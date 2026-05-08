@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { deriveFaction } from './color-utils';
 import { PATTERNS } from './data';
 import { Glyph, RarityShape } from './glyphs';
+import { confirmDestructiveAction } from './confirm';
 import type { Card, Keyword, Faction, Rarity, GlyphName, GlobalSettings, DeckSettings } from './types';
 
 interface FieldProps {
@@ -290,7 +291,10 @@ const ArtUploader = ({ value, onChange }: ArtUploaderProps): React.ReactElement 
       </div>
       {value && (
         <button type="button" className="btn btn-sm btn-ghost art-clear"
-                onClick={() => onChange(null)}>
+                onClick={() => {
+                  if (!confirmDestructiveAction('Remove this image from the card?')) return;
+                  onChange(null);
+                }}>
           <Glyph name="trash" size={11}/>
           <span>Remove image</span>
         </button>

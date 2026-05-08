@@ -11,6 +11,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { deriveFaction } from './color-utils';
 import { Glyph } from './glyphs';
 import { GlyphPicker } from './glyph-picker';
+import { confirmDestructiveAction } from './confirm';
 import type { Faction, ThematicGlyphName } from './types';
 
 const FACTION_PRESET_COLORS = [
@@ -83,8 +84,8 @@ export function FactionManager({ open, factions, onClose, onChange, onCardFactio
   };
 
   const onDelete = (id: string) => {
+    if (!confirmDestructiveAction('Delete this faction? Cards using it will fall back to the first remaining faction.')) return;
     if (factions.length <= 1) { alert('Keep at least one faction.'); return; }
-    if (!confirm('Delete this faction? Cards using it will fall back to the first remaining faction.')) return;
     const remaining = factions.filter(f => f.id !== id);
     onChange(remaining);
     if (onCardFactionMissing) onCardFactionMissing(id, remaining[0].id);

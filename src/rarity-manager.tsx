@@ -10,6 +10,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Glyph, RarityShape } from './glyphs';
 import { RARITY_SHAPE_OPTIONS } from './data';
+import { confirmDestructiveAction } from './confirm';
 import type { Rarity, RarityShapeName } from './types';
 
 const RARITY_PRESET_COLORS = [
@@ -79,8 +80,8 @@ export function RarityManager({ open, rarities, onClose, onChange, onCardRarityM
   };
 
   const onDelete = (id: string) => {
+    if (!confirmDestructiveAction('Delete this rarity? Cards using it will fall back to the first remaining rarity.')) return;
     if (rarities.length <= 1) { alert('Keep at least one rarity.'); return; }
-    if (!confirm('Delete this rarity? Cards using it will fall back to the first remaining rarity.')) return;
     const remaining = rarities.filter(r => r.id !== id);
     onChange(remaining);
     if (onCardRarityMissing) onCardRarityMissing(id, remaining[0].id);

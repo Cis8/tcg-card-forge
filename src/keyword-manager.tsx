@@ -10,6 +10,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Glyph } from './glyphs';
 import { GlyphPicker } from './glyph-picker';
+import { confirmDestructiveAction } from './confirm';
 import type { Keyword, ThematicGlyphName } from './types';
 
 const PRESET_COLORS = [
@@ -75,7 +76,7 @@ export function KeywordManager({ open, keywords, onClose, onChange }: KeywordMan
     setEditing(null);
   };
   const onDelete = (id: string) => {
-    if (!confirm('Delete this keyword? It will no longer style existing card text.')) return;
+    if (!confirmDestructiveAction('Delete this keyword? It will no longer style existing card text.')) return;
     onChange(keywords.filter(k => k.id !== id));
     setEditing(null);
   };

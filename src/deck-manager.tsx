@@ -9,6 +9,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Glyph } from './glyphs';
+import { confirmDestructiveAction } from './confirm';
 import type { Card, Deck, DeckSettings, Faction } from './types';
 import { createDeck, getDeckTotal, getDeckFactions, validateDeck } from './deck-utils';
 
@@ -84,7 +85,7 @@ export function DeckManager({ open, decks, cards, factions, deckSettings, onClos
 
   const handleDelete = (id: string) => {
     const deck = decks.find(d => d.id === id);
-    if (!confirm(`Delete deck "${deck?.name || 'this deck'}"? This cannot be undone.`)) return;
+    if (!confirmDestructiveAction(`Delete deck "${deck?.name || 'this deck'}"?`)) return;
     onChange(decks.filter(d => d.id !== id));
   };
 
