@@ -116,7 +116,7 @@ export default function App(): React.ReactElement {
   const dragRef = useRef<{ side: 'left' | 'right'; startX: number; startW: number } | null>(null);
 
   // Mobile state
-  const [mobileTab, setMobileTab] = useState<MobileTab>('props');
+  const [mobileTab, setMobileTab] = useState<MobileTab>('preview');
   const [showOverflow, setShowOverflow] = useState(false);
   const overflowRef = useRef<HTMLDivElement>(null);
 
@@ -193,7 +193,7 @@ export default function App(): React.ReactElement {
 
   const onPickFromCollection = (id: string) => {
     const c = cards.find((x) => x.id === id);
-    if (c) { setCurrent({ ...c }); setShowCollection(false); }
+    if (c) { setCurrent({ ...c }); setShowCollection(false); setMobileTab('preview'); }
   };
 
   const onDeleteFromCollection = (id: string) =>
