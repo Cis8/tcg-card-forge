@@ -61,10 +61,10 @@
   }
   .app[data-mobile-tab="preview"] .stage {
     display: flex !important;
-    overflow-y: auto;
+    overflow: auto;
     padding: 16px;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: flex-start;
   }
   .app[data-mobile-tab="appearance"] .rail-right {
     display: flex !important;
@@ -72,15 +72,13 @@
     overflow-y: auto;
   }
 
-  /* ── Card preview: scale to fit narrow viewport ── */
+  /* ── Card preview: fixed size, scrollable stage on narrow viewports ── */
   .stage-card-mount {
-    width: 100%;
     display: flex;
     justify-content: center;
+    min-width: max-content;
   }
-  .stage-card-mount .card-shell {
-    width: min(300px, calc(100vw - 48px));
-  }
+  /* Card shell keeps its canonical 340px — no shrinking on mobile */
 
   /* ── Mobile tab bar ── */
   .mobile-tab-bar {
