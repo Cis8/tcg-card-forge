@@ -112,7 +112,7 @@ function StatGem({ variant = 'gem', tone = 'azure', rimColor, value, size = 56 }
     </g>
   );
   if (variant === 'heart') return wrap(
-    <g>
+    <g transform="translate(50 50) scale(1.25) translate(-50 -50)">
       <path d="M50,82 C10,60,6,24,30,16 C40,12,50,22,50,30 C50,22,60,12,70,16 C94,24,90,60,50,82 Z"
             fill={`url(#${gid})`} stroke={`url(#${rid})`} strokeWidth="4"/>
       <path d="M50,72 C18,54,14,28,34,22 C42,19,50,28,50,35 C50,28,58,19,66,22 C86,28,82,54,50,72 Z"
