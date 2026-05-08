@@ -1,0 +1,249 @@
+/* card-extras.css — additions for v2 (themes/rarities CRUD, art upload).
+ * Loaded after card.css. Append-only stylesheet so we don't fight the v1.
+ */
+
+/* ── Card frame: themed fill + pattern layer ───────────────────────── */
+.card-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Pattern thumbs (sidebar) ────────────────────────────────────── */
+.pattern-thumb-plain {
+  background: linear-gradient(135deg, #4a3414, #2a1d09);
+}
+.pattern-thumb-damask {
+  background:
+    radial-gradient(circle at 25% 25%, rgba(255,235,200,.4) 0 18%, transparent 19%),
+    radial-gradient(circle at 75% 75%, rgba(255,235,200,.4) 0 18%, transparent 19%),
+    radial-gradient(circle at 75% 25%, rgba(0,0,0,.5) 0 14%, transparent 15%),
+    radial-gradient(circle at 25% 75%, rgba(0,0,0,.5) 0 14%, transparent 15%),
+    linear-gradient(135deg, #4a3414, #2a1d09);
+  background-size: 16px 16px, 16px 16px, 16px 16px, 16px 16px, 100% 100%;
+}
+.pattern-thumb-lattice {
+  background:
+    repeating-linear-gradient(45deg, rgba(255,235,200,.3) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(-45deg, rgba(255,235,200,.3) 0 1px, transparent 1px 6px),
+    linear-gradient(135deg, #4a3414, #2a1d09);
+}
+.pattern-thumb-rays {
+  background:
+    repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,235,200,.3) 0deg 12deg, transparent 12deg 24deg),
+    radial-gradient(circle at 50% 50%, #6a4a1c, #2a1d09);
+}
+.pattern-thumb-scales {
+  background:
+    radial-gradient(circle at 50% 0%, transparent 5px, rgba(0,0,0,.6) 6px, transparent 7px),
+    radial-gradient(circle at 0 5px, transparent 5px, rgba(0,0,0,.6) 6px, transparent 7px),
+    radial-gradient(circle at 100% 5px, transparent 5px, rgba(0,0,0,.6) 6px, transparent 7px),
+    linear-gradient(135deg, #4a3414, #2a1d09);
+  background-size: 12px 12px, 12px 12px, 12px 12px, 100% 100%;
+}
+
+/* ── Splash-art uploader ────────────────────────────────────────── */
+.art-drop {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 8px;
+  border: 1.5px dashed var(--line-strong);
+  background: #0e0c08;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .15s, background .15s;
+}
+.art-drop:hover { border-color: rgba(255,230,180,.3); background: #14110d; }
+.art-drop.drag {
+  border-color: var(--gold);
+  background: rgba(216,178,90,.06);
+  border-style: solid;
+}
+.art-drop.has { border-style: solid; border-color: var(--gold-deep); }
+.art-drop-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-faint);
+  font-size: 11.5px;
+  text-align: center;
+  padding: 10px;
+  letter-spacing: .02em;
+}
+.art-drop-empty svg { color: var(--gold); }
+.art-drop-hint {
+  font-size: 10px !important;
+  font-style: italic;
+  opacity: .7;
+}
+.art-drop-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.art-drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8,6,4,.6);
+  color: #f0e6d0;
+  opacity: 0;
+  transition: opacity .15s;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.art-drop:hover .art-drop-overlay { opacity: 1; }
+.art-clear {
+  margin-top: 6px;
+  width: 100%;
+  justify-content: center;
+}
+
+/* ── Manage… link below pickers ────────────────────────────────── */
+.rail-manage-link {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 6px 0 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+}
+.rail-manage-link:hover { color: var(--gold-2); }
+
+/* ── Theme manager modal extras ────────────────────────────────── */
+.theme-list-swatch {
+  width: 32px; height: 32px;
+  border-radius: 7px;
+  display: grid; place-items: center;
+  color: #fff;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.5),
+              inset 0 0 0 2px rgba(255,255,255,.06);
+}
+.theme-preview {
+  position: relative;
+  height: 96px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  gap: 14px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.5),
+              inset 0 0 0 2px var(--gold-2),
+              inset 0 0 0 3px var(--gold-deep);
+}
+.theme-preview-glyph {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.6));
+  opacity: .85;
+}
+.theme-preview-name {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-shadow: 0 1px 3px rgba(0,0,0,.6);
+  flex: 1;
+}
+.theme-preview-swatches {
+  display: flex;
+  gap: 4px;
+  align-self: flex-end;
+  margin-bottom: 12px;
+}
+.theme-preview-swatch {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.5);
+}
+
+/* ── Rarity manager modal extras ───────────────────────────────── */
+.rarity-list-swatch {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+}
+.rarity-preview {
+  position: relative;
+  height: 110px;
+  border-radius: 8px;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(216,178,90,.1) 0%, transparent 70%),
+    linear-gradient(180deg, #1a1510, #0e0c08);
+  border: 1px solid var(--line-strong);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.rarity-preview-name {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0,0,0,.6);
+}
+.shape-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.shape-pick {
+  appearance: none;
+  border: 1px solid var(--line-strong);
+  background: #0e0c08;
+  color: var(--text-mute);
+  border-radius: 7px;
+  padding: 8px 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.shape-pick:hover { color: var(--text); border-color: rgba(255,230,180,.3); }
+.shape-pick.on {
+  background: var(--bg-2);
+  border-color: var(--gold);
+  color: var(--gold-2);
+}
+
+/* ── Theme grid: more breathable when there are many ─────────────── */
+.theme-grid { grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); }
+
+/* ── Rarity row: wrap when there are many ─────────────────────────── */
+.rarity-row { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+
+/* ── Collection thumb: art image when uploaded ────────────────────── */
+.coll-card-art-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

@@ -1,0 +1,186 @@
+import React, { useState } from 'react';
+import { Glyph } from './glyphs';
+import type { Keyword, GlyphName } from './types';
+
+const KEYWORD_GLYPH_OPTIONS: GlyphName[] = [
+  'overrun', 'skull', 'bolt', 'shield', 'eye', 'drop', 'chalice', 'wing',
+  'flame', 'frost', 'leaf', 'sun',
+];
+
+const PRESET_COLORS = [
+  '#c2410c', '#b45309', '#15803d', '#0e7490',
+  '#1d4ed8', '#6b21a8', '#9d174d', '#475569',
+];
+
+interface KeywordManagerProps {
+  open: boolean;
+  keywords: Keyword[];
+  onClose: () => void;
+  onChange: (kws: Keyword[]) => void;
+}
+
+export function KeywordManager({ open, keywords, onClose, onChange }: KeywordManagerProps): React.ReactElement | null {
+  const [editing, setEditing] = useState<string | null>(null);
+  if (!open) return null;
+
+  const onSave = (kw: Keyword) => {
+    if (kw.id === '_new') {
+      const id = `k_${Date.now().toString(36)}`;
+      onChange([...keywords, { ...kw, id }]);
+    } else {
+      onChange(keywords.map(k => k.id === kw.id ? kw : k));
+    }
+    setEditing(null);
+  };
+  const onDelete = (id: string) => {
+    if (!confirm('Delete this keyword? It will no longer style existing card text.')) return;
+    onChange(keywords.filter(k => k.id !== id));
+    setEditing(null);
+  };
+
+  const editingKw: Keyword | undefined = editing === 'new'
+    ? { id: '_new', name: '', glyph: 'bolt', color: PRESET_COLORS[0], description: '' }
+    : keywords.find(k => k.id === editing);
+
+  return (
+    <div className="modal-scrim" onClick={onClose}>
+      <div className="modal kw-modal" onClick={(e) => e.stopPropagation()}>
+        <header className="modal-header">
+          <div>
+            <span className="modal-eyebrow">Library</span>
+            <h2 className="modal-title">Keywords</h2>
+          </div>
+          <button type="button" className="icon-btn" onClick={onClose}>
+            <Glyph name="close" size={16}/>
+          </button>
+        </header>
+
+        <div className="kw-modal-body">
+          <div className="kw-list">
+            <div className="kw-list-head">
+              <span>{keywords.length} keywords</span>
+              <button type="button" className="btn btn-primary btn-sm"
+                      onClick={() => setEditing('new')}>
+                <Glyph name="plus" size={12}/>
+                <span>New keyword</span>
+              </button>
+            </div>
+            <ul>
+              {keywords.map(k => (
+                <li key={k.id}
+                    className={`kw-list-item ${editing === k.id ? 'on' : ''}`}
+                    onClick={() => setEditing(k.id)}>
+                  <span className="kw-list-glyph" style={{ color: k.color, background: `${k.color}18` }}>
+                    <Glyph name={k.glyph} size={16}/>
+                  </span>
+                  <span className="kw-list-text">
+                    <span className="kw-list-name" style={{ color: k.color }}>{k.name}</span>
+                    <span className="kw-list-desc">{k.description}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="kw-detail">
+            {!editingKw ? (
+              <div className="kw-empty">
+                <Glyph name="book" size={32}/>
+                <p>Select a keyword to edit, or create a new one.</p>
+              </div>
+            ) : (
+              <KeywordEditor key={editingKw.id} keyword={editingKw}
+                             onSave={onSave}
+                             onCancel={() => setEditing(null)}
+                             onDelete={editingKw.id !== '_new' ? () => onDelete(editingKw.id) : undefined}/>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface KeywordEditorProps {
+  keyword: Keyword;
+  onSave: (kw: Keyword) => void;
+  onCancel: () => void;
+  onDelete?: () => void;
+}
+
+function KeywordEditor({ keyword, onSave, onCancel, onDelete }: KeywordEditorProps): React.ReactElement {
+  const [draft, setDraft] = useState<Keyword>(keyword);
+  const set = (patch: Partial<Keyword>) => setDraft(d => ({ ...d, ...patch }));
+
+  return (
+    <div className="kw-editor">
+      <div className="kw-preview">
+        <span className="kw" style={{ color: draft.color, fontSize: 14 }}>
+          <span className="kw-glyph" style={{ color: draft.color }}>
+            <Glyph name={draft.glyph} size={13}/>
+          </span>
+          <span className="kw-name">{draft.name || 'Keyword'}</span>
+        </span>
+        <span className="kw-preview-hint">Preview</span>
+      </div>
+
+      <label className="field">
+        <span className="field-label">Name</span>
+        <input className="text-input" type="text" value={draft.name}
+               placeholder="e.g. Last Breath"
+               onChange={(e) => set({ name: e.target.value })}/>
+      </label>
+
+      <label className="field">
+        <span className="field-label">Description</span>
+        <textarea className="text-input text-area" rows={2} value={draft.description}
+                  placeholder="What does this keyword do?"
+                  onChange={(e) => set({ description: e.target.value })}/>
+      </label>
+
+      <div className="field">
+        <span className="field-label">Glyph</span>
+        <div className="glyph-grid">
+          {KEYWORD_GLYPH_OPTIONS.map(g => (
+            <button type="button" key={g}
+                    className={`glyph-pick ${draft.glyph === g ? 'on' : ''}`}
+                    style={draft.glyph === g ? { color: draft.color, borderColor: draft.color } : undefined}
+                    onClick={() => set({ glyph: g })}>
+              <Glyph name={g} size={18}/>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="field">
+        <span className="field-label">Color</span>
+        <div className="color-row">
+          {PRESET_COLORS.map(c => (
+            <button type="button" key={c}
+                    className={`color-pick ${draft.color === c ? 'on' : ''}`}
+                    onClick={() => set({ color: c })}
+                    style={{ background: c }}/>
+          ))}
+          <input type="color" className="color-custom" value={draft.color}
+                 onChange={(e) => set({ color: e.target.value })}/>
+        </div>
+      </div>
+
+      <div className="kw-editor-actions">
+        {onDelete && (
+          <button type="button" className="btn btn-danger" onClick={onDelete}>
+            <Glyph name="trash" size={12}/>
+            <span>Delete</span>
+          </button>
+        )}
+        <span style={{ flex: 1 }}/>
+        <button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button>
+        <button type="button" className="btn btn-primary"
+                disabled={!draft.name.trim()}
+                onClick={() => onSave({ ...draft, name: draft.name.trim() })}>
+          {keyword.id === '_new' ? 'Create' : 'Save'}
+        </button>
+      </div>
+    </div>
+  );
+}
