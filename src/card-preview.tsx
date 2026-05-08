@@ -1,4 +1,4 @@
-import React, { useState, useRef, useId, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useId, useMemo, useCallback, useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { deriveFaction, deriveRarityDeep, deriveRarityGlow } from './color-utils';
 import { Glyph, RarityShape, CornerFlourish } from './glyphs';
@@ -188,6 +188,8 @@ export function CardPreview({ card, keywords, factions, rarities,
 
   const descWatermarkGlyph = resolveDescriptionGlyph(card, factionRaw.glyph);
   const descBg = validHex(card.descBg);
+  const namePlateRef = useRef<HTMLDivElement>(null);
+  const nameFit = useCardNameFit(card.name || 'Untitled', font, namePlateRef);
 
   return (
     <div className={`card-shell card-frame-${frame} card-font-${font}`}
@@ -221,8 +223,8 @@ export function CardPreview({ card, keywords, factions, rarities,
         </div>
 
         <div className="name-plate">
-          <div className="name-plate-inner">
-            <div className="card-name" style={{ fontSize: scaleName(card.name) }}>
+          <div className="name-plate-inner" ref={namePlateRef}>
+            <div className="card-name" style={nameFit}>
               {card.name || 'Untitled'}
             </div>
           </div>
@@ -298,12 +300,90 @@ export function CardPreview({ card, keywords, factions, rarities,
   );
 }
 
-function scaleName(name: string): string {
-  const n = (name || '').length;
-  if (n <= 14) return '24px';
-  if (n <= 20) return '20px';
-  if (n <= 26) return '17px';
-  return '15px';
+const NAME_BASE_SIZE = 24;
+const NAME_MIN_SIZE = 14;
+const NAME_BASE_TRACKING = 0.03;
+const NAME_MIN_TRACKING = 0.01;
+
+function fontFamilyForVariant(font: FontVariant): string {
+  if (font === 'fell') return `'IM Fell English SC', serif`;
+  if (font === 'trajan') return `'Cinzel Decorative', serif`;
+  return `'Cinzel', serif`;
+}
+
+function trackingForSize(size: number): number {
+  const range = NAME_BASE_SIZE - NAME_MIN_SIZE;
+  if (range <= 0) return NAME_MIN_TRACKING;
+  const t = (size - NAME_MIN_SIZE) / range;
+  return NAME_MIN_TRACKING + Math.max(0, Math.min(1, t)) * (NAME_BASE_TRACKING - NAME_MIN_TRACKING);
+}
+
+function useCardNameFit(
+  name: string,
+  font: FontVariant,
+  containerRef: React.RefObject<HTMLDivElement | null>
+): React.CSSProperties {
+  const [style, setStyle] = useState<React.CSSProperties>({
+    fontSize: `${NAME_BASE_SIZE}px`,
+    letterSpacing: `${NAME_BASE_TRACKING}em`,
+  });
+
+  useLayoutEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const measure = () => {
+      const available = node.clientWidth - parseFloat(getComputedStyle(node).paddingLeft) - parseFloat(getComputedStyle(node).paddingRight);
+      if (available <= 0) return;
+
+      const computed = getComputedStyle(node);
+      const fontWeight = font === 'trajan' ? '700' : '600';
+      const fontStyle = computed.fontStyle || 'normal';
+      const family = fontFamilyForVariant(font);
+      const widthAt = (size: number, trackingEm: number) => {
+        ctx.font = `${fontStyle} ${fontWeight} ${size}px ${family}`;
+        const base = ctx.measureText(name).width;
+        const spacing = Math.max(0, name.length - 1) * size * trackingEm;
+        return base + spacing;
+      };
+
+      let lo = NAME_MIN_SIZE;
+      let hi = NAME_BASE_SIZE;
+      let best = NAME_MIN_SIZE;
+      for (let i = 0; i < 18; i += 1) {
+        const mid = (lo + hi) / 2;
+        const tracking = trackingForSize(mid);
+        if (widthAt(mid, tracking) <= available) {
+          best = mid;
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+
+      const tracking = trackingForSize(best);
+      setStyle({
+        fontSize: `${best.toFixed(2)}px`,
+        letterSpacing: `${tracking.toFixed(3)}em`,
+      });
+    };
+
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(node);
+    measure();
+    const fontsReady = document.fonts?.ready;
+    if (fontsReady) {
+      void fontsReady.then(measure).catch(() => undefined);
+    }
+
+    return () => ro.disconnect();
+  }, [containerRef, font, name]);
+
+  return style;
 }
 
 function KeywordSpan({ keyword }: { keyword: Keyword }): React.ReactElement {
