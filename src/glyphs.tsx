@@ -209,6 +209,7 @@ export const SHAPE_PATHS: Record<RarityShapeName, ShapeDef> = {
   circle:   { tag: 'circle',  attrs: { cx: 12, cy: 12, r: 10 } },
   shield:   { tag: 'path',    attrs: { d: 'M12 2 L21 5 V12 C21 18 17 21 12 22 C7 21 3 18 3 12 V5 Z' } },
   star:     { tag: 'polygon', attrs: { points: '12,2 14.4,9.2 22,9.2 15.8,13.7 18.2,21 12,16.4 5.8,21 8.2,13.7 2,9.2 9.6,9.2' } },
+  triangle: { tag: 'polygon', attrs: { points: '12,2 22,22 2,22' } },
 };
 
 interface RarityShapeProps {

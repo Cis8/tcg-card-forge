@@ -11,7 +11,7 @@ import { KeywordManager } from './keyword-manager';
 import { ThemeManager } from './theme-manager';
 import { RarityManager } from './rarity-manager';
 import { Collection } from './collection';
-import { TweaksPanel, TweakSection, TweakRadio, useTweaks } from './tweaks-panel';
+
 import { Glyph } from './glyphs';
 import type { Card, Theme, Rarity, Keyword, TweakState } from './types';
 
@@ -43,6 +43,9 @@ const TWEAK_DEFAULTS: Partial<TweakState> = {
   frame: 'ornate',
   font: 'cinzel',
   statShape: 'gem',
+  costColor:   '#5dbce5',  // azure (original cost tone)
+  attackColor: '#e23a3a',  // crimson (original attack tone)
+  healthColor: '#cfd6dd',  // iron (original health tone)
 };
 
 function load<T>(key: string, fallback: T): T {
@@ -78,7 +81,9 @@ export default function App(): React.ReactElement {
   const [showRarities, setShowRarities]   = useState(false);
   const [showCollection, setShowCollection] = useState(false);
   const [toast, setToast]                 = useState<string | null>(null);
-  const [tweaks, setTweak]               = useTweaks(TWEAK_DEFAULTS);
+  const [tweaks, setTweaks] = useState<TweakState>(TWEAK_DEFAULTS as TweakState);
+  const setTweak = (k: keyof TweakState, v: string) =>
+    setTweaks(prev => ({ ...prev, [k]: v }));
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => save(STORAGE.cards,    cards),    [cards]);
@@ -209,6 +214,9 @@ export default function App(): React.ReactElement {
               frame={tweaks.frame}
               font={tweaks.font}
               statShape={tweaks.statShape}
+              costColor={tweaks.costColor}
+              attackColor={tweaks.attackColor}
+              healthColor={tweaks.healthColor}
             />
           </div>
           <div className="stage-eyebrow">Live preview · hover keywords for rules</div>
@@ -222,6 +230,8 @@ export default function App(): React.ReactElement {
         rarities={rarities}
         onManageThemes={() => setShowThemes(true)}
         onManageRarities={() => setShowRarities(true)}
+        tweaks={tweaks}
+        onTweakChange={setTweak}
       />
 
       <KeywordManager
@@ -255,45 +265,6 @@ export default function App(): React.ReactElement {
         onDelete={onDeleteFromCollection}
         onNew={onNewCard}
       />
-
-      <TweaksPanel title="Card style">
-        <TweakSection label="Frame">
-          <TweakRadio
-            label="Border style"
-            value={tweaks.frame}
-            options={[
-              { value: 'ornate',     label: 'Ornate' },
-              { value: 'classic',    label: 'Classic' },
-              { value: 'inscribed',  label: 'Inscribed' },
-            ]}
-            onChange={(v) => setTweak('frame', String(v))}
-          />
-        </TweakSection>
-        <TweakSection label="Typography">
-          <TweakRadio
-            label="Font set"
-            value={tweaks.font}
-            options={[
-              { value: 'cinzel',     label: 'Cinzel' },
-              { value: 'fell',       label: 'IM Fell' },
-              { value: 'trajan',     label: 'Decorative' },
-            ]}
-            onChange={(v) => setTweak('font', String(v))}
-          />
-        </TweakSection>
-        <TweakSection label="Stats">
-          <TweakRadio
-            label="Stat shape"
-            value={tweaks.statShape}
-            options={[
-              { value: 'gem',    label: 'Gem' },
-              { value: 'shield', label: 'Shield' },
-              { value: 'circle', label: 'Disc' },
-            ]}
-            onChange={(v) => setTweak('statShape', String(v))}
-          />
-        </TweakSection>
-      </TweaksPanel>
 
       {toast && <div className="toast">{toast}</div>}
     </div>

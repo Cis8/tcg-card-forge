@@ -1,4 +1,13 @@
 import React, { useState } from 'react';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext, sortableKeyboardCoordinates, useSortable,
+  verticalListSortingStrategy, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Glyph } from './glyphs';
 import type { Keyword, GlyphName } from './types';
 
@@ -19,9 +28,46 @@ interface KeywordManagerProps {
   onChange: (kws: Keyword[]) => void;
 }
 
+function SortableKeywordItem({ kw, onEdit }: { kw: Keyword; onEdit: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: kw.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <li ref={setNodeRef} style={style} className="kw-list-item" onClick={onEdit}>
+      <span {...attributes} {...listeners}
+            onClick={(e) => e.stopPropagation()}
+            style={{ cursor: 'grab', padding: '4px 6px', color: 'rgba(0,0,0,.35)', touchAction: 'none', userSelect: 'none', flexShrink: 0 }}
+            aria-label="Drag to reorder">⋮⋮</span>
+      <span className="kw-list-glyph" style={{ color: kw.color, background: `${kw.color}18` }}>
+        <Glyph name={kw.glyph} size={16}/>
+      </span>
+      <span className="kw-list-text">
+        <span className="kw-list-name" style={{ color: kw.color }}>{kw.name}</span>
+        <span className="kw-list-desc">{kw.description}</span>
+      </span>
+    </li>
+  );
+}
+
 export function KeywordManager({ open, keywords, onClose, onChange }: KeywordManagerProps): React.ReactElement | null {
   const [editing, setEditing] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   if (!open) return null;
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = keywords.findIndex(k => k.id === active.id);
+      const newIndex = keywords.findIndex(k => k.id === over.id);
+      onChange(arrayMove(keywords, oldIndex, newIndex));
+    }
+  };
 
   const onSave = (kw: Keyword) => {
     if (kw.id === '_new') {
@@ -66,19 +112,29 @@ export function KeywordManager({ open, keywords, onClose, onChange }: KeywordMan
               </button>
             </div>
             <ul>
-              {keywords.map(k => (
-                <li key={k.id}
-                    className={`kw-list-item ${editing === k.id ? 'on' : ''}`}
-                    onClick={() => setEditing(k.id)}>
-                  <span className="kw-list-glyph" style={{ color: k.color, background: `${k.color}18` }}>
-                    <Glyph name={k.glyph} size={16}/>
-                  </span>
-                  <span className="kw-list-text">
-                    <span className="kw-list-name" style={{ color: k.color }}>{k.name}</span>
-                    <span className="kw-list-desc">{k.description}</span>
-                  </span>
-                </li>
-              ))}
+              {editing === null ? (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={keywords.map(k => k.id)} strategy={verticalListSortingStrategy}>
+                    {keywords.map(k => (
+                      <SortableKeywordItem key={k.id} kw={k} onEdit={() => setEditing(k.id)}/>
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                keywords.map(k => (
+                  <li key={k.id}
+                      className={`kw-list-item ${editing === k.id ? 'on' : ''}`}
+                      onClick={() => setEditing(k.id)}>
+                    <span className="kw-list-glyph" style={{ color: k.color, background: `${k.color}18` }}>
+                      <Glyph name={k.glyph} size={16}/>
+                    </span>
+                    <span className="kw-list-text">
+                      <span className="kw-list-name" style={{ color: k.color }}>{k.name}</span>
+                      <span className="kw-list-desc">{k.description}</span>
+                    </span>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
 

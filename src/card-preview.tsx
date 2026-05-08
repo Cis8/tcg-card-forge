@@ -12,6 +12,9 @@ interface CardPreviewProps {
   frame?: FrameVariant;
   font?: FontVariant;
   statShape?: StatShape;
+  costColor?:   string;
+  attackColor?: string;
+  healthColor?: string;
 }
 
 interface Token {
@@ -40,9 +43,10 @@ function parseDescription(text: string, keywordsByLowerName: Map<string, Keyword
 type StatTone = 'amber' | 'crimson' | 'iron' | 'azure';
 interface StatToneConfig { fill: string; rim: string; glow: string; ink: string }
 
-function StatGem({ variant = 'gem', tone = 'amber', value, size = 56 }: {
+function StatGem({ variant = 'gem', tone = 'azure', rimColor, value, size = 56 }: {
   variant?: StatShape;
   tone?: StatTone;
+  rimColor?: string;
   value: number;
   size?: number;
 }): React.ReactElement {
@@ -52,7 +56,9 @@ function StatGem({ variant = 'gem', tone = 'amber', value, size = 56 }: {
     iron:    { fill: '#0d1116', rim: '#cfd6dd', glow: '#7c8a99', ink: '#f1f4f8' },
     azure:   { fill: '#02101e', rim: '#5dbce5', glow: '#236aa6', ink: '#dff0fa' },
   };
-  const t = tones[tone];
+  const t: StatToneConfig = rimColor
+    ? { fill: '#0d0d0d', rim: rimColor, glow: deriveRarityDeep(rimColor), ink: '#f4f4f4' }
+    : tones[tone];
   const uid = useId();
   const gid = `gem-${uid}`, rid = `rim-${uid}`;
   const defs = (
@@ -126,7 +132,9 @@ const PATTERN_BACKGROUNDS: Record<string, string> = {
 };
 
 export function CardPreview({ card, keywords, themes, rarities,
-                              frame = 'ornate', font = 'cinzel', statShape = 'gem' }: CardPreviewProps): React.ReactElement {
+                              frame = 'ornate', font = 'cinzel', statShape = 'gem',
+                              costColor = '#5dbce5', attackColor = '#e23a3a', healthColor = '#cfd6dd',
+                            }: CardPreviewProps): React.ReactElement {
   const themeRaw = themes.find(t => t.id === card.theme) ?? themes[0];
   const theme = deriveTheme(themeRaw);
   const rarity = rarities.find(r => r.id === card.rarity) ?? rarities[0];
@@ -166,10 +174,6 @@ export function CardPreview({ card, keywords, themes, rarities,
             <div className="corner br"><CornerFlourish side="br" color={rarity.color}/></div>
           </>
         )}
-
-        <div className="cost-gem">
-          <StatGem variant={statShape} tone="azure" value={card.cost ?? 0} size={64}/>
-        </div>
 
         <div className="rarity-gem" title={rarity.name}>
           <RarityShape shape={rarity.shape} color={rarity.color} size={22}/>
@@ -228,17 +232,22 @@ export function CardPreview({ card, keywords, themes, rarities,
           </div>
         </div>
 
-        {isUnit && (
-          <>
-            <div className="stat stat-attack">
-              <StatGem variant={statShape} tone="crimson" value={card.attack ?? 0} size={62}/>
-            </div>
-            <div className="stat stat-health">
-              <StatGem variant={statShape} tone="iron" value={card.health ?? 0} size={62}/>
-            </div>
-          </>
-        )}
       </div>
+
+      <div className="cost-gem">
+        <StatGem variant={statShape} rimColor={costColor} value={card.cost ?? 0} size={64}/>
+      </div>
+
+      {isUnit && (
+        <>
+          <div className="stat stat-attack">
+            <StatGem variant={statShape} rimColor={attackColor} value={card.attack ?? 0} size={62}/>
+          </div>
+          <div className="stat stat-health">
+            <StatGem variant={statShape} rimColor={healthColor} value={card.health ?? 0} size={62}/>
+          </div>
+        </>
+      )}
     </div>
   );
 }

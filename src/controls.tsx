@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { deriveTheme } from './color-utils';
 import { PATTERNS } from './data';
 import { Glyph, RarityShape } from './glyphs';
-import type { Card, Keyword, Theme, Rarity, GlyphName } from './types';
+import type { Card, Keyword, Theme, Rarity, GlyphName, TweakState } from './types';
 
 interface FieldProps {
   label: string;
@@ -292,9 +292,11 @@ interface RightPanelProps {
   rarities: Rarity[];
   onManageThemes: () => void;
   onManageRarities: () => void;
+  tweaks: TweakState;
+  onTweakChange: (k: keyof TweakState, v: string) => void;
 }
 
-export function RightPanel({ card, onChange, themes, rarities, onManageThemes, onManageRarities }: RightPanelProps): React.ReactElement {
+export function RightPanel({ card, onChange, themes, rarities, onManageThemes, onManageRarities, tweaks, onTweakChange }: RightPanelProps): React.ReactElement {
   return (
     <aside className="rail rail-right">
       <header className="rail-header">
@@ -317,6 +319,55 @@ export function RightPanel({ card, onChange, themes, rarities, onManageThemes, o
           <RarityPicker rarities={rarities} value={card.rarity}
                         onChange={(v) => onChange({ rarity: v })}
                         onManage={onManageRarities}/>
+        </Field>
+        <Field label="Border style">
+          <Seg value={tweaks.frame}
+               options={[
+                 { value: 'ornate',    label: 'Ornate' },
+                 { value: 'classic',   label: 'Classic' },
+                 { value: 'inscribed', label: 'Inscribed' },
+               ]}
+               onChange={(v) => onTweakChange('frame', v)}/>
+        </Field>
+        <Field label="Font set">
+          <Seg value={tweaks.font}
+               options={[
+                 { value: 'cinzel',  label: 'Cinzel' },
+                 { value: 'fell',    label: 'IM Fell' },
+                 { value: 'trajan',  label: 'Decorative' },
+               ]}
+               onChange={(v) => onTweakChange('font', v)}/>
+        </Field>
+        <Field label="Stat shape">
+          <Seg value={tweaks.statShape}
+               options={[
+                 { value: 'gem',    label: 'Gem' },
+                 { value: 'shield', label: 'Shield' },
+                 { value: 'circle', label: 'Disc' },
+               ]}
+               onChange={(v) => onTweakChange('statShape', v)}/>
+        </Field>
+        <Field label="Gem colours">
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '11px', color: 'rgba(255, 254, 254, 0.55)' }}>
+              <input type="color" value={tweaks.costColor}
+                     onChange={(e) => onTweakChange('costColor', e.target.value)}
+                     style={{ width: 28, height: 22, padding: 1, border: '1px solid rgba(0,0,0,.15)', borderRadius: 4, cursor: 'pointer' }}/>
+              Cost
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '11px', color: 'rgba(255, 254, 254, 0.55)' }}>
+              <input type="color" value={tweaks.attackColor}
+                     onChange={(e) => onTweakChange('attackColor', e.target.value)}
+                     style={{ width: 28, height: 22, padding: 1, border: '1px solid rgba(0,0,0,.15)', borderRadius: 4, cursor: 'pointer' }}/>
+              Atk
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '11px', color: 'rgba(255, 254, 254, 0.55)' }}>
+              <input type="color" value={tweaks.healthColor}
+                     onChange={(e) => onTweakChange('healthColor', e.target.value)}
+                     style={{ width: 28, height: 22, padding: 1, border: '1px solid rgba(0,0,0,.15)', borderRadius: 4, cursor: 'pointer' }}/>
+              HP
+            </label>
+          </div>
         </Field>
       </div>
     </aside>

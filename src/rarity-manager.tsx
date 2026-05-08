@@ -1,4 +1,13 @@
 import React, { useState } from 'react';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext, sortableKeyboardCoordinates, useSortable,
+  verticalListSortingStrategy, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Glyph, RarityShape } from './glyphs';
 import { RARITY_SHAPE_OPTIONS } from './data';
 import type { Rarity, RarityShapeName } from './types';
@@ -16,9 +25,48 @@ interface RarityManagerProps {
   onCardRarityMissing?: (oldId: string, newId: string) => void;
 }
 
+function SortableRarityItem({ r, onEdit }: { r: Rarity; onEdit: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: r.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <li ref={setNodeRef} style={style} className="kw-list-item" onClick={onEdit}>
+      <span {...attributes} {...listeners}
+            onClick={(e) => e.stopPropagation()}
+            style={{ cursor: 'grab', padding: '4px 6px', color: 'rgba(0,0,0,.35)', touchAction: 'none', userSelect: 'none', flexShrink: 0 }}
+            aria-label="Drag to reorder">⋮⋮</span>
+      <span className="rarity-list-swatch">
+        <RarityShape shape={r.shape} color={r.color} size={26}/>
+      </span>
+      <span className="kw-list-text">
+        <span className="kw-list-name" style={{ color: r.color }}>{r.name}</span>
+        <span className="kw-list-desc" style={{ fontFamily: 'ui-monospace, monospace' }}>
+          {r.shape} · {r.color}
+        </span>
+      </span>
+    </li>
+  );
+}
+
 export function RarityManager({ open, rarities, onClose, onChange, onCardRarityMissing }: RarityManagerProps): React.ReactElement | null {
   const [editing, setEditing] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   if (!open) return null;
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = rarities.findIndex(r => r.id === active.id);
+      const newIndex = rarities.findIndex(r => r.id === over.id);
+      onChange(arrayMove(rarities, oldIndex, newIndex));
+    }
+  };
 
   const onSave = (r: Rarity) => {
     if (r.id === '_new') {
@@ -66,21 +114,31 @@ export function RarityManager({ open, rarities, onClose, onChange, onCardRarityM
               </button>
             </div>
             <ul>
-              {rarities.map(r => (
-                <li key={r.id}
-                    className={`kw-list-item ${editing === r.id ? 'on' : ''}`}
-                    onClick={() => setEditing(r.id)}>
-                  <span className="rarity-list-swatch">
-                    <RarityShape shape={r.shape} color={r.color} size={26}/>
-                  </span>
-                  <span className="kw-list-text">
-                    <span className="kw-list-name" style={{ color: r.color }}>{r.name}</span>
-                    <span className="kw-list-desc" style={{ fontFamily: 'ui-monospace, monospace' }}>
-                      {r.shape} · {r.color}
+              {editing === null ? (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={rarities.map(r => r.id)} strategy={verticalListSortingStrategy}>
+                    {rarities.map(r => (
+                      <SortableRarityItem key={r.id} r={r} onEdit={() => setEditing(r.id)}/>
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                rarities.map(r => (
+                  <li key={r.id}
+                      className={`kw-list-item ${editing === r.id ? 'on' : ''}`}
+                      onClick={() => setEditing(r.id)}>
+                    <span className="rarity-list-swatch">
+                      <RarityShape shape={r.shape} color={r.color} size={26}/>
                     </span>
-                  </span>
-                </li>
-              ))}
+                    <span className="kw-list-text">
+                      <span className="kw-list-name" style={{ color: r.color }}>{r.name}</span>
+                      <span className="kw-list-desc" style={{ fontFamily: 'ui-monospace, monospace' }}>
+                        {r.shape} · {r.color}
+                      </span>
+                    </span>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
 

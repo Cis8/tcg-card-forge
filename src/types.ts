@@ -14,7 +14,7 @@ export type GlyphName =
   | 'close' | 'check';
 
 // Renamed from RarityShape to avoid collision with the RarityShape component in glyphs.tsx.
-export type RarityShapeName = 'diamond' | 'pentagon' | 'hexagon' | 'circle' | 'shield' | 'star';
+export type RarityShapeName = 'diamond' | 'pentagon' | 'hexagon' | 'circle' | 'shield' | 'star' | 'triangle';
 
 export type FrameVariant = 'ornate' | 'classic' | 'inscribed';
 export type FontVariant  = 'cinzel' | 'fell' | 'trajan';
@@ -63,6 +63,9 @@ export interface TweakState {
   frame: FrameVariant;
   font: FontVariant;
   statShape: StatShape;
+  costColor: string;    // hex rim color for cost gem
+  attackColor: string;  // hex rim color for attack gem
+  healthColor: string;  // hex rim color for health gem
 }
 
 // Derived color palette returned by deriveTheme() in color-utils.ts.

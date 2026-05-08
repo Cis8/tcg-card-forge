@@ -1,4 +1,13 @@
 import React, { useState } from 'react';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext, sortableKeyboardCoordinates, useSortable,
+  verticalListSortingStrategy, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { deriveTheme } from './color-utils';
 import { Glyph } from './glyphs';
 import { THEME_GLYPH_OPTIONS } from './data';
@@ -18,9 +27,50 @@ interface ThemeManagerProps {
   onCardThemeMissing?: (oldId: string, newId: string) => void;
 }
 
+function SortableThemeItem({ rawT, onEdit }: { rawT: Theme; onEdit: () => void }) {
+  const t = deriveTheme(rawT);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: rawT.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <li ref={setNodeRef} style={style} className="kw-list-item" onClick={onEdit}>
+      <span {...attributes} {...listeners}
+            onClick={(e) => e.stopPropagation()}
+            style={{ cursor: 'grab', padding: '4px 6px', color: 'rgba(0,0,0,.35)', touchAction: 'none', userSelect: 'none', flexShrink: 0 }}
+            aria-label="Drag to reorder">⋮⋮</span>
+      <span className="theme-list-swatch"
+            style={{ background: `linear-gradient(160deg, ${t.bg[1]}, ${t.bg[2]})` }}>
+        <Glyph name={rawT.glyph} size={18}/>
+      </span>
+      <span className="kw-list-text">
+        <span className="kw-list-name" style={{ color: t.accent }}>{t.name}</span>
+        <span className="kw-list-desc" style={{ fontFamily: 'ui-monospace, monospace' }}>
+          {rawT.primary}
+        </span>
+      </span>
+    </li>
+  );
+}
+
 export function ThemeManager({ open, themes, onClose, onChange, onCardThemeMissing }: ThemeManagerProps): React.ReactElement | null {
   const [editing, setEditing] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   if (!open) return null;
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = themes.findIndex(t => t.id === active.id);
+      const newIndex = themes.findIndex(t => t.id === over.id);
+      onChange(arrayMove(themes, oldIndex, newIndex));
+    }
+  };
 
   const onSave = (t: Theme) => {
     if (t.id === '_new') {
@@ -68,25 +118,35 @@ export function ThemeManager({ open, themes, onClose, onChange, onCardThemeMissi
               </button>
             </div>
             <ul>
-              {themes.map(rawT => {
-                const t = deriveTheme(rawT);
-                return (
-                  <li key={t.id}
-                      className={`kw-list-item ${editing === t.id ? 'on' : ''}`}
-                      onClick={() => setEditing(t.id)}>
-                    <span className="theme-list-swatch"
-                          style={{ background: `linear-gradient(160deg, ${t.bg[1]}, ${t.bg[2]})` }}>
-                      <Glyph name={rawT.glyph} size={18}/>
-                    </span>
-                    <span className="kw-list-text">
-                      <span className="kw-list-name" style={{ color: t.accent }}>{t.name}</span>
-                      <span className="kw-list-desc" style={{ fontFamily: 'ui-monospace, monospace' }}>
-                        {rawT.primary}
+              {editing === null ? (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={themes.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                    {themes.map(rawT => (
+                      <SortableThemeItem key={rawT.id} rawT={rawT} onEdit={() => setEditing(rawT.id)}/>
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                themes.map(rawT => {
+                  const t = deriveTheme(rawT);
+                  return (
+                    <li key={t.id}
+                        className={`kw-list-item ${editing === t.id ? 'on' : ''}`}
+                        onClick={() => setEditing(t.id)}>
+                      <span className="theme-list-swatch"
+                            style={{ background: `linear-gradient(160deg, ${t.bg[1]}, ${t.bg[2]})` }}>
+                        <Glyph name={rawT.glyph} size={18}/>
                       </span>
-                    </span>
-                  </li>
-                );
-              })}
+                      <span className="kw-list-text">
+                        <span className="kw-list-name" style={{ color: t.accent }}>{t.name}</span>
+                        <span className="kw-list-desc" style={{ fontFamily: 'ui-monospace, monospace' }}>
+                          {rawT.primary}
+                        </span>
+                      </span>
+                    </li>
+                  );
+                })
+              )}
             </ul>
           </div>
 
