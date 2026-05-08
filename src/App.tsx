@@ -157,6 +157,7 @@ export default function App(): React.ReactElement {
     }
   };
   const cardRef = useRef<HTMLDivElement>(null);
+  const [cardZoom, setCardZoom] = useState(100);
   const [leftW, setLeftW] = useState(320);
   const [rightW, setRightW] = useState(320);
   const dragRef = useRef<{ side: 'left' | 'right'; startX: number; startW: number } | null>(null);
@@ -487,22 +488,57 @@ export default function App(): React.ReactElement {
                 <span className="stage-meta-sep" />
                 <span>{current.type === 'unit' ? 'Unit' : 'Spell'}</span>
               </div>
-              <div ref={cardRef} className="stage-card-mount">
-                <CardPreview
-                 card={current}
-                  keywords={keywords}
-                  factions={factions}
-                  rarities={rarities}
-                  font={globalSettings.font}
-                  costShape={globalSettings.costShape}
-                  attackShape={globalSettings.attackShape}
-                  healthShape={globalSettings.healthShape}
-                  costColor={globalSettings.costColor}
-                  attackColor={globalSettings.attackColor}
-                  healthColor={globalSettings.healthColor}
-                />
+              {/* Outer div compensates layout space for the scaled card */}
+              <div style={{
+                width: `${Math.round(340 * cardZoom / 100 * 1.2)}px`,
+                height: `${Math.round((488 + 60) * cardZoom / 100 * 1.2)}px`,
+                flexShrink: 0,
+                position: 'relative',
+              }}>
+                <div style={{
+                  transform: `scale(${cardZoom / 100 * 1.2})`,
+                  transformOrigin: 'top left',
+                }}>
+                  <div ref={cardRef} className="stage-card-mount">
+                    <CardPreview
+                      card={current}
+                      keywords={keywords}
+                      factions={factions}
+                      rarities={rarities}
+                      font={globalSettings.font}
+                      costShape={globalSettings.costShape}
+                      attackShape={globalSettings.attackShape}
+                      healthShape={globalSettings.healthShape}
+                      costColor={globalSettings.costColor}
+                      attackColor={globalSettings.attackColor}
+                      healthColor={globalSettings.healthColor}
+                    />
+                  </div>
+                </div>
               </div>
               <div className="stage-eyebrow">Live preview · hover keywords for rules</div>
+              <div className="stage-zoom-control">
+                <span className="stage-zoom-label">Zoom</span>
+                <input
+                  type="range"
+                  className="stage-zoom-slider"
+                  min={50}
+                  max={150}
+                  step={1}
+                  value={cardZoom}
+                  onChange={e => setCardZoom(Number(e.target.value))}
+                  aria-label="Card zoom"
+                />
+                <span className="stage-zoom-value">{cardZoom}%</span>
+                {cardZoom !== 100 && (
+                  <button
+                    type="button"
+                    className="stage-zoom-reset"
+                    onClick={() => setCardZoom(100)}
+                    title="Reset zoom"
+                  >↺</button>
+                )}
+              </div>
             </div>
           </div>
           <div

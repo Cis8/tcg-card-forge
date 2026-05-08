@@ -10,6 +10,7 @@
 .topbar-desktop-btns { display: contents; } /* transparent flex passthrough */
 .topbar-mobile-overflow { display: none; }
 .mobile-tab-bar         { display: none; }
+.stage-zoom-control     { display: flex; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    MOBILE LAYOUT  (≤ 767 px)
@@ -41,6 +42,9 @@
     align-items: center;
     position: relative;
   }
+
+  /* ── Zoom control: hidden on mobile (no stage shown) ── */
+  .stage-zoom-control { display: none; }
 
   /* ── Resize handles: useless on touch ── */
   .resize-handle { display: none; }
