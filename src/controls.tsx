@@ -285,6 +285,7 @@ const ArtUploader = ({ value, onChange }: ArtUploaderProps): React.ReactElement 
           </div>
         )}
         <input ref={inputRef} type="file" accept="image/*" hidden
+               onClick={(e) => e.stopPropagation()}
                onChange={(e) => handleFiles(e.target.files)}/>
       </div>
       {value && (

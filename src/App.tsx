@@ -1,7 +1,7 @@
 // App.tsx — main shell. Owns: current card, saved cards, keyword library,
 // faction list, rarity list. All persisted to localStorage.
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as htmlToImage from 'html-to-image';
 
 import { DEFAULT_FACTIONS, DEFAULT_RARITIES, DEFAULT_KEYWORDS, SEED_CARDS } from './data';
@@ -15,6 +15,8 @@ import { Collection } from './collection';
 import { exportSnapshot, downloadSnapshot, parseSnapshot, applySnapshot } from './io';
 import { Glyph } from './glyphs';
 import type { Card, Faction, Rarity, Keyword, TweakState } from './types';
+
+type MobileTab = 'props' | 'preview' | 'appearance';
 
 const STORAGE = {
   cards:    'tcg.cards.v2',
@@ -105,6 +107,24 @@ export default function App(): React.ReactElement {
   const [leftW, setLeftW] = useState(320);
   const [rightW, setRightW] = useState(320);
   const dragRef = useRef<{ side: 'left' | 'right'; startX: number; startW: number } | null>(null);
+
+  // Mobile state
+  const [mobileTab, setMobileTab] = useState<MobileTab>('props');
+  const [showOverflow, setShowOverflow] = useState(false);
+  const overflowRef = useRef<HTMLDivElement>(null);
+
+  const closeOverflow = useCallback(() => setShowOverflow(false), []);
+
+  useEffect(() => {
+    if (!showOverflow) return;
+    const handler = (e: MouseEvent) => {
+      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
+        setShowOverflow(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showOverflow]);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -245,7 +265,9 @@ export default function App(): React.ReactElement {
   const rarityForCard = rarities.find((r) => r.id === current.rarity) ?? rarities[0];
 
   return (
-    <div className="app" style={{ gridTemplateColumns: `${leftW}px 6px 1fr 6px ${rightW}px` }}>
+    <div className="app"
+         style={{ gridTemplateColumns: `${leftW}px 6px 1fr 6px ${rightW}px` }}
+         data-mobile-tab={mobileTab}>
       <header className="topbar">
         <div className="topbar-brand">
           <div className="topbar-mark"><Glyph name="book" size={18} /></div>
@@ -255,20 +277,53 @@ export default function App(): React.ReactElement {
           </div>
         </div>
         <div className="topbar-actions">
-          <button type="button" className="btn" onClick={() => setShowCollection(true)}>
-            <Glyph name="collection" size={14} />
-            <span>Collection</span>
-            <span style={{ opacity: 0.5, marginLeft: 4 }}>{cards.length}</span>
-          </button>
-          <button type="button" className="btn" onClick={() => setShowKeywords(true)}>
-            <Glyph name="book" size={14} /><span>Keywords</span>
-          </button>
-          <button type="button" className="btn" onClick={onExportPng}>
-            <Glyph name="download" size={14} /><span>Export PNG</span>
-          </button>
+          {/* Desktop-only buttons — hidden on mobile via CSS */}
+          <div className="topbar-desktop-btns">
+            <button type="button" className="btn" onClick={() => setShowCollection(true)}>
+              <Glyph name="collection" size={14} />
+              <span>Collection</span>
+              <span style={{ opacity: 0.5, marginLeft: 4 }}>{cards.length}</span>
+            </button>
+            <button type="button" className="btn" onClick={() => setShowKeywords(true)}>
+              <Glyph name="book" size={14} /><span>Keywords</span>
+            </button>
+            <button type="button" className="btn" onClick={onExportPng}>
+              <Glyph name="download" size={14} /><span>Export PNG</span>
+            </button>
+          </div>
           <button type="button" className="btn btn-primary" onClick={onSave}>
             <Glyph name="save" size={14} /><span>Save card</span>
           </button>
+          {/* Mobile-only overflow menu — hidden on desktop via CSS */}
+          <div className="topbar-mobile-overflow" ref={overflowRef}>
+            <button
+              type="button"
+              className="btn"
+              aria-label="More actions"
+              aria-expanded={showOverflow}
+              onClick={() => setShowOverflow(v => !v)}
+            >
+              <span style={{ fontSize: 18, lineHeight: 1, letterSpacing: '.05em' }}>⋯</span>
+            </button>
+            {showOverflow && (
+              <div className="mobile-overflow-menu" role="menu">
+                <button type="button" className="btn" role="menuitem"
+                        onClick={() => { setShowCollection(true); closeOverflow(); }}>
+                  <Glyph name="collection" size={14} />
+                  <span>Collection</span>
+                  <span style={{ opacity: 0.5, marginLeft: 4 }}>{cards.length}</span>
+                </button>
+                <button type="button" className="btn" role="menuitem"
+                        onClick={() => { setShowKeywords(true); closeOverflow(); }}>
+                  <Glyph name="book" size={14} /><span>Keywords</span>
+                </button>
+                <button type="button" className="btn" role="menuitem"
+                        onClick={() => { onExportPng(); closeOverflow(); }}>
+                  <Glyph name="download" size={14} /><span>Export PNG</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -368,6 +423,37 @@ export default function App(): React.ReactElement {
       />
 
       {toast && <div className="toast">{toast}</div>}
+
+      {/* Mobile bottom tab bar — hidden on desktop via CSS */}
+      <nav className="mobile-tab-bar" aria-label="Main navigation">
+        <button
+          type="button"
+          className={`mobile-tab-btn${mobileTab === 'props' ? ' on' : ''}`}
+          aria-current={mobileTab === 'props' ? 'page' : undefined}
+          onClick={() => setMobileTab('props')}
+        >
+          <Glyph name="edit" size={20} />
+          <span>Properties</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-tab-btn${mobileTab === 'preview' ? ' on' : ''}`}
+          aria-current={mobileTab === 'preview' ? 'page' : undefined}
+          onClick={() => setMobileTab('preview')}
+        >
+          <Glyph name="eye" size={20} />
+          <span>Preview</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-tab-btn${mobileTab === 'appearance' ? ' on' : ''}`}
+          aria-current={mobileTab === 'appearance' ? 'page' : undefined}
+          onClick={() => setMobileTab('appearance')}
+        >
+          <Glyph name="palette" size={20} />
+          <span>Appearance</span>
+        </button>
+      </nav>
     </div>
   );
 }

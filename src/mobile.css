@@ -1,0 +1,255 @@
+/* mobile.css — imported LAST so these rules win over card.css and card-extras.css.
+ *
+ * Why a separate file: the desktop modal styles live in card.css (imported after
+ * styles.css). Any mobile override in styles.css would lose the cascade fight to
+ * the same-specificity rules in card.css. Loading mobile.css last guarantees that
+ * every rule here overrides its desktop counterpart without needing !important.
+ */
+
+/* ── Desktop-visible, mobile-hidden wrappers (base / non-query state) ─── */
+.topbar-desktop-btns { display: contents; } /* transparent flex passthrough */
+.topbar-mobile-overflow { display: none; }
+.mobile-tab-bar         { display: none; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MOBILE LAYOUT  (≤ 767 px)
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+
+  /* ── Base ── */
+  body { font-size: 14px; }
+
+  /* ── App: flex column instead of 3-column grid ── */
+  .app {
+    display: flex !important;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* ── Topbar: compact ── */
+  .topbar { padding: 0 12px; gap: 8px; height: 52px; }
+  .topbar-sub   { display: none; }
+  .topbar-title { font-size: 14px; }
+  .topbar-mark  { width: 26px; height: 26px; }
+  .topbar-mark svg { width: 14px; height: 14px; }
+
+  /* Desktop button group hidden; mobile overflow group shown */
+  .topbar-desktop-btns { display: none; }
+  .topbar-mobile-overflow {
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+
+  /* ── Resize handles: useless on touch ── */
+  .resize-handle { display: none; }
+
+  /* ── Panel visibility: one active at a time ── */
+  .rail-left,
+  .rail-right,
+  .stage {
+    flex: 1;
+    min-height: 0;
+    display: none !important;
+  }
+
+  .app[data-mobile-tab="props"] .rail-left {
+    display: flex !important;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .app[data-mobile-tab="preview"] .stage {
+    display: flex !important;
+    overflow-y: auto;
+    padding: 16px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .app[data-mobile-tab="appearance"] .rail-right {
+    display: flex !important;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  /* ── Card preview: scale to fit narrow viewport ── */
+  .stage-card-mount {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  .stage-card-mount .card-shell {
+    width: min(300px, calc(100vw - 48px));
+  }
+
+  /* ── Mobile tab bar ── */
+  .mobile-tab-bar {
+    display: flex;
+    flex-shrink: 0;
+    height: 56px;
+    background: linear-gradient(0deg, #1d1813, #14110d);
+    border-top: 1px solid var(--line-strong);
+    z-index: 10;
+  }
+  .mobile-tab-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: transparent;
+    border: 0;
+    border-top: 2px solid transparent;
+    color: var(--text-mute);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 8px 4px;
+    transition: color .15s, border-color .15s;
+    min-height: 44px;
+  }
+  .mobile-tab-btn.on {
+    color: var(--gold-2);
+    border-top-color: var(--gold);
+  }
+
+  /* ── Mobile overflow dropdown ── */
+  .mobile-overflow-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: #1d1813;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 6px;
+    z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,.65),
+                0 0 0 1px var(--gold-deep);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 172px;
+    animation: modal-in .15s ease-out;
+  }
+  .mobile-overflow-menu .btn {
+    height: 44px;
+    font-size: 13px;
+    justify-content: flex-start;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    width: 100%;
+    min-height: 44px;
+  }
+  .mobile-overflow-menu .btn:hover { background: var(--bg-2); }
+
+  /* ── Touch targets: minimum 44 × 44 px ── */
+  .btn     { min-height: 44px; }
+  .btn-sm  { min-height: 38px; }
+  .icon-btn { width: 44px; height: 44px; }
+
+  /* Stepper */
+  .stepper { grid-template-columns: 48px 1fr 48px; height: 48px; }
+  .stepper-btn { font-size: 20px; }
+
+  /* Segmented controls */
+  .seg-btn { padding: 10px 8px; min-height: 44px; }
+
+  /* Keyword chips */
+  .kw-bar-chip,
+  .kw-bar-manage { min-height: 36px; padding: 6px 12px; font-size: 12px; }
+
+  /* Faction / theme chips */
+  .theme-chip { height: 64px; }
+
+  /* Rarity chips */
+  .rarity-chip { padding: 10px 4px; }
+
+  /* Glyph picker buttons */
+  .glyph-pick { height: 44px; }
+
+  /* Color swatches */
+  .color-pick { width: 34px; height: 34px; }
+
+  /* ── iOS zoom prevention: font-size ≥ 16 px on all text inputs ── */
+  .text-input    { font-size: 16px; }
+  .stepper input { font-size: 16px !important; }
+  .text-area     { min-height: 80px; }
+  .shape-select  { font-size: 16px; }
+
+  /* ── Rail borders: not needed in flex-column layout ── */
+  .rail       { border-right: none; }
+  .rail-right { border-left:  none; }
+
+  /* ── Modals: bottom-sheet style ────────────────────────────────────────
+   *
+   * Desktop .modal-scrim (card.css):  display:grid; place-items:center; padding:32px
+   * Desktop .kw-modal (card.css):     width:760px; height:540px
+   * Desktop .collection-modal:        width:880px; height:600px
+   *
+   * Because this file loads after card.css, same-specificity rules here win
+   * the cascade and correctly override the desktop fixed dimensions.
+   * ──────────────────────────────────────────────────────────────────── */
+  .modal-scrim {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+    padding: 0;
+  }
+  .modal {
+    width: 100%;
+    border-radius: 14px 14px 0 0;
+    max-height: 90dvh;
+    animation: mobile-sheet-in .22s cubic-bezier(.2,.8,.3,1);
+  }
+  @keyframes mobile-sheet-in {
+    from { transform: translateY(60px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  /* Keyword / Faction / Rarity manager: stacked single-column */
+  .kw-modal {
+    width: 100%;
+    height: auto;
+    max-height: 88dvh;
+  }
+  .kw-modal-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+    max-height: calc(88dvh - 72px);
+  }
+  .kw-list {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .kw-detail { border-top: none; }
+
+  /* Collection modal */
+  .collection-modal {
+    width: 100%;
+    height: auto;
+    max-height: 90dvh;
+  }
+  .collection-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    max-height: calc(90dvh - 80px);
+    overflow-y: auto;
+  }
+
+  /* Delete button: always visible on touch (no :hover needed) */
+  .coll-card-del { opacity: 1; }
+
+  /* ── Modal header: allow wrapping on very small screens ── */
+  .modal-header { flex-wrap: wrap; gap: 8px; padding: 12px 14px; }
+
+  /* ── Toast: lift above tab bar ── */
+  .toast { bottom: calc(56px + 16px); }
+}
