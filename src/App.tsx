@@ -176,7 +176,7 @@ export default function App(): React.ReactElement {
   const [mobileTab, setMobileTab] = useState<MobileTab>('preview');
   const [showOverflow, setShowOverflow] = useState(false);
   const overflowRef = useRef<HTMLDivElement>(null);
-  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
+  const [viewportW, setViewportW] = useState(() => window.innerWidth);
 
   // Deck / view state
   const [decks, setDecks] = useState<Deck[]>(() => load<Deck[]>(STORAGE.decks, []));
@@ -198,21 +198,34 @@ export default function App(): React.ReactElement {
 
   const closeOverflow = useCallback(() => setShowOverflow(false), []);
 
-  // Track mobile breakpoint
+  // Track viewport width reactively (handles orientation changes on mobile).
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    const onResize = () => setViewportW(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Effective card scale: on mobile, fit the card (340px) to the available
-  // stage width (viewport − 32px padding); on desktop use zoom × 1.2 boost.
-  const CARD_NATIVE_W = 340;
-  const STAGE_PADDING = 32;
+  // Card bleed amounts in natural card coordinates (px).
+  // These are the distances each element protrudes outside the 340×488 card box.
+  const CARD_W = 340, CARD_H = 488;
+  const BLEED_TOP = 12, BLEED_LEFT = 10, BLEED_RIGHT = 8, BLEED_BOTTOM = 8;
+
+  // Effective card scale.
+  // Mobile: fit the full bleed-box (340 + 10 + 8 = 358 px wide) within the
+  //         available stage content width (viewport − 32 px h-padding).
+  // Desktop: user zoom × 1.2 boost.
+  const isMobile = viewportW <= 767;
   const cardScale = isMobile
-    ? Math.min(1.2, (window.innerWidth - STAGE_PADDING) / CARD_NATIVE_W)
+    ? Math.min(1.2, (viewportW - 32) / (CARD_W + BLEED_LEFT + BLEED_RIGHT))
     : cardZoom / 100 * 1.2;
+
+  // Outer div: layout placeholder sized to the full bleed-box.
+  // Inner div: absolutely positioned inside, offset so every bleed element
+  //            stays within the outer div (no upward/leftward layout overflow).
+  const outerW   = (CARD_W + BLEED_LEFT + BLEED_RIGHT) * cardScale;
+  const outerH   = (CARD_H + BLEED_TOP  + BLEED_BOTTOM) * cardScale;
+  const innerTop  = BLEED_TOP  * cardScale; // room for cost-gem above card
+  const innerLeft = BLEED_LEFT * cardScale; // room for cost-gem left of card
 
   // Sync appView → URL hash
   useEffect(() => {
@@ -564,16 +577,20 @@ export default function App(): React.ReactElement {
                 <span className="stage-meta-sep" />
                 <span>{current.type === 'unit' ? 'Unit' : 'Spell'}</span>
               </div>
-              {/* Outer div compensates layout space for the scaled card */}
+              {/* Outer div compensates layout space for the scaled card including bleed */}
               <div style={{
-                width: `${Math.round(340 * cardScale)}px`,
-                height: `${Math.round((488 + 60) * cardScale)}px`,
+                width: `${outerW}px`,
+                height: `${outerH}px`,
                 flexShrink: 0,
                 position: 'relative',
               }}>
                 <div style={{
+                  position: 'absolute',
+                  top: `${innerTop}px`,
+                  left: `${innerLeft}px`,
                   transform: `scale(${cardScale})`,
                   transformOrigin: 'top left',
+                  width: `${CARD_W}px`,
                 }}>
                   <div ref={cardRef} className="stage-card-mount">
                     <CardPreview
