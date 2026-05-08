@@ -1,5 +1,5 @@
 // App.tsx — main shell. Owns: current card, saved cards, keyword library,
-// faction list, rarity list. All persisted to localStorage.
+// faction list, rarity list, decks. All persisted to localStorage.
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as htmlToImage from 'html-to-image';
@@ -11,11 +11,17 @@ import { KeywordManager } from './keyword-manager';
 import { FactionManager } from './faction-manager';
 import { RarityManager } from './rarity-manager';
 import { Collection } from './collection';
+import { DeckManager } from './deck-manager';
+import { DeckEditor } from './deck-editor';
 
 import { exportSnapshot, downloadSnapshot, parseSnapshot, applySnapshot } from './io';
 import { Glyph } from './glyphs';
-import type { Card, Faction, Rarity, Keyword, GlobalSettings } from './types';
+import type { Card, Deck, DeckSettings, Faction, Rarity, Keyword, GlobalSettings } from './types';
+import {
+  generateId, DECK_SETTINGS_DEFAULTS, normalizeDeckSettings, deleteCardFromDecks, affectedDeckNames, normalizeDeck,
+} from './deck-utils';
 
+type AppView = { kind: 'card-editor' } | { kind: 'deck-editor'; deckId: string };
 type MobileTab = 'props' | 'preview' | 'appearance';
 
 const STORAGE = {
@@ -25,6 +31,7 @@ const STORAGE = {
   factions:       'tcg.factions.v2',
   rarities:       'tcg.rarities.v2',
   globalSettings: 'tcg.globalSettings.v1',
+  decks:          'tcg.decks.v1',
 } as const;
 
 function loadWithFallback<T>(newKey: string, oldKey: string, fallback: T): T {
@@ -37,7 +44,7 @@ function loadWithFallback<T>(newKey: string, oldKey: string, fallback: T): T {
 }
 
 const BLANK_CARD = (factions: Faction[], rarities: Rarity[]): Card => ({
-  id: `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+  id: generateId('c'),
   type: 'unit',
   name: '',
   subtype: '',
@@ -61,9 +68,11 @@ const GLOBAL_SETTINGS_DEFAULTS: GlobalSettings = {
   costColor:   '#5dbce5',
   attackColor: '#7c8a99',
   healthColor: '#b21625',
+  deckSettings: DECK_SETTINGS_DEFAULTS,
 };
 
-const LEGACY_GLOBAL_SETTINGS_DEFAULTS: GlobalSettings = {
+// Legacy defaults without deckSettings — used only for migration detection
+const LEGACY_GLOBAL_SETTINGS_DEFAULTS: Partial<GlobalSettings> = {
   font: 'cinzel',
   costShape:   'gem',
   attackShape: 'gem',
@@ -83,7 +92,12 @@ function normalizeGlobalSettings(settings: Partial<GlobalSettings> | null | unde
     settings.costColor === LEGACY_GLOBAL_SETTINGS_DEFAULTS.costColor &&
     settings.attackColor === LEGACY_GLOBAL_SETTINGS_DEFAULTS.attackColor &&
     settings.healthColor === LEGACY_GLOBAL_SETTINGS_DEFAULTS.healthColor;
-  return isLegacyDefault ? GLOBAL_SETTINGS_DEFAULTS : { ...GLOBAL_SETTINGS_DEFAULTS, ...settings };
+  const base = isLegacyDefault ? GLOBAL_SETTINGS_DEFAULTS : { ...GLOBAL_SETTINGS_DEFAULTS, ...settings };
+  // Always ensure deckSettings is fully populated (handles missing from localStorage)
+  return {
+    ...base,
+    deckSettings: normalizeDeckSettings({ ...DECK_SETTINGS_DEFAULTS, ...(settings.deckSettings ?? {}) }),
+  };
 }
 
 function load<T>(key: string, fallback: T): T {
@@ -133,6 +147,15 @@ export default function App(): React.ReactElement {
   );
   const setGlobalSetting = (k: keyof GlobalSettings, v: string) =>
     setGlobalSettings(prev => ({ ...prev, [k]: v }));
+  const setDeckSetting = (k: keyof DeckSettings, v: number) => {
+    const nextDeckSettings = normalizeDeckSettings({ ...globalSettings.deckSettings, [k]: v });
+    setGlobalSettings(prev => ({ ...prev, deckSettings: nextDeckSettings }));
+    // Hard-enforce maxCopiesPerCard immediately so no deck can hold illegal copies
+    if (k === 'maxCopiesPerCard' && nextDeckSettings.maxCopiesPerCard !== globalSettings.deckSettings.maxCopiesPerCard) {
+      const validCardIds = new Set(cards.map(c => c.id));
+      setDecks(ds => ds.map(d => normalizeDeck(d, validCardIds, nextDeckSettings)));
+    }
+  };
   const cardRef = useRef<HTMLDivElement>(null);
   const [leftW, setLeftW] = useState(320);
   const [rightW, setRightW] = useState(320);
@@ -142,6 +165,11 @@ export default function App(): React.ReactElement {
   const [mobileTab, setMobileTab] = useState<MobileTab>('preview');
   const [showOverflow, setShowOverflow] = useState(false);
   const overflowRef = useRef<HTMLDivElement>(null);
+
+  // Deck / view state
+  const [decks, setDecks] = useState<Deck[]>(() => load<Deck[]>(STORAGE.decks, []));
+  const [appView, setAppView] = useState<AppView>({ kind: 'card-editor' });
+  const [showDeckManager, setShowDeckManager] = useState(false);
 
   const closeOverflow = useCallback(() => setShowOverflow(false), []);
 
@@ -185,6 +213,25 @@ export default function App(): React.ReactElement {
   useEffect(() => save(STORAGE.factions,       factions),       [factions]);
   useEffect(() => save(STORAGE.rarities,       rarities),       [rarities]);
   useEffect(() => save(STORAGE.globalSettings, globalSettings), [globalSettings]);
+  useEffect(() => save(STORAGE.decks,          decks),          [decks]);
+
+  // Normalize decks once on mount against the current card collection and settings.
+  // Handles data from old localStorage (missing entries, stale cardIds, excess copies).
+  const mountNormalizedRef = useRef(false);
+  useEffect(() => {
+    if (mountNormalizedRef.current) return;
+    mountNormalizedRef.current = true;
+    const validCardIds = new Set(cards.map(c => c.id));
+    setDecks(ds => ds.map(d => normalizeDeck(d, validCardIds, globalSettings.deckSettings)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // If the active deck-editor deck is deleted, fall back to card-editor
+  useEffect(() => {
+    if (appView.kind === 'deck-editor' && !decks.find(d => d.id === appView.deckId)) {
+      setAppView({ kind: 'card-editor' });
+    }
+  }, [appView, decks]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -219,8 +266,15 @@ export default function App(): React.ReactElement {
     if (c) { setCurrent({ ...c }); setShowCollection(false); setMobileTab('preview'); }
   };
 
-  const onDeleteFromCollection = (id: string) =>
-    setCards((all) => all.filter((c) => c.id !== id));
+  const onDeleteFromCollection = (id: string) => {
+    const names = affectedDeckNames(decks, id);
+    if (names.length > 0) {
+      const list = names.slice(0, 3).join(', ') + (names.length > 3 ? ` +${names.length - 3} more` : '');
+      if (!confirm(`This card is in ${names.length} deck(s): ${list}.\nDeleting it will remove it from those decks. Continue?`)) return;
+    }
+    setCards(all => all.filter(c => c.id !== id));
+    setDecks(ds => deleteCardFromDecks(ds, id));
+  };
 
   const onFactionDeleted = (deletedId: string, fallbackId: string) => {
     setCards((all) => all.map((c) => c.faction === deletedId ? { ...c, faction: fallbackId } : c));
@@ -233,7 +287,7 @@ export default function App(): React.ReactElement {
   };
 
   const onExportJson = () => {
-    const snapshot = exportSnapshot(cards, keywords, factions, rarities, globalSettings);
+    const snapshot = exportSnapshot(cards, keywords, factions, rarities, globalSettings, decks);
     downloadSnapshot(snapshot);
     showToast('Collection exported');
   };
@@ -249,23 +303,31 @@ export default function App(): React.ReactElement {
         const snap = result.data;
         const summary =
           `${snap.cards.length} cards, ${snap.keywords.length} keywords, ` +
-          `${snap.factions.length} factions, ${snap.rarities.length} rarities.\n\n` +
+          `${snap.factions.length} factions, ${snap.rarities.length} rarities, ` +
+          `${snap.decks.length} decks.\n\n` +
           'OK = Replace all · Cancel = Merge (keep existing, imported wins on conflict)';
 
         const replace = window.confirm(summary);
         const mode = replace ? 'replace' : 'merge';
 
         const next = applySnapshot(
-          { cards, keywords, factions, rarities, globalSettings },
+          { cards, keywords, factions, rarities, globalSettings, decks },
           snap,
           mode,
         );
+        // Compute normalized decks BEFORE any setState — prevents partial state if normalization fails
+        const validCardIds = new Set(next.cards.map(c => c.id));
+        const normalizedDecks = next.decks.map(d =>
+          normalizeDeck(d, validCardIds, next.globalSettings.deckSettings)
+        );
+        // All data ready: apply atomically
         setCards(next.cards);
         setKeywords(next.keywords);
         setFactions(next.factions);
         setRarities(next.rarities);
         setGlobalSettings(next.globalSettings);
-        showToast(`Imported (${mode}): ${snap.cards.length} cards`);
+        setDecks(normalizedDecks);
+        showToast(`Imported (${mode}): ${snap.cards.length} cards, ${snap.decks.length} decks`);
       } catch {
         showToast('Import failed: invalid JSON file');
       }
@@ -297,9 +359,36 @@ export default function App(): React.ReactElement {
   const factionForCard = factions.find((f) => f.id === current.faction) ?? factions[0];
   const rarityForCard = rarities.find((r) => r.id === current.rarity) ?? rarities[0];
 
+  // Deck handlers
+  const onDeckChange = (deck: Deck) =>
+    setDecks(ds => ds.map(d => d.id === deck.id ? deck : d));
+
+  const onOpenDeck = (deckId: string) =>
+    setAppView({ kind: 'deck-editor', deckId });
+
+  const onCloseDeckEditor = () =>
+    setAppView({ kind: 'card-editor' });
+
+  // Compute deck-editor content outside JSX to avoid hook-in-render issues
+  const deckEditorContent = appView.kind === 'deck-editor' ? (() => {
+    const deck = decks.find(d => d.id === appView.deckId);
+    return deck ? (
+      <DeckEditor
+        deck={deck}
+        cards={cards}
+        factions={factions}
+        rarities={rarities}
+        keywords={keywords}
+        deckSettings={globalSettings.deckSettings}
+        onChange={onDeckChange}
+        onBack={onCloseDeckEditor}
+      />
+    ) : null;
+  })() : null;
+
   return (
     <div className="app"
-         style={{ gridTemplateColumns: `${leftW}px 6px 1fr 6px ${rightW}px` }}
+         style={{ gridTemplateColumns: appView.kind === 'card-editor' ? `${leftW}px 6px 1fr 6px ${rightW}px` : '1fr' }}
          data-mobile-tab={mobileTab}>
       <header className="topbar">
         <div className="topbar-brand">
@@ -312,6 +401,11 @@ export default function App(): React.ReactElement {
         <div className="topbar-actions">
           {/* Desktop-only buttons — hidden on mobile via CSS */}
           <div className="topbar-desktop-btns">
+            <button type="button" className="btn" onClick={() => setShowDeckManager(true)}>
+              <Glyph name="deck" size={14} />
+              <span>Decks</span>
+              {decks.length > 0 && <span style={{ opacity: 0.5, marginLeft: 4 }}>{decks.length}</span>}
+            </button>
             <button type="button" className="btn" onClick={() => setShowCollection(true)}>
               <Glyph name="collection" size={14} />
               <span>Collection</span>
@@ -341,6 +435,12 @@ export default function App(): React.ReactElement {
             {showOverflow && (
               <div className="mobile-overflow-menu" role="menu">
                 <button type="button" className="btn" role="menuitem"
+                        onClick={() => { setShowDeckManager(true); closeOverflow(); }}>
+                  <Glyph name="deck" size={14} />
+                  <span>Decks</span>
+                  {decks.length > 0 && <span style={{ opacity: 0.5, marginLeft: 4 }}>{decks.length}</span>}
+                </button>
+                <button type="button" className="btn" role="menuitem"
                         onClick={() => { setShowCollection(true); closeOverflow(); }}>
                   <Glyph name="collection" size={14} />
                   <span>Collection</span>
@@ -360,65 +460,71 @@ export default function App(): React.ReactElement {
         </div>
       </header>
 
-      <LeftPanel
-        card={current}
-        onChange={onCardChange}
-        keywords={keywords}
-        onOpenKeywords={() => setShowKeywords(true)}
-      />
-      <div
-        className="resize-handle"
-        onMouseDown={startDrag('left')}
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize left panel"
-      />
+      {appView.kind === 'card-editor' ? (
+        <>
+          <LeftPanel
+            card={current}
+            onChange={onCardChange}
+            keywords={keywords}
+            onOpenKeywords={() => setShowKeywords(true)}
+            deckSettings={globalSettings.deckSettings}
+            onDeckSettingChange={setDeckSetting}
+          />
+          <div
+            className="resize-handle"
+            onMouseDown={startDrag('left')}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize left panel"
+          />
 
-      <div className="stage">
-        <div className="stage-wrap">
-          <div className="stage-meta">
-            <span>{factionForCard.name}</span>
-            <span className="stage-meta-sep" />
-            <b>{rarityForCard.name}</b>
-            <span className="stage-meta-sep" />
-            <span>{current.type === 'unit' ? 'Unit' : 'Spell'}</span>
+          <div className="stage">
+            <div className="stage-wrap">
+              <div className="stage-meta">
+                <span>{factionForCard.name}</span>
+                <span className="stage-meta-sep" />
+                <b>{rarityForCard.name}</b>
+                <span className="stage-meta-sep" />
+                <span>{current.type === 'unit' ? 'Unit' : 'Spell'}</span>
+              </div>
+              <div ref={cardRef} className="stage-card-mount">
+                <CardPreview
+                 card={current}
+                  keywords={keywords}
+                  factions={factions}
+                  rarities={rarities}
+                  font={globalSettings.font}
+                  costShape={globalSettings.costShape}
+                  attackShape={globalSettings.attackShape}
+                  healthShape={globalSettings.healthShape}
+                  costColor={globalSettings.costColor}
+                  attackColor={globalSettings.attackColor}
+                  healthColor={globalSettings.healthColor}
+                />
+              </div>
+              <div className="stage-eyebrow">Live preview · hover keywords for rules</div>
+            </div>
           </div>
-          <div ref={cardRef} className="stage-card-mount">
-            <CardPreview
-             card={current}
-              keywords={keywords}
-              factions={factions}
-              rarities={rarities}
-              font={globalSettings.font}
-              costShape={globalSettings.costShape}
-              attackShape={globalSettings.attackShape}
-              healthShape={globalSettings.healthShape}
-              costColor={globalSettings.costColor}
-              attackColor={globalSettings.attackColor}
-              healthColor={globalSettings.healthColor}
-            />
-          </div>
-          <div className="stage-eyebrow">Live preview · hover keywords for rules</div>
-        </div>
-      </div>
-      <div
-        className="resize-handle"
-        onMouseDown={startDrag('right')}
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize right panel"
-      />
+          <div
+            className="resize-handle"
+            onMouseDown={startDrag('right')}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize right panel"
+          />
 
-      <RightPanel
-        card={current}
-        onChange={onCardChange}
-        factions={factions}
-        rarities={rarities}
-        onManageFactions={() => setShowFactions(true)}
-        onManageRarities={() => setShowRarities(true)}
-        globalSettings={globalSettings}
-        onGlobalSettingChange={setGlobalSetting}
-      />
+          <RightPanel
+            card={current}
+            onChange={onCardChange}
+            factions={factions}
+            rarities={rarities}
+            onManageFactions={() => setShowFactions(true)}
+            onManageRarities={() => setShowRarities(true)}
+            globalSettings={globalSettings}
+            onGlobalSettingChange={setGlobalSetting}
+          />
+        </>
+      ) : deckEditorContent}
 
       <KeywordManager
         open={showKeywords}
@@ -454,39 +560,51 @@ export default function App(): React.ReactElement {
         onExportJson={onExportJson}
         onImportJson={onImportJson}
       />
+      <DeckManager
+        open={showDeckManager}
+        decks={decks}
+        cards={cards}
+        factions={factions}
+        deckSettings={globalSettings.deckSettings}
+        onClose={() => setShowDeckManager(false)}
+        onChange={setDecks}
+        onOpenDeck={onOpenDeck}
+      />
 
       {toast && <div className="toast">{toast}</div>}
 
-      {/* Mobile bottom tab bar — hidden on desktop via CSS */}
-      <nav className="mobile-tab-bar" aria-label="Main navigation">
-        <button
-          type="button"
-          className={`mobile-tab-btn${mobileTab === 'props' ? ' on' : ''}`}
-          aria-current={mobileTab === 'props' ? 'page' : undefined}
-          onClick={() => setMobileTab('props')}
-        >
-          <Glyph name="edit" size={20} />
-          <span>Properties</span>
-        </button>
-        <button
-          type="button"
-          className={`mobile-tab-btn${mobileTab === 'preview' ? ' on' : ''}`}
-          aria-current={mobileTab === 'preview' ? 'page' : undefined}
-          onClick={() => setMobileTab('preview')}
-        >
-          <Glyph name="eye" size={20} />
-          <span>Preview</span>
-        </button>
-        <button
-          type="button"
-          className={`mobile-tab-btn${mobileTab === 'appearance' ? ' on' : ''}`}
-          aria-current={mobileTab === 'appearance' ? 'page' : undefined}
-          onClick={() => setMobileTab('appearance')}
-        >
-          <Glyph name="palette" size={20} />
-          <span>Appearance</span>
-        </button>
-      </nav>
+      {/* Mobile bottom tab bar — only shown in card-editor view */}
+      {appView.kind === 'card-editor' && (
+        <nav className="mobile-tab-bar" aria-label="Main navigation">
+          <button
+            type="button"
+            className={`mobile-tab-btn${mobileTab === 'props' ? ' on' : ''}`}
+            aria-current={mobileTab === 'props' ? 'page' : undefined}
+            onClick={() => setMobileTab('props')}
+          >
+            <Glyph name="edit" size={20} />
+            <span>Properties</span>
+          </button>
+          <button
+            type="button"
+            className={`mobile-tab-btn${mobileTab === 'preview' ? ' on' : ''}`}
+            aria-current={mobileTab === 'preview' ? 'page' : undefined}
+            onClick={() => setMobileTab('preview')}
+          >
+            <Glyph name="eye" size={20} />
+            <span>Preview</span>
+          </button>
+          <button
+            type="button"
+            className={`mobile-tab-btn${mobileTab === 'appearance' ? ' on' : ''}`}
+            aria-current={mobileTab === 'appearance' ? 'page' : undefined}
+            onClick={() => setMobileTab('appearance')}
+          >
+            <Glyph name="palette" size={20} />
+            <span>Appearance</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 }

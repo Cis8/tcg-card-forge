@@ -1,0 +1,578 @@
+/* ============================================================
+   deck.css — Deck building system styles
+   Dark fantasy theme: #1a1306 bg, var(--gold) accents
+   ============================================================ */
+
+/* ============================================================
+   DECK MANAGER — modal list items
+   ============================================================ */
+
+.deck-manager-item {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.deck-manager-item:hover {
+  background: rgba(255, 230, 180, 0.06);
+}
+
+.deck-size-badge {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 230, 180, 0.2);
+  color: rgba(255, 230, 180, 0.6);
+  background: rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+
+.deck-size-badge.valid {
+  color: #5a9e5a;
+  border-color: rgba(90, 158, 90, 0.4);
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.deck-size-badge.invalid {
+  color: #c0392b;
+  border-color: rgba(192, 57, 43, 0.4);
+  background: rgba(192, 57, 43, 0.1);
+}
+
+.deck-del-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 230, 180, 0.3);
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.deck-del-btn:hover {
+  color: #c0392b;
+  background: rgba(192, 57, 43, 0.12);
+}
+
+/* ============================================================
+   DECK EDITOR — full-screen layout
+   ============================================================ */
+
+.deck-editor {
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  height: 100%;
+  grid-row: 2;
+  align-self: stretch;
+  overflow: hidden;
+}
+
+.deck-editor-left {
+  width: 380px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  min-height: 0;
+  background: #1d1813;
+  border-right: 1px solid rgba(255, 230, 180, 0.12);
+}
+
+.deck-editor-right {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  background: #231a0e;
+  min-width: 0;
+}
+
+.deck-editor-left-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 230, 180, 0.12);
+  background: #1d1813;
+  flex-shrink: 0;
+}
+
+.deck-editor-title-sm {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.deck-editor-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 230, 180, 0.4);
+  padding: 10px 14px 4px;
+  flex-shrink: 0;
+}
+
+.deck-editor-header-card {
+  background: #2a1e10;
+  border: 1px solid rgba(255, 230, 180, 0.12);
+  border-radius: 6px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+
+.deck-editor-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* ============================================================
+   DECK CARD LIST — cards currently in the deck
+   ============================================================ */
+
+.deck-card-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.deck-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border-bottom: 1px solid rgba(255, 230, 180, 0.06);
+  transition: background 0.12s;
+}
+
+.deck-card-row:hover {
+  background: rgba(255, 230, 180, 0.04);
+}
+
+.deck-card-row-thumb {
+  width: 36px;
+  height: 50px;
+  flex-shrink: 0;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 230, 180, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deck-card-row-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.deck-card-row-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.deck-card-row-name {
+  font-size: 0.8rem;
+  color: rgba(255, 230, 180, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deck-card-row-sub {
+  font-size: 0.68rem;
+  color: rgba(255, 230, 180, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deck-card-row-qty {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.qty-btn {
+  background: rgba(255, 230, 180, 0.07);
+  border: 1px solid rgba(255, 230, 180, 0.15);
+  color: rgba(255, 230, 180, 0.7);
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+  padding: 0;
+}
+
+.qty-btn:hover {
+  background: rgba(255, 230, 180, 0.14);
+  color: var(--gold);
+}
+
+.qty-value {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 230, 180, 0.7);
+  min-width: 22px;
+  text-align: center;
+}
+
+/* ============================================================
+   CARD PICKER — add cards panel
+   ============================================================ */
+
+.deck-search-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 230, 180, 0.2);
+  border-radius: 4px;
+  color: rgba(255, 230, 180, 0.85);
+  font-size: 0.82rem;
+  padding: 6px 10px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.deck-search-input::placeholder {
+  color: rgba(255, 230, 180, 0.3);
+}
+
+.deck-search-input:focus {
+  border-color: var(--gold);
+}
+
+.deck-picker-list {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.deck-picker-item {
+  padding: 3px 14px;
+  transition: background 0.12s;
+  cursor: pointer;
+}
+
+.deck-picker-item:hover {
+  background: rgba(255, 230, 180, 0.06);
+}
+
+.deck-picker-item.at-max {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.deck-picker-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.deck-picker-cost {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(241, 176, 55, 0.15);
+  border: 1px solid rgba(241, 176, 55, 0.3);
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.deck-picker-name {
+  flex: 1;
+  font-size: 0.8rem;
+  color: rgba(255, 230, 180, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.deck-picker-qty {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 230, 180, 0.5);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   DECK STATS / INFO
+   ============================================================ */
+
+.deck-name-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 230, 180, 0.2);
+  border-radius: 4px;
+  color: rgba(255, 230, 180, 0.9);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 7px 10px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.deck-name-input::placeholder {
+  color: rgba(255, 230, 180, 0.25);
+  font-weight: 400;
+}
+
+.deck-name-input:focus {
+  border-color: var(--gold);
+}
+
+.deck-desc-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 230, 180, 0.2);
+  border-radius: 4px;
+  color: rgba(255, 230, 180, 0.75);
+  font-size: 0.82rem;
+  padding: 7px 10px;
+  outline: none;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.deck-desc-input::placeholder {
+  color: rgba(255, 230, 180, 0.25);
+}
+
+.deck-desc-input:focus {
+  border-color: var(--gold);
+}
+
+.deck-factions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.deck-faction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 230, 180, 0.2);
+  color: rgba(255, 230, 180, 0.75);
+  background: rgba(255, 230, 180, 0.05);
+}
+
+.deck-faction-badge-empty {
+  font-size: 0.75rem;
+  color: rgba(255, 230, 180, 0.3);
+  font-style: italic;
+}
+
+.deck-total-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255, 230, 180, 0.85);
+}
+
+.deck-total-badge.valid {
+  color: #5a9e5a;
+}
+
+.deck-total-badge.pending {
+  color: #e07840;
+}
+
+.deck-total-sep {
+  font-size: 0.85rem;
+  color: rgba(255, 230, 180, 0.35);
+  margin: 0 1px;
+}
+
+.deck-total-max {
+  font-size: 0.85rem;
+  color: rgba(255, 230, 180, 0.45);
+}
+
+.deck-total-label {
+  font-size: 0.72rem;
+  color: rgba(255, 230, 180, 0.4);
+  margin-left: 4px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.valid {
+  color: #5a9e5a;
+}
+
+.pending {
+  color: #e07840;
+}
+
+/* ============================================================
+   DECK VALIDATION ISSUES
+   ============================================================ */
+
+.deck-issues {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.deck-issue {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.78rem;
+  padding: 5px 8px;
+  border-radius: 4px;
+  border-left: 3px solid transparent;
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 230, 180, 0.75);
+}
+
+.deck-issue--error {
+  border-left-color: #c0392b;
+  color: #e05a4a;
+  background: rgba(192, 57, 43, 0.08);
+}
+
+.deck-issue--warning {
+  border-left-color: #e07840;
+  color: #e09050;
+  background: rgba(224, 120, 64, 0.08);
+}
+
+.deck-issue--ok {
+  border-left-color: #4caf50;
+  color: #5a9e5a;
+  background: rgba(76, 175, 80, 0.08);
+}
+
+/* ============================================================
+   COST CURVE
+   ============================================================ */
+
+.deck-cost-curve {
+  margin-top: 16px;
+}
+
+.deck-cost-curve-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 230, 180, 0.4);
+  margin-bottom: 8px;
+}
+
+.deck-cost-curve-bars {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 4px;
+  height: 64px;
+  padding: 0 2px;
+}
+
+.deck-curve-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  height: 100%;
+  gap: 3px;
+}
+
+.deck-curve-count {
+  font-size: 0.6rem;
+  color: rgba(255, 230, 180, 0.5);
+  line-height: 1;
+  min-height: 10px;
+}
+
+.deck-curve-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: rgba(241, 176, 55, 0.65);
+  transition: height 0.2s ease;
+}
+
+.deck-curve-label {
+  font-size: 0.58rem;
+  color: rgba(255, 230, 180, 0.35);
+  text-align: center;
+  line-height: 1;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
+.deck-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: rgba(255, 230, 180, 0.3);
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.deck-empty-state > *:first-child {
+  font-size: 1.6rem;
+  opacity: 0.5;
+}

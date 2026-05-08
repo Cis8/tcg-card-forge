@@ -11,10 +11,12 @@ interface GlyphProps {
 }
 
 export const Glyph = ({ name, size = 16, color, style, title }: GlyphProps): React.ReactElement | null => {
-  const C = GLYPHS[name as GlyphName];
+  const normalizedName = name === 'fang' ? 'vampire' : name;
+  const displayName = normalizedName;
+  const C = GLYPHS[normalizedName as GlyphName];
   if (!C) return null;
   return (
-    <span aria-label={title || name} role="img"
+    <span aria-label={title || displayName} role="img"
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         width: size, height: size, color: color || 'currentColor',
@@ -91,12 +93,8 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
     </svg>
   ),
   wing: () => (
-    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
-         strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3.5 17.5c.7-6.8 4.8-11.3 12.2-13.5 1.7 4.7 1 8.7-2.1 12-2.6 2.6-6 4-10.1 4.2z"/>
-      <path d="M7.1 16.2c2.5-1.4 5.1-4.3 7.2-8.5"/>
-      <path d="M9.8 17.8c1.8-1 3.9-2.8 5.8-5.5"/>
-      <path d="M12.8 18.5c1-.6 2.2-1.6 3.4-3.2"/>
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      <path fillRule="evenodd" d="M3.2 17.7c1.7-5.9 5.8-10.4 12.4-13.4 2.3-1.1 4.8.8 4.5 3.2-.5 4.1-3 7.7-7.4 10.8-3.4 2.4-7.1 3.9-11.2 4.5-.8.1-1.5-.5-1.5-1.3 0-.5.1-.9.2-1.3zM8.5 15.4c1.4-1 2.9-2.6 4.1-4.5.3-.4.8-.5 1.2-.2.4.3.5.8.2 1.2-1.2 2.1-2.8 3.8-4.4 5-.4.3-.9.3-1.3 0-.4-.3-.4-.9.2-1.5zM11.5 16.6c1-.7 2-1.7 3-2.9.3-.4.8-.4 1.2-.1.4.3.5.8.2 1.2-1 1.4-2.2 2.5-3.4 3.3-.4.2-.9.1-1.1-.3-.3-.4-.2-.9.1-1.2zM14.3 17.2c.7-.4 1.4-1 2-1.7.3-.3.8-.4 1.1-.1.4.3.4.8.1 1.1-.7.9-1.5 1.6-2.3 2-.4.2-.8.1-1-.3-.2-.4-.1-.7.1-1z"/>
     </svg>
   ),
   star: () => (
@@ -176,6 +174,13 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
       <path d="M5 12l5 5L19 7"/>
     </svg>
   ),
+  deck: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="9" width="13" height="11" rx="1.5" transform="rotate(-6 3 9)"/>
+      <rect x="5" y="7" width="13" height="11" rx="1.5"/>
+      <rect x="8" y="4" width="13" height="11" rx="1.5" transform="rotate(6 8 4)"/>
+    </svg>
+  ),
 
   // ── Thematic additions ─────────────────────────────────────────────
   sword: () => (
@@ -195,12 +200,11 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
   bow: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
          strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18.5 3.5c3 2.6 4.5 5.6 4.5 8.5s-1.5 5.9-4.5 8.5"/>
-      <path d="M6.5 4v16"/>
-      <line x1="6.5" y1="12" x2="18.3" y2="12"/>
-      <path d="M6.5 9l-3 3 3 3"/>
-      <path d="M15.4 9.2l3 2.8-3 2.8"/>
-      <path d="M10.1 11.1h2.2"/>
+      <path d="M8.3 4.2c4.7 3.3 4.7 12.3 0 15.6"/>
+      <path d="M8.3 4.2v15.6"/>
+      <path d="M5 12h12.6"/>
+      <path d="M14 9.6l3.6 2.4-3.6 2.4"/>
+      <path d="M8.3 12h1.8"/>
     </svg>
   ),
   spear: () => (
@@ -322,15 +326,14 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
     </svg>
   ),
 
-  // vampire fang
-  fang: () => (
+  // vampire
+  vampire: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
          strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5.2 8.4c2.2-1.8 4.8-2.8 6.8-2.8s4.6 1 6.8 2.8"/>
-      <path d="M6.2 10c1.7 2.5 3.5 4.4 5.8 7.4 2.3-3 4.1-4.9 5.8-7.4"/>
-      <path d="M8.4 10.1l1.8 7.7 1.8-7.7z" fill="currentColor" stroke="none"/>
-      <path d="M12 10.1l1.8 7.7 1.8-7.7z" fill="currentColor" stroke="none"/>
-      <path d="M7.3 14.8c1.7 1 3.2 1.5 4.7 1.5s3-.5 4.7-1.5"/>
+      <path d="M5.2 8.6c2.2-1.7 4.8-2.6 6.8-2.6s4.6.9 6.8 2.6"/>
+      <path d="M6 10.2c1.6 2.4 3.3 4.4 6 7.8 2.7-3.4 4.4-5.4 6-7.8"/>
+      <path d="M8.3 10.3l1.5 6.3 2.2-4.8 2.2 4.8 1.5-6.3"/>
+      <path d="M7.5 15.1c1.5.9 2.8 1.3 4.5 1.3s3-.4 4.5-1.3"/>
     </svg>
   ),
 

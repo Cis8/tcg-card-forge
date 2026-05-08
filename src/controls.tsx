@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { deriveFaction } from './color-utils';
 import { PATTERNS } from './data';
 import { Glyph, RarityShape } from './glyphs';
-import type { Card, Keyword, Faction, Rarity, GlyphName, GlobalSettings } from './types';
+import type { Card, Keyword, Faction, Rarity, GlyphName, GlobalSettings, DeckSettings } from './types';
 
 interface FieldProps {
   label: string;
@@ -304,9 +304,11 @@ interface LeftPanelProps {
   onChange: (patch: Partial<Card>) => void;
   keywords: Keyword[];
   onOpenKeywords: () => void;
+  deckSettings: DeckSettings;
+  onDeckSettingChange: (k: keyof DeckSettings, v: number) => void;
 }
 
-export function LeftPanel({ card, onChange, keywords, onOpenKeywords }: LeftPanelProps): React.ReactElement {
+export function LeftPanel({ card, onChange, keywords, onOpenKeywords, deckSettings, onDeckSettingChange }: LeftPanelProps): React.ReactElement {
   const isUnit = card.type === 'unit';
   return (
     <aside className="rail rail-left">
@@ -366,6 +368,38 @@ export function LeftPanel({ card, onChange, keywords, onOpenKeywords }: LeftPane
                     value={card.flavor || ''}
                     placeholder='"A short evocative quote."'
                     onChange={(e) => onChange({ flavor: e.target.value })}/>
+        </Field>
+      </div>
+
+      {/* ── Gameplay Rules ──────────────────────────────────────────── */}
+      <div className="rail-global-section">
+        <div className="rail-global-header">
+          <span className="rail-global-title">Gameplay Rules</span>
+          <span className="rail-global-badge">All decks</span>
+        </div>
+        <Field label="Max copies per card" hint="How many copies of one card a deck can hold">
+          <Stepper
+            value={deckSettings.maxCopiesPerCard}
+            min={1}
+            max={10}
+            onChange={(v) => onDeckSettingChange('maxCopiesPerCard', v)}
+          />
+        </Field>
+        <Field label="Min deck size" hint="Minimum number of cards in a valid deck">
+          <Stepper
+            value={deckSettings.minDeckSize}
+            min={1}
+            max={deckSettings.maxDeckSize}
+            onChange={(v) => onDeckSettingChange('minDeckSize', v)}
+          />
+        </Field>
+        <Field label="Max deck size" hint="Maximum number of cards allowed in a deck">
+          <Stepper
+            value={deckSettings.maxDeckSize}
+            min={deckSettings.minDeckSize}
+            max={200}
+            onChange={(v) => onDeckSettingChange('maxDeckSize', v)}
+          />
         </Field>
       </div>
     </aside>

@@ -16,7 +16,7 @@ export const GLYPH_CATALOG = [
   },
   {
     category: 'Dark',
-    glyphs: ['skull', 'skull-x', 'eye', 'blind', 'moon', 'chain', 'rune', 'fang'],
+    glyphs: ['skull', 'skull-x', 'eye', 'blind', 'moon', 'chain', 'rune', 'vampire'],
   },
   {
     category: 'Arcane',

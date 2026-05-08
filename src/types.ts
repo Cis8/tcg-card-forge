@@ -14,12 +14,12 @@ export type ThematicGlyphName =
   | 'moon' | 'orb' | 'rune' | 'feather'
   | 'paw' | 'vine' | 'mountain' | 'wave' | 'tornado'
   | 'chain' | 'heart'
-  | 'blind' | 'fang' | 'dna' | 'skull-x' | 'bleed';
+  | 'blind' | 'vampire' | 'dna' | 'skull-x' | 'bleed';
 
 // UI-only glyphs — not available as faction/keyword choices.
 export type UiGlyphName =
   | 'plus' | 'trash' | 'edit' | 'download' | 'upload'
-  | 'save' | 'collection' | 'book' | 'palette' | 'close' | 'check';
+  | 'save' | 'collection' | 'book' | 'palette' | 'close' | 'check' | 'deck';
 
 // Union of all glyph keys present in the GLYPHS map (glyphs.tsx).
 export type GlyphName = ThematicGlyphName | UiGlyphName;
@@ -80,6 +80,28 @@ export interface GlobalSettings {
   costColor: string;       // hex rim color for cost gem
   attackColor: string;     // hex rim color for attack gem
   healthColor: string;     // hex rim color for health gem
+  deckSettings: DeckSettings;
+}
+
+/** Gameplay rules applying to all decks. Nested inside GlobalSettings. */
+export interface DeckSettings {
+  maxCopiesPerCard: number; // default 4
+  minDeckSize: number;      // default 20
+  maxDeckSize: number;      // default 60
+}
+
+/** A single card entry in a deck (card id + quantity). */
+export interface DeckEntry {
+  cardId: string;
+  quantity: number;
+}
+
+/** A named deck of cards. */
+export interface Deck {
+  id: string;
+  name: string;
+  description: string;
+  entries: DeckEntry[];
 }
 
 // Derived color palette returned by deriveFaction() in color-utils.ts.
