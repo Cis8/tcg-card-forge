@@ -176,6 +176,7 @@ export default function App(): React.ReactElement {
   const [mobileTab, setMobileTab] = useState<MobileTab>('preview');
   const [showOverflow, setShowOverflow] = useState(false);
   const overflowRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
 
   // Deck / view state
   const [decks, setDecks] = useState<Deck[]>(() => load<Deck[]>(STORAGE.decks, []));
@@ -196,6 +197,22 @@ export default function App(): React.ReactElement {
   const [showDeckManager, setShowDeckManager] = useState(false);
 
   const closeOverflow = useCallback(() => setShowOverflow(false), []);
+
+  // Track mobile breakpoint
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  // Effective card scale: on mobile, fit the card (340px) to the available
+  // stage width (viewport − 32px padding); on desktop use zoom × 1.2 boost.
+  const CARD_NATIVE_W = 340;
+  const STAGE_PADDING = 32;
+  const cardScale = isMobile
+    ? Math.min(1.2, (window.innerWidth - STAGE_PADDING) / CARD_NATIVE_W)
+    : cardZoom / 100 * 1.2;
 
   // Sync appView → URL hash
   useEffect(() => {
@@ -549,13 +566,13 @@ export default function App(): React.ReactElement {
               </div>
               {/* Outer div compensates layout space for the scaled card */}
               <div style={{
-                width: `${Math.round(340 * cardZoom / 100 * 1.2)}px`,
-                height: `${Math.round((488 + 60) * cardZoom / 100 * 1.2)}px`,
+                width: `${Math.round(340 * cardScale)}px`,
+                height: `${Math.round((488 + 60) * cardScale)}px`,
                 flexShrink: 0,
                 position: 'relative',
               }}>
                 <div style={{
-                  transform: `scale(${cardZoom / 100 * 1.2})`,
+                  transform: `scale(${cardScale})`,
                   transformOrigin: 'top left',
                 }}>
                   <div ref={cardRef} className="stage-card-mount">
