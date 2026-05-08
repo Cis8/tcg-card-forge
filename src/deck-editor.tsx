@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CardHoverPreview } from './card-preview';
+import { CardPreview, CardHoverPreview } from './card-preview';
 import { CollectionFilterBar } from './collection-filter-bar';
 import { Glyph } from './glyphs';
 import type { Card, Deck, DeckSettings, Faction, GlobalSettings, Keyword, Rarity } from './types';
@@ -50,6 +50,7 @@ function DeckCardRow({ card, factions, rarities, keywords, quantity, maxCopies, 
             <Glyph name={faction.glyph} size={13} />
           </span>
         )}
+        <span className="deck-card-row-cost">{card.cost}</span>
         <span className="deck-card-row-name">{card.name || 'Untitled'}</span>
         <div className="deck-card-row-qty">
           <button type="button" className="qty-btn" onClick={onRemove} title="Remove one">−</button>
@@ -61,7 +62,7 @@ function DeckCardRow({ card, factions, rarities, keywords, quantity, maxCopies, 
   );
 }
 
-interface DeckPickerRowProps {
+interface DeckPickerCardProps {
   card: Card;
   factions: Faction[];
   rarities: Rarity[];
@@ -72,32 +73,29 @@ interface DeckPickerRowProps {
   onAdd: () => void;
 }
 
-function DeckPickerRow({ card, factions, rarities, keywords, quantity, maxCopies, globalSettings, onAdd }: DeckPickerRowProps): React.ReactElement {
-  const faction = factions.find(f => f.id === card.faction) ?? factions[0];
+function DeckPickerCard({ card, factions, rarities, keywords, quantity, maxCopies, globalSettings, onAdd }: DeckPickerCardProps): React.ReactElement {
   const atMax = quantity >= maxCopies;
   const { font, costShape, attackShape, healthShape, costColor, attackColor, healthColor } = globalSettings;
   return (
-    <CardHoverPreview
-      card={card} factions={factions} rarities={rarities} keywords={keywords}
-      font={font} costShape={costShape} attackShape={attackShape} healthShape={healthShape}
-      costColor={costColor} attackColor={attackColor} healthColor={healthColor}
+    <div
+      className={`deck-picker-card-wrap${atMax ? ' at-max' : ''}`}
+      role="button"
+      tabIndex={atMax ? -1 : 0}
+      onClick={() => !atMax && onAdd()}
+      onKeyDown={e => e.key === 'Enter' && !atMax && onAdd()}
+      title={atMax ? `Max ${maxCopies} copies` : `Add ${card.name || 'card'} to deck`}
     >
-      <button
-        type="button"
-        className={`deck-picker-item${atMax ? ' at-max' : ''}`}
-        disabled={atMax}
-        onClick={onAdd}
-      >
-        {faction && (
-          <span className="deck-picker-glyph" style={{ color: faction.primary }}>
-            <Glyph name={faction.glyph} size={12} />
-          </span>
-        )}
-        <span className="deck-picker-cost">{card.cost}</span>
-        <span className="deck-picker-name">{card.name || 'Untitled'}</span>
-        {quantity > 0 && <span className="deck-picker-qty">×{quantity}</span>}
-      </button>
-    </CardHoverPreview>
+      <CardPreview
+        card={card} factions={factions} rarities={rarities} keywords={keywords}
+        font={font} costShape={costShape} attackShape={attackShape} healthShape={healthShape}
+        costColor={costColor} attackColor={attackColor} healthColor={healthColor}
+      />
+      {quantity > 0 && (
+        <div className={`deck-picker-card-badge${atMax ? ' at-max' : ''}`}>
+          ×{quantity}{atMax ? ' MAX' : ''}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -114,6 +112,15 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
     for (const entry of deck.entries) map.set(entry.cardId, entry.quantity);
     return map;
   }, [deck.entries]);
+
+  const sortedEntries = useMemo(() =>
+    [...deck.entries].sort((a, b) => {
+      const ca = cards.find(c => c.id === a.cardId);
+      const cb = cards.find(c => c.id === b.cardId);
+      return (ca?.cost ?? 0) - (cb?.cost ?? 0);
+    }),
+    [deck.entries, cards],
+  );
 
   const total = getDeckTotal(deck);
   const deckFactions = getDeckFactions(deck, cards, factions);
@@ -163,7 +170,7 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
               <span>No cards yet — browse the collection on the right</span>
             </div>
           )}
-          {deck.entries.map(entry => {
+          {sortedEntries.map(entry => {
             const card = cards.find(c => c.id === entry.cardId);
             if (!card) return null;
             return (
@@ -197,14 +204,6 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
                 placeholder="Deck name…"
                 onChange={e => handleNameChange(e.target.value)}
               />
-              <button
-                type="button"
-                className="deck-desc-toggle-btn"
-                onClick={() => setShowDesc(v => !v)}
-                title={showDesc ? 'Hide description' : 'Edit description'}
-              >
-                ✎ {showDesc ? 'Hide desc' : 'Edit desc'}
-              </button>
               <div className="deck-total-badge">
                 <span className={total >= deckSettings.minDeckSize ? 'valid' : 'pending'}>
                   {total}
@@ -214,15 +213,29 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
                 <span className="deck-total-label">cards</span>
               </div>
             </div>
-            {showDesc && (
-              <textarea
-                className="deck-desc-input"
-                rows={2}
-                placeholder="Deck description…"
-                value={deck.description}
-                onChange={e => handleDescChange(e.target.value)}
-              />
-            )}
+            <div className="deck-desc-row">
+              {!showDesc ? (
+                <p className="deck-desc-display">
+                  {deck.description || <span className="deck-desc-placeholder">No description</span>}
+                </p>
+              ) : (
+                <textarea
+                  className="deck-desc-input"
+                  rows={2}
+                  placeholder="Deck description…"
+                  value={deck.description}
+                  onChange={e => handleDescChange(e.target.value)}
+                  autoFocus
+                />
+              )}
+              <button
+                type="button"
+                className="deck-desc-toggle-btn"
+                onClick={() => setShowDesc(v => !v)}
+              >
+                ✎ {showDesc ? 'Done' : 'Edit desc'}
+              </button>
+            </div>
             <div className="deck-factions-row">
               {deckFactions.map(f => (
                 <span key={f.id} className="deck-faction-badge" style={{ borderColor: f.primary, color: f.primary }}>
@@ -282,9 +295,9 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
             onChange={setFilters}
             onClear={() => setFilters(createEmptyFilters())}
           />
-          <div className="deck-picker-list">
+          <div className="deck-picker-grid">
             {filteredCards.map(card => (
-              <DeckPickerRow
+              <DeckPickerCard
                 key={card.id}
                 card={card}
                 factions={factions}

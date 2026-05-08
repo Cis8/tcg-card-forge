@@ -268,13 +268,17 @@
   display: flex;
   flex-direction: column;
   border-top: 1px solid rgba(255, 230, 180, 0.12);
-  padding-bottom: 20px;
 }
 
-.deck-picker-list {
+.deck-picker-grid {
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px 24px 24px;
+  align-content: flex-start;
 }
 
 .deck-picker-item {
@@ -340,6 +344,85 @@
   font-weight: 600;
   color: rgba(255, 230, 180, 0.5);
   flex-shrink: 0;
+}
+
+/* Picker card wrap: full CardPreview as a clickable item */
+.deck-picker-card-wrap {
+  position: relative;
+  cursor: pointer;
+  border-radius: 12px;
+  outline: none;
+  transition: transform 0.15s, opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.deck-picker-card-wrap:hover:not(.at-max),
+.deck-picker-card-wrap:focus-visible:not(.at-max) {
+  transform: translateY(-3px);
+}
+
+.deck-picker-card-wrap.at-max {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.deck-picker-card-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.82);
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(241, 176, 55, 0.4);
+  pointer-events: none;
+}
+
+.deck-picker-card-badge.at-max {
+  color: #c0392b;
+  border-color: rgba(192, 57, 43, 0.4);
+}
+
+/* Cost badge in the deck card list rows */
+.deck-card-row-cost {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(241, 176, 55, 0.12);
+  border: 1px solid rgba(241, 176, 55, 0.25);
+  color: var(--gold);
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Description row: italic text + edit button */
+.deck-desc-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.deck-desc-display {
+  flex: 1;
+  margin: 0;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: rgba(255, 230, 180, 0.6);
+  line-height: 1.45;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.deck-desc-placeholder {
+  color: rgba(255, 230, 180, 0.25);
 }
 
 /* ============================================================
