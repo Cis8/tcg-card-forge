@@ -379,7 +379,7 @@ export default function App(): React.ReactElement {
         factions={factions}
         rarities={rarities}
         keywords={keywords}
-        deckSettings={globalSettings.deckSettings}
+        globalSettings={globalSettings}
         onChange={onDeckChange}
         onBack={onCloseDeckEditor}
       />

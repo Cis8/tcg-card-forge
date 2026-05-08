@@ -900,3 +900,29 @@
   animation: toast-in .25s cubic-bezier(.2,.8,.3,1.1);
 }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+/* ── Card hover preview portal ───────────────────────────────────────── */
+/* Fixed-position scaled card shown on hover over deck rows or other triggers. */
+.card-preview-hover-portal {
+  position: fixed;
+  z-index: 9999;
+  width: 170px;    /* 340 * 0.5 */
+  height: 244px;   /* 488 * 0.5 */
+  pointer-events: none;
+  overflow: visible; /* allow gem shadows and glows to bleed */
+  animation: card-preview-hover-in 0.14s ease-out;
+}
+
+@keyframes card-preview-hover-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* The scaler stretches to the natural card size; transform shrinks the visual.
+   transform-origin: top left keeps the top-left corner anchored at the portal position. */
+.card-preview-hover-scaler {
+  width: 340px;
+  height: 488px;
+  transform: scale(0.5);
+  transform-origin: top left;
+}

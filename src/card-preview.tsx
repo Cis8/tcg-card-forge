@@ -1,4 +1,4 @@
-import React, { useState, useRef, useId, useMemo } from 'react';
+import React, { useState, useRef, useId, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { deriveFaction, deriveRarityDeep, deriveRarityGlow } from './color-utils';
 import { Glyph, RarityShape, CornerFlourish } from './glyphs';
@@ -313,5 +313,57 @@ function KeywordSpan({ keyword }: { keyword: Keyword }): React.ReactElement {
         document.body
       )}
     </span>
+  );
+}
+
+// ── Card hover preview ────────────────────────────────────────────────────
+// Wrap any single element to show a scaled full-card preview on hover/focus.
+
+export interface CardHoverPreviewProps extends CardPreviewProps {
+  children: React.ReactNode;
+}
+
+const PREVIEW_W = 170; // 340 * 0.5
+const PREVIEW_H = 244; // 488 * 0.5
+
+export function CardHoverPreview({ children, ...previewProps }: CardHoverPreviewProps): React.ReactElement {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const show = useCallback(() => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    const GAP = 14;
+    let x = r.right + GAP;
+    let y = r.top + r.height / 2 - PREVIEW_H / 2;
+    // flip to left side if no room on the right
+    if (x + PREVIEW_W > window.innerWidth - 8) x = r.left - PREVIEW_W - GAP;
+    // clamp both axes to keep inside viewport
+    x = Math.max(8, Math.min(x, window.innerWidth - PREVIEW_W - 8));
+    y = Math.max(8, Math.min(y, window.innerHeight - PREVIEW_H - 8));
+    setPos({ x, y });
+  }, []);
+
+  const hide = useCallback(() => setPos(null), []);
+
+  return (
+    <div
+      ref={ref}
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onFocus={show}
+      onBlur={hide}
+      onWheel={hide}
+    >
+      {children}
+      {pos && ReactDOM.createPortal(
+        <div className="card-preview-hover-portal" style={{ left: pos.x, top: pos.y }}>
+          <div className="card-preview-hover-scaler">
+            <CardPreview {...previewProps} />
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
   );
 }

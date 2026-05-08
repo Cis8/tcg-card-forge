@@ -167,44 +167,18 @@
   background: rgba(255, 230, 180, 0.04);
 }
 
-.deck-card-row-thumb {
-  width: 36px;
-  height: 50px;
+.deck-card-row-glyph {
   flex-shrink: 0;
-  border-radius: 3px;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 230, 180, 0.1);
   display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.deck-card-row-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.deck-card-row-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  gap: 2px;
+  opacity: 0.85;
 }
 
 .deck-card-row-name {
-  font-size: 0.8rem;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
   color: rgba(255, 230, 180, 0.85);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.deck-card-row-sub {
-  font-size: 0.68rem;
-  color: rgba(255, 230, 180, 0.4);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
+import { CardHoverPreview } from './card-preview';
 import { Glyph } from './glyphs';
-import { CardThumbnail } from './card-thumbnail';
-import type { Card, Deck, DeckSettings, Faction, Keyword, Rarity } from './types';
+import type { Card, Deck, DeckSettings, Faction, GlobalSettings, Keyword, Rarity } from './types';
 import {
-  addCardToDeck, removeCardFromDeck, setCardQuantity,
+  addCardToDeck, removeCardFromDeck,
   getDeckTotal, getDeckFactions, getDeckCostCurve, validateDeck,
 } from './deck-utils';
 import { applyFilters, createEmptyFilters } from './collection-filter';
@@ -14,7 +14,7 @@ export interface DeckEditorProps {
   factions: Faction[];
   rarities: Rarity[];
   keywords: Keyword[];
-  deckSettings: DeckSettings;
+  globalSettings: GlobalSettings;
   onChange: (deck: Deck) => void;
   onBack: () => void;
 }
@@ -23,38 +23,40 @@ interface DeckCardRowProps {
   card: Card;
   factions: Faction[];
   rarities: Rarity[];
+  keywords: Keyword[];
   quantity: number;
   maxCopies: number;
+  globalSettings: GlobalSettings;
   onAdd: () => void;
   onRemove: () => void;
-  onSetQty: (q: number) => void;
 }
 
-function DeckCardRow({ card, factions, rarities, quantity, maxCopies, onAdd, onRemove }: DeckCardRowProps): React.ReactElement {
-  const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
-  const rarity = rarities.find(r => r.id === card.rarity) ?? rarities[0];
+function DeckCardRow({ card, factions, rarities, keywords, quantity, maxCopies, globalSettings, onAdd, onRemove }: DeckCardRowProps): React.ReactElement {
+  const faction = factions.find(f => f.id === card.faction) ?? factions[0];
+  const { font, costShape, attackShape, healthShape, costColor, attackColor, healthColor } = globalSettings;
   return (
-    <div className="deck-card-row">
-      <div className="deck-card-row-thumb">
-        <CardThumbnail card={card} factions={factions} rarities={rarities} />
-      </div>
-      <div className="deck-card-row-info">
-        <span className="deck-card-row-name">{card.name || 'Untitled'}</span>
-        <span className="deck-card-row-sub" style={{ color: factionRaw?.primary }}>
-          {factionRaw?.name}
-          {rarity && <span style={{ color: rarity.color }}> · {rarity.name}</span>}
+    <CardHoverPreview
+      card={card} factions={factions} rarities={rarities} keywords={keywords}
+      font={font} costShape={costShape} attackShape={attackShape} healthShape={healthShape}
+      costColor={costColor} attackColor={attackColor} healthColor={healthColor}
+    >
+      <div className="deck-card-row">
+        <span className="deck-card-row-glyph" style={{ color: faction.primary }}>
+          <Glyph name={faction.glyph} size={13} />
         </span>
+        <span className="deck-card-row-name">{card.name || 'Untitled'}</span>
+        <div className="deck-card-row-qty">
+          <button type="button" className="qty-btn" onClick={onRemove} title="Remove one">−</button>
+          <span className="qty-value">×{quantity}</span>
+          <button type="button" className="qty-btn" onClick={onAdd} disabled={quantity >= maxCopies} title="Add one">+</button>
+        </div>
       </div>
-      <div className="deck-card-row-qty">
-        <button type="button" className="qty-btn" onClick={onRemove} title="Remove one">−</button>
-        <span className="qty-value">×{quantity}</span>
-        <button type="button" className="qty-btn" onClick={onAdd} disabled={quantity >= maxCopies} title="Add one">+</button>
-      </div>
-    </div>
+    </CardHoverPreview>
   );
 }
 
-export function DeckEditor({ deck, cards, factions, rarities, keywords, deckSettings, onChange, onBack }: DeckEditorProps): React.ReactElement {
+export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSettings, onChange, onBack }: DeckEditorProps): React.ReactElement {
+  const deckSettings: DeckSettings = globalSettings.deckSettings;
   const [search, setSearch] = useState('');
 
   const filters = useMemo(() => ({ ...createEmptyFilters(), search }), [search]);
@@ -68,7 +70,6 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, deckSett
 
   const handleAdd = (cardId: string) => onChange(addCardToDeck(deck, cardId, deckSettings));
   const handleRemove = (cardId: string) => onChange(removeCardFromDeck(deck, cardId));
-  const handleSetQty = (cardId: string, qty: number) => onChange(setCardQuantity(deck, cardId, qty, deckSettings));
   const handleNameChange = (name: string) => onChange({ ...deck, name });
   const handleDescChange = (description: string) => onChange({ ...deck, description });
 
@@ -100,11 +101,12 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, deckSett
                 card={card}
                 factions={factions}
                 rarities={rarities}
+                keywords={keywords}
                 quantity={entry.quantity}
                 maxCopies={deckSettings.maxCopiesPerCard}
+                globalSettings={globalSettings}
                 onAdd={() => handleAdd(entry.cardId)}
                 onRemove={() => handleRemove(entry.cardId)}
-                onSetQty={(q) => handleSetQty(entry.cardId, q)}
               />
             );
           })}
