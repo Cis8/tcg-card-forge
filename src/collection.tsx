@@ -7,6 +7,8 @@ import {
   createEmptyFilters,
   hasActiveFilters,
   applyFilters,
+  COST_FILTER_VALUES,
+  COST_PLUS_THRESHOLD,
 } from './collection-filter';
 
 interface CollectionProps {
@@ -166,16 +168,17 @@ function CollectionFilterBar({
         : [...filters.keywords, id],
     });
 
-  const setCost = (raw: string) => {
-    if (raw === '') { onChange({ ...filters, cost: null }); return; }
-    const n = parseInt(raw, 10);
-    if (!Number.isFinite(n)) return;
-    onChange({ ...filters, cost: Math.max(0, Math.min(99, n)) });
-  };
+  const toggleCost = (c: number) =>
+    onChange({
+      ...filters,
+      costs: filters.costs.includes(c)
+        ? filters.costs.filter(x => x !== c)
+        : [...filters.costs, c],
+    });
 
   return (
     <div className="coll-filter">
-      {/* Row 1: search + cost + clear */}
+      {/* Row 1: search + clear */}
       <div className="coll-filter-row">
         <input
           className="coll-filter-search"
@@ -184,31 +187,31 @@ function CollectionFilterBar({
           value={filters.search}
           onChange={e => onChange({ ...filters, search: e.target.value })}
         />
-        <div className="coll-filter-cost">
-          <span className="coll-filter-label" style={{ width: 'auto' }}>Cost</span>
-          <input
-            className="coll-filter-cost-input"
-            type="number"
-            min={0}
-            max={99}
-            placeholder="—"
-            value={filters.cost ?? ''}
-            onChange={e => setCost(e.target.value)}
-          />
-          {filters.cost !== null && (
-            <button
-              type="button"
-              className="coll-filter-cost-clear"
-              title="Clear cost filter"
-              onClick={() => onChange({ ...filters, cost: null })}
-            >×</button>
-          )}
-        </div>
         {active && (
           <button type="button" className="coll-filter-clear" onClick={onClear}>
             Clear all
           </button>
         )}
+      </div>
+
+      {/* Row 2: cost chips */}
+      <div className="coll-filter-row">
+        <span className="coll-filter-label">Cost</span>
+        <div className="coll-filter-chips">
+          {COST_FILTER_VALUES.map(c => {
+            const on = filters.costs.includes(c);
+            return (
+              <button
+                key={c}
+                type="button"
+                className={`coll-filter-chip coll-filter-chip--cost${on ? ' on' : ''}`}
+                onClick={() => toggleCost(c)}
+              >
+                {c === COST_PLUS_THRESHOLD ? '10+' : c}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Row 2: factions */}

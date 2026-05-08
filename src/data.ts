@@ -1,4 +1,4 @@
-import type { Faction, Rarity, Keyword, Card, GlyphName, RarityShapeName, PatternName } from './types';
+import type { Faction, Rarity, Keyword, Card, RarityShapeName, PatternName } from './types';
 
 export const DEFAULT_FACTIONS: Faction[] = [
   { id: 'fire',    name: 'Fire',    glyph: 'flame', primary: '#c84a18' },
@@ -16,11 +16,6 @@ export const DEFAULT_RARITIES: Rarity[] = [
 ];
 
 export const PATTERNS: PatternName[] = ['plain', 'damask', 'lattice', 'rays', 'scales'];
-
-export const FACTION_GLYPH_OPTIONS: GlyphName[] = [
-  'flame', 'frost', 'leaf', 'sun', 'skull',
-  'bolt', 'shield', 'eye', 'drop', 'chalice', 'wing', 'overrun', 'star', 'diamond',
-];
 
 export const RARITY_SHAPE_OPTIONS: RarityShapeName[] = [
   'diamond', 'pentagon', 'hexagon', 'circle', 'shield', 'star', 'triangle',

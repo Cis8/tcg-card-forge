@@ -10,8 +10,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { deriveFaction } from './color-utils';
 import { Glyph } from './glyphs';
-import { FACTION_GLYPH_OPTIONS } from './data';
-import type { Faction, GlyphName } from './types';
+import { GlyphPicker } from './glyph-picker';
+import type { Faction, ThematicGlyphName } from './types';
 
 const FACTION_PRESET_COLORS = [
   '#c84a18', '#d97706', '#e1a526',
@@ -207,16 +207,11 @@ function FactionEditor({ faction, onSave, onCancel, onDelete }: FactionEditorPro
 
       <div className="field">
         <span className="field-label">Glyph</span>
-        <div className="glyph-grid">
-          {FACTION_GLYPH_OPTIONS.map(g => (
-            <button type="button" key={g}
-                    className={`glyph-pick ${draft.glyph === g ? 'on' : ''}`}
-                    style={draft.glyph === g ? { color: derived.accent, borderColor: derived.accent } : undefined}
-                    onClick={() => set({ glyph: g as GlyphName })}>
-              <Glyph name={g} size={18}/>
-            </button>
-          ))}
-        </div>
+        <GlyphPicker
+          value={draft.glyph}
+          accentColor={derived.accent}
+          onChange={(g: ThematicGlyphName) => set({ glyph: g })}
+        />
       </div>
 
       <div className="field">

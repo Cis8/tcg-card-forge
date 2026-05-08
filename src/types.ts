@@ -4,14 +4,24 @@ export type CardType = 'unit' | 'spell';
 
 export type PatternName = 'plain' | 'damask' | 'lattice' | 'rays' | 'scales';
 
-// All glyph keys present in the GLYPHS map (glyphs.tsx).
-export type GlyphName =
+// Thematic glyphs — valid choices for Faction.glyph and Keyword.glyph.
+export type ThematicGlyphName =
   | 'flame' | 'frost' | 'leaf' | 'sun' | 'skull'
   | 'bolt' | 'shield' | 'eye' | 'drop' | 'chalice'
-  | 'wing' | 'overrun' | 'star' | 'diamond'
+  | 'wing' | 'overrun' | 'star' | 'diamond' | 'gem'
+  | 'sword' | 'axe' | 'bow' | 'spear' | 'trident'
+  | 'crown' | 'anchor' | 'hourglass' | 'compass'
+  | 'moon' | 'orb' | 'rune' | 'feather'
+  | 'paw' | 'vine' | 'mountain' | 'wave' | 'tornado'
+  | 'chain' | 'heart';
+
+// UI-only glyphs — not available as faction/keyword choices.
+export type UiGlyphName =
   | 'plus' | 'trash' | 'edit' | 'download' | 'upload'
-  | 'save' | 'collection' | 'book' | 'palette' | 'gem'
-  | 'close' | 'check';
+  | 'save' | 'collection' | 'book' | 'palette' | 'close' | 'check';
+
+// Union of all glyph keys present in the GLYPHS map (glyphs.tsx).
+export type GlyphName = ThematicGlyphName | UiGlyphName;
 
 // Renamed from RarityShape to avoid collision with the RarityShape component in glyphs.tsx.
 export type RarityShapeName = 'diamond' | 'pentagon' | 'hexagon' | 'circle' | 'shield' | 'star' | 'triangle';
@@ -41,7 +51,7 @@ export interface Card {
 export interface Faction {
   id: string;
   name: string;
-  glyph: GlyphName;
+  glyph: ThematicGlyphName;
   primary: string; // hex color
 }
 
@@ -55,7 +65,7 @@ export interface Rarity {
 export interface Keyword {
   id: string;
   name: string;
-  glyph: GlyphName;
+  glyph: ThematicGlyphName;
   color: string;   // hex accent color
   description: string;
 }

@@ -3,21 +3,25 @@
 
 import type { Card, Keyword } from './types';
 
+/** Cost values shown as filter chips: 0-9 exact, 10 means "10 or more". */
+export const COST_FILTER_VALUES = [0,1,2,3,4,5,6,7,8,9,10] as const;
+export const COST_PLUS_THRESHOLD = 10;
+
 export interface CollectionFilters {
   factions: string[];   // faction ids — OR semantics (card must be IN the set)
-  cost:     number | null; // exact cost match; null = all costs
+  costs:    number[];   // 0-9 = exact match; 10 = card.cost >= 10 — OR semantics
   keywords: string[];   // keyword ids — AND semantics (card must have ALL)
   search:   string;     // case-insensitive substring: name, subtype, description
 }
 
 export function createEmptyFilters(): CollectionFilters {
-  return { factions: [], cost: null, keywords: [], search: '' };
+  return { factions: [], costs: [], keywords: [], search: '' };
 }
 
 export function hasActiveFilters(f: CollectionFilters): boolean {
   return (
     f.factions.length > 0 ||
-    f.cost !== null ||
+    f.costs.length > 0 ||
     f.keywords.length > 0 ||
     f.search.trim() !== ''
   );
@@ -36,20 +40,26 @@ export function extractCardKeywordIds(description: string, keywords: Keyword[]):
 }
 
 /** Apply all active filters with intersection (AND across filter groups).
- *  Within factions the semantics are OR (card belongs to any selected faction).
- *  Within keywords the semantics are AND (card must carry every selected keyword). */
+ *  Within factions: OR (card belongs to any selected faction).
+ *  Within costs:    OR (card matches any selected cost bucket).
+ *  Within keywords: AND (card must carry every selected keyword). */
 export function applyFilters(
   cards: Card[],
   filters: CollectionFilters,
   keywords: Keyword[],
 ): Card[] {
-  const { factions, cost, keywords: kwIds, search } = filters;
+  const { factions, costs, keywords: kwIds, search } = filters;
   const q = search.trim().toLowerCase();
 
   return cards.filter(card => {
     if (factions.length > 0 && !factions.includes(card.faction)) return false;
 
-    if (cost !== null && card.cost !== cost) return false;
+    if (costs.length > 0) {
+      const matchesCost = costs.some(c =>
+        c === COST_PLUS_THRESHOLD ? card.cost >= COST_PLUS_THRESHOLD : card.cost === c
+      );
+      if (!matchesCost) return false;
+    }
 
     if (kwIds.length > 0) {
       const cardKwIds = extractCardKeywordIds(card.description, keywords);

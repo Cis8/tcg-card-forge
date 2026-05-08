@@ -9,12 +9,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Glyph } from './glyphs';
-import type { Keyword, GlyphName } from './types';
-
-const KEYWORD_GLYPH_OPTIONS: GlyphName[] = [
-  'overrun', 'skull', 'bolt', 'shield', 'eye', 'drop', 'chalice', 'wing',
-  'flame', 'frost', 'leaf', 'sun',
-];
+import { GlyphPicker } from './glyph-picker';
+import type { Keyword, ThematicGlyphName } from './types';
 
 const PRESET_COLORS = [
   '#c2410c', '#b45309', '#15803d', '#0e7490',
@@ -196,16 +192,11 @@ function KeywordEditor({ keyword, onSave, onCancel, onDelete }: KeywordEditorPro
 
       <div className="field">
         <span className="field-label">Glyph</span>
-        <div className="glyph-grid">
-          {KEYWORD_GLYPH_OPTIONS.map(g => (
-            <button type="button" key={g}
-                    className={`glyph-pick ${draft.glyph === g ? 'on' : ''}`}
-                    style={draft.glyph === g ? { color: draft.color, borderColor: draft.color } : undefined}
-                    onClick={() => set({ glyph: g })}>
-              <Glyph name={g} size={18}/>
-            </button>
-          ))}
-        </div>
+        <GlyphPicker
+          value={draft.glyph}
+          accentColor={draft.color}
+          onChange={(g: ThematicGlyphName) => set({ glyph: g })}
+        />
       </div>
 
       <div className="field">

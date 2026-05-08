@@ -173,6 +173,135 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
       <path d="M5 12l5 5L19 7"/>
     </svg>
   ),
+
+  // ── Thematic additions ─────────────────────────────────────────────
+  sword: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="4" y1="20" x2="20" y2="4"/>
+      <line x1="8" y1="11" x2="14" y2="17"/>
+    </svg>
+  ),
+  axe: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="4" y1="22" x2="14" y2="12"/>
+      <path d="M14 12c0 0 2-8 7-9 1 4-1 9-7 9z"/>
+    </svg>
+  ),
+  bow: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 3C4 9 4 15 5 21"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+      <path d="M16 9l3 3-3 3"/>
+    </svg>
+  ),
+  spear: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      <path d="M12 2l-4 9h3v11h2V11h3z"/>
+    </svg>
+  ),
+  trident: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="22"/>
+      <path d="M9 2v7l3-4 3 4V2"/>
+      <line x1="9" y1="11" x2="15" y2="11"/>
+    </svg>
+  ),
+  crown: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      <path d="M2 19h20v2H2zM2 13l4-8 4 4 2-5 2 5 4-4 4 8H2z"/>
+    </svg>
+  ),
+  anchor: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="6" r="3"/>
+      <line x1="12" y1="9" x2="12" y2="21"/>
+      <line x1="5" y1="14" x2="19" y2="14"/>
+      <path d="M5 14c0 3 3 7 7 7s7-4 7-7"/>
+    </svg>
+  ),
+  hourglass: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      <path d="M5 3h14v4.5L12 12l7 4.5V21H5v-4.5L12 12 5 7.5V3zm2 1.5v2.4L12 11l5-4.1V4.5H7zm0 15h10v-2.4L12 13l-5 4.1v2.4z"/>
+    </svg>
+  ),
+  compass: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polygon points="16.24,7.76 14.12,14.12 7.76,16.24 9.88,9.88" fill="currentColor" stroke="none"/>
+    </svg>
+  ),
+  moon: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  ),
+  orb: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="9"/>
+      <ellipse cx="12" cy="12" rx="4.5" ry="9" strokeWidth="1" strokeDasharray="3 2"/>
+      <line x1="3" y1="12" x2="21" y2="12" strokeWidth="1" strokeDasharray="3 2"/>
+    </svg>
+  ),
+  rune: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="12" y1="3" x2="12" y2="21"/>
+      <path d="M9 9l3-6 3 6"/>
+      <path d="M7 16l5-3 5 3"/>
+    </svg>
+  ),
+  feather: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/>
+      <line x1="16" y1="8" x2="2" y2="22"/>
+      <line x1="17" y1="15" x2="9" y2="15"/>
+    </svg>
+  ),
+  paw: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      <circle cx="6.5" cy="7.5" r="2.5"/>
+      <circle cx="12" cy="5.5" r="2.5"/>
+      <circle cx="17.5" cy="7.5" r="2.5"/>
+      <path d="M12 20c-3 0-6-2-6-5s2-4 6-4 6 1 6 4-3 5-6 5z"/>
+    </svg>
+  ),
+  vine: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M12 22V2"/>
+      <path d="M12 8C10 4 6 5 5 8"/>
+      <path d="M12 14C14 10 18 11 19 14"/>
+      <path d="M12 18C10 15 7 16 6 18"/>
+    </svg>
+  ),
+  mountain: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 21L9 7l4 5 3-4 6 13H2z"/>
+    </svg>
+  ),
+  wave: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <path d="M2 11c1.5-4 3.5-4 5 0s3.5 4 5 0 3.5-4 5 0"/>
+      <path d="M2 16c1.5-4 3.5-4 5 0s3.5 4 5 0 3.5-4 5 0" strokeWidth="1.5" strokeOpacity="0.5"/>
+    </svg>
+  ),
+  tornado: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="3" y1="5" x2="21" y2="5"/>
+      <line x1="5" y1="10" x2="19" y2="10"/>
+      <line x1="8" y1="15" x2="16" y2="15"/>
+      <line x1="11" y1="20" x2="13" y2="20"/>
+    </svg>
+  ),
+  chain: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    </svg>
+  ),
+  heart: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+    </svg>
+  ),
 };
 
 interface CornerFlourishProps {
