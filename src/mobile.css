@@ -204,43 +204,56 @@
   }
   .modal {
     width: 100%;
-    border-radius: 14px 14px 0 0;
-    max-height: 90dvh;
-    animation: mobile-sheet-in .22s cubic-bezier(.2,.8,.3,1);
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    animation: mobile-sheet-in .25s cubic-bezier(.2,.8,.3,1);
   }
   @keyframes mobile-sheet-in {
-    from { transform: translateY(60px); opacity: 0; }
+    from { transform: translateY(100%); opacity: 0; }
     to   { transform: translateY(0);    opacity: 1; }
   }
 
-  /* Keyword / Faction / Rarity manager: stacked single-column */
+  /* Keyword / Faction / Rarity manager: full-screen stacked */
   .kw-modal {
     width: 100%;
-    height: auto;
-    max-height: 88dvh;
+    height: 100dvh;
+    max-height: 100dvh;
   }
   .kw-modal-body {
     grid-template-columns: 1fr;
-    overflow-y: auto;
-    max-height: calc(88dvh - 72px);
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   .kw-list {
     border-right: none;
     border-bottom: 1px solid var(--line);
-    max-height: 200px;
+    /* ~40% of screen for the list — enough for ~6-8 items */
+    max-height: 40dvh;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .kw-detail {
+    border-top: none;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
   }
-  .kw-detail { border-top: none; }
 
-  /* Collection modal */
+  /* Collection modal: full-screen */
   .collection-modal {
     width: 100%;
-    height: auto;
-    max-height: 90dvh;
+    height: 100dvh;
+    max-height: 100dvh;
   }
   .collection-grid {
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    max-height: calc(90dvh - 80px);
+    flex: 1;
+    min-height: 0;
+    max-height: calc(100dvh - 72px);
     overflow-y: auto;
   }
 
