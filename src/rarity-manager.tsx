@@ -36,7 +36,7 @@ function SortableRarityItem({ r, onEdit }: { r: Rarity; onEdit: () => void }) {
     <li ref={setNodeRef} style={style} className="kw-list-item" onClick={onEdit}>
       <span {...attributes} {...listeners}
             onClick={(e) => e.stopPropagation()}
-            style={{ cursor: 'grab', padding: '4px 6px', color: 'rgba(0,0,0,.35)', touchAction: 'none', userSelect: 'none', flexShrink: 0 }}
+            style={{ cursor: 'grab', padding: '4px 6px', color: 'rgba(255,230,180,.3)', touchAction: 'none', userSelect: 'none', flexShrink: 0 }}
             aria-label="Drag to reorder">⋮⋮</span>
       <span className="rarity-list-swatch">
         <RarityShape shape={r.shape} color={r.color} size={26}/>

@@ -509,13 +509,12 @@
   flex: 1;
 }
 .kw-list-item {
-  padding: 8px 10px;
+  padding: 6px 10px;
   border-radius: 7px;
-  display: grid;
-  grid-template-columns: 32px 1fr;
-  gap: 10px;
-  cursor: pointer;
+  display: flex;
   align-items: center;
+  gap: 8px;
+  cursor: pointer;
   transition: background .12s;
 }
 .kw-list-item:hover { background: var(--bg-2); }
@@ -525,7 +524,7 @@
   border-radius: 7px;
   display: grid; place-items: center;
 }
-.kw-list-text { display: flex; flex-direction: column; min-width: 0; }
+.kw-list-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .kw-list-name {
   font-family: 'Cinzel', serif;
   font-weight: 600;

@@ -1,22 +1,34 @@
-import React from 'react';
-import { deriveTheme } from './color-utils';
+import React, { useRef } from 'react';
+import { deriveFaction } from './color-utils';
 import { Glyph } from './glyphs';
-import type { Card, Theme, Rarity } from './types';
+import type { Card, Faction, Rarity } from './types';
 
 interface CollectionProps {
   open: boolean;
   cards: Card[];
   currentId: string;
-  themes: Theme[];
+  factions: Faction[];
   rarities: Rarity[];
   onClose: () => void;
   onPick: (id: string) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
+  onExportJson?: () => void;
+  onImportJson?: (file: File) => void;
 }
 
-export function Collection({ open, cards, currentId, themes, rarities, onClose, onPick, onDelete, onNew }: CollectionProps): React.ReactElement | null {
+export function Collection({ open, cards, currentId, factions, rarities, onClose, onPick, onDelete, onNew, onExportJson, onImportJson }: CollectionProps): React.ReactElement | null {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   if (!open) return null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onImportJson) onImportJson(file);
+    // Reset so the same file can be re-selected if needed
+    e.target.value = '';
+  };
+
   return (
     <div className="modal-scrim" onClick={onClose}>
       <div className="modal collection-modal" onClick={(e) => e.stopPropagation()}>
@@ -26,6 +38,27 @@ export function Collection({ open, cards, currentId, themes, rarities, onClose, 
             <h2 className="modal-title">Collection</h2>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {onExportJson && (
+              <button type="button" className="btn btn-sm" onClick={onExportJson}>
+                <Glyph name="download" size={12}/>
+                <span>Export JSON</span>
+              </button>
+            )}
+            {onImportJson && (
+              <>
+                <button type="button" className="btn btn-sm" onClick={() => fileInputRef.current?.click()}>
+                  <Glyph name="upload" size={12}/>
+                  <span>Import JSON</span>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
+                />
+              </>
+            )}
             <button type="button" className="btn btn-primary btn-sm" onClick={onNew}>
               <Glyph name="plus" size={12}/>
               <span>New card</span>
@@ -45,7 +78,7 @@ export function Collection({ open, cards, currentId, themes, rarities, onClose, 
           <div className="collection-grid">
             {cards.map(c => (
               <CollectionCard key={c.id} card={c}
-                              themes={themes} rarities={rarities}
+                              factions={factions} rarities={rarities}
                               active={c.id === currentId}
                               onPick={() => onPick(c.id)}
                               onDelete={() => onDelete(c.id)}/>
@@ -59,31 +92,31 @@ export function Collection({ open, cards, currentId, themes, rarities, onClose, 
 
 interface CollectionCardProps {
   card: Card;
-  themes: Theme[];
+  factions: Faction[];
   rarities: Rarity[];
   active: boolean;
   onPick: () => void;
   onDelete: () => void;
 }
 
-function CollectionCard({ card, themes, rarities, active, onPick, onDelete }: CollectionCardProps): React.ReactElement {
-  const themeRaw = themes.find(t => t.id === card.theme) ?? themes[0];
-  const theme = deriveTheme(themeRaw);
+function CollectionCard({ card, factions, rarities, active, onPick, onDelete }: CollectionCardProps): React.ReactElement {
+  const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
+  const faction = deriveFaction(factionRaw);
   const rarity = rarities.find(r => r.id === card.rarity) ?? rarities[0];
   return (
     <div className={`coll-card ${active ? 'on' : ''}`} onClick={onPick}>
       <div className="coll-card-art" style={{
         background: card.art
-          ? `linear-gradient(180deg, transparent 0%, ${theme.bg[0]}90 100%)`
-          : `radial-gradient(ellipse at 50% 30%, ${theme.bg[2]}aa 0%, transparent 70%),
-             linear-gradient(160deg, ${theme.bg[0]} 0%, ${theme.bg[1]} 100%)`,
+          ? `linear-gradient(180deg, transparent 0%, ${faction.bg[0]}90 100%)`
+          : `radial-gradient(ellipse at 50% 30%, ${faction.bg[2]}aa 0%, transparent 70%),
+             linear-gradient(160deg, ${faction.bg[0]} 0%, ${faction.bg[1]} 100%)`,
       }}>
         {card.art && (
           <img src={card.art} alt="" className="coll-card-art-img"/>
         )}
         {!card.art && (
-          <div className="coll-card-watermark" style={{ color: theme.accent }}>
-            <Glyph name={themeRaw.glyph} size={56}/>
+          <div className="coll-card-watermark" style={{ color: faction.accent }}>
+            <Glyph name={factionRaw.glyph} size={56}/>
           </div>
         )}
         <div className="coll-card-cost">{card.cost ?? 0}</div>
@@ -98,7 +131,7 @@ function CollectionCard({ card, themes, rarities, active, onPick, onDelete }: Co
       <div className="coll-card-meta" style={{ borderTop: `2px solid ${rarity.color}` }}>
         <div className="coll-card-name">{card.name || 'Untitled'}</div>
         <div className="coll-card-sub">
-          <span style={{ color: theme.accent }}>{themeRaw.name}</span>
+          <span style={{ color: faction.accent }}>{factionRaw.name}</span>
           <span> · </span>
           <span style={{ color: rarity.color }}>{rarity.name}</span>
         </div>

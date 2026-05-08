@@ -1,4 +1,4 @@
-import type { Theme, DerivedTheme } from './types';
+import type { Faction, DerivedFaction } from './types';
 
 export function hexToRgb(hex: string): [number, number, number] {
   const h = String(hex || '#000').replace('#', '');
@@ -53,13 +53,13 @@ export const hslToHex = (h: number, s: number, l: number): string => rgbToHex(..
 
 const clamp = (n: number, a: number, b: number): number => Math.max(a, Math.min(b, n));
 
-export function deriveTheme(theme: Theme): DerivedTheme {
-  const [h0, s0, l0] = hexToHsl(theme.primary || '#888');
+export function deriveFaction(faction: Faction): DerivedFaction {
+  const [h0, s0, l0] = hexToHsl(faction.primary || '#888');
   const h = h0;
   const s = s0 < 0.05 ? 0.05 : s0;
   const l = clamp(l0, 0.18, 0.65);
   return {
-    ...theme,
+    ...faction,
     bg: [
       hslToHex(h, s * 0.7,  clamp(l * 0.22, 0.04, 0.14)),
       hslToHex(h, s * 0.85, clamp(l * 0.5,  0.1,  0.3 )),

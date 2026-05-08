@@ -1,34 +1,44 @@
 // App.tsx — main shell. Owns: current card, saved cards, keyword library,
-// theme list, rarity list. All persisted to localStorage.
+// faction list, rarity list. All persisted to localStorage.
 
 import React, { useState, useEffect, useRef } from 'react';
 import * as htmlToImage from 'html-to-image';
 
-import { DEFAULT_THEMES, DEFAULT_RARITIES, DEFAULT_KEYWORDS, SEED_CARDS } from './data';
+import { DEFAULT_FACTIONS, DEFAULT_RARITIES, DEFAULT_KEYWORDS, SEED_CARDS } from './data';
 import { CardPreview } from './card-preview';
 import { LeftPanel, RightPanel } from './controls';
 import { KeywordManager } from './keyword-manager';
-import { ThemeManager } from './theme-manager';
+import { FactionManager } from './faction-manager';
 import { RarityManager } from './rarity-manager';
 import { Collection } from './collection';
 
+import { exportSnapshot, downloadSnapshot, parseSnapshot, applySnapshot } from './io';
 import { Glyph } from './glyphs';
-import type { Card, Theme, Rarity, Keyword, TweakState } from './types';
+import type { Card, Faction, Rarity, Keyword, TweakState } from './types';
 
 const STORAGE = {
   cards:    'tcg.cards.v2',
   current:  'tcg.current.v2',
   keywords: 'tcg.keywords.v2',
-  themes:   'tcg.themes.v2',
+  factions: 'tcg.factions.v2',
   rarities: 'tcg.rarities.v2',
 } as const;
 
-const BLANK_CARD = (themes: Theme[], rarities: Rarity[]): Card => ({
+function loadWithFallback<T>(newKey: string, oldKey: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(newKey);
+    if (raw) return JSON.parse(raw) as T;
+    const oldRaw = localStorage.getItem(oldKey);
+    return oldRaw ? (JSON.parse(oldRaw) as T) : fallback;
+  } catch { return fallback; }
+}
+
+const BLANK_CARD = (factions: Faction[], rarities: Rarity[]): Card => ({
   id: `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
   type: 'unit',
   name: '',
   subtype: '',
-  theme: themes[0]?.id ?? 'fire',
+  faction: factions[0]?.id ?? 'fire',
   pattern: 'damask',
   rarity: rarities[0]?.id ?? 'common',
   cost: 1,
@@ -39,13 +49,15 @@ const BLANK_CARD = (themes: Theme[], rarities: Rarity[]): Card => ({
   art: null,
 });
 
-const TWEAK_DEFAULTS: Partial<TweakState> = {
+const TWEAK_DEFAULTS: TweakState = {
   frame: 'ornate',
   font: 'cinzel',
-  statShape: 'gem',
-  costColor:   '#5dbce5',  // azure (original cost tone)
-  attackColor: '#e23a3a',  // crimson (original attack tone)
-  healthColor: '#cfd6dd',  // iron (original health tone)
+  costShape:   'gem',
+  attackShape: 'gem',
+  healthShape: 'gem',
+  costColor:   '#5dbce5',
+  attackColor: '#e23a3a',
+  healthColor: '#cfd6dd',
 };
 
 function load<T>(key: string, fallback: T): T {
@@ -63,33 +75,64 @@ function save<T>(key: string, value: T): void {
 }
 
 export default function App(): React.ReactElement {
-  const [themes, setThemes]     = useState<Theme[]>(() => load(STORAGE.themes, DEFAULT_THEMES));
+  const [factions, setFactions] = useState<Faction[]>(() => loadWithFallback(STORAGE.factions, 'tcg.themes.v2', DEFAULT_FACTIONS));
   const [rarities, setRarities] = useState<Rarity[]>(() => load(STORAGE.rarities, DEFAULT_RARITIES));
   const [keywords, setKeywords] = useState<Keyword[]>(() => load(STORAGE.keywords, DEFAULT_KEYWORDS));
-  const [cards, setCards]       = useState<Card[]>(() => load(STORAGE.cards, SEED_CARDS));
-  const [current, setCurrent]   = useState<Card>(() => {
-    const stored = load<Card | null>(STORAGE.current, null);
-    const base = stored ?? { ...SEED_CARDS[0] };
-    // Sanitize stale theme/rarity IDs that may have been deleted since last session.
-    const validTheme   = themes.find((t) => t.id === base.theme)   ? base.theme   : themes[0]?.id   ?? base.theme;
-    const validRarity  = rarities.find((r) => r.id === base.rarity) ? base.rarity : rarities[0]?.id ?? base.rarity;
-    return { ...base, theme: validTheme, rarity: validRarity };
+
+  const migrateCard = (c: any): Card => ({ ...c, faction: c.faction ?? (c as any).theme ?? factions[0]?.id });
+
+  const [cards, setCards] = useState<Card[]>(() => {
+    const raw = load<any[]>(STORAGE.cards, SEED_CARDS);
+    return raw.map(migrateCard);
+  });
+  const [current, setCurrent] = useState<Card>(() => {
+    const stored = load<any | null>(STORAGE.current, null);
+    const base = stored ? migrateCard(stored) : migrateCard({ ...SEED_CARDS[0] });
+    const validFaction = factions.find(f => f.id === base.faction) ? base.faction : factions[0]?.id ?? base.faction;
+    const validRarity  = rarities.find(r => r.id === base.rarity)  ? base.rarity  : rarities[0]?.id  ?? base.rarity;
+    return { ...base, faction: validFaction, rarity: validRarity };
   });
 
   const [showKeywords, setShowKeywords]   = useState(false);
-  const [showThemes, setShowThemes]       = useState(false);
+  const [showFactions, setShowFactions]   = useState(false);
   const [showRarities, setShowRarities]   = useState(false);
   const [showCollection, setShowCollection] = useState(false);
   const [toast, setToast]                 = useState<string | null>(null);
-  const [tweaks, setTweaks] = useState<TweakState>(TWEAK_DEFAULTS as TweakState);
+  const [tweaks, setTweaks] = useState<TweakState>(TWEAK_DEFAULTS);
   const setTweak = (k: keyof TweakState, v: string) =>
     setTweaks(prev => ({ ...prev, [k]: v }));
   const cardRef = useRef<HTMLDivElement>(null);
+  const [leftW, setLeftW] = useState(320);
+  const [rightW, setRightW] = useState(320);
+  const dragRef = useRef<{ side: 'left' | 'right'; startX: number; startW: number } | null>(null);
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      const dx = e.clientX - d.startX;
+      const newW = Math.max(240, Math.min(600, d.startW + (d.side === 'left' ? dx : -dx)));
+      if (d.side === 'left') setLeftW(newW);
+      else setRightW(newW);
+    };
+    const onUp = () => { dragRef.current = null; };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, []);
+
+  const startDrag = (side: 'left' | 'right') => (e: React.MouseEvent) => {
+    e.preventDefault();
+    dragRef.current = { side, startX: e.clientX, startW: side === 'left' ? leftW : rightW };
+  };
 
   useEffect(() => save(STORAGE.cards,    cards),    [cards]);
   useEffect(() => save(STORAGE.current,  current),  [current]);
   useEffect(() => save(STORAGE.keywords, keywords), [keywords]);
-  useEffect(() => save(STORAGE.themes,   themes),   [themes]);
+  useEffect(() => save(STORAGE.factions, factions), [factions]);
   useEffect(() => save(STORAGE.rarities, rarities), [rarities]);
 
   const showToast = (msg: string) => {
@@ -115,7 +158,7 @@ export default function App(): React.ReactElement {
   };
 
   const onNewCard = () => {
-    setCurrent(BLANK_CARD(themes, rarities));
+    setCurrent(BLANK_CARD(factions, rarities));
     setShowCollection(false);
     showToast('New card');
   };
@@ -128,14 +171,54 @@ export default function App(): React.ReactElement {
   const onDeleteFromCollection = (id: string) =>
     setCards((all) => all.filter((c) => c.id !== id));
 
-  const onThemeDeleted = (deletedId: string, fallbackId: string) => {
-    setCards((all) => all.map((c) => c.theme === deletedId ? { ...c, theme: fallbackId } : c));
-    setCurrent((c) => c.theme === deletedId ? { ...c, theme: fallbackId } : c);
+  const onFactionDeleted = (deletedId: string, fallbackId: string) => {
+    setCards((all) => all.map((c) => c.faction === deletedId ? { ...c, faction: fallbackId } : c));
+    setCurrent((c) => c.faction === deletedId ? { ...c, faction: fallbackId } : c);
   };
 
   const onRarityDeleted = (deletedId: string, fallbackId: string) => {
     setCards((all) => all.map((c) => c.rarity === deletedId ? { ...c, rarity: fallbackId } : c));
     setCurrent((c) => c.rarity === deletedId ? { ...c, rarity: fallbackId } : c);
+  };
+
+  const onExportJson = () => {
+    const snapshot = exportSnapshot(cards, keywords, factions, rarities);
+    downloadSnapshot(snapshot);
+    showToast('Collection exported');
+  };
+
+  const onImportJson = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const raw = JSON.parse(e.target?.result as string);
+        const result = parseSnapshot(raw);
+        if (!result.ok) { showToast(`Import failed: ${result.error}`); return; }
+
+        const snap = result.data;
+        const summary =
+          `${snap.cards.length} cards, ${snap.keywords.length} keywords, ` +
+          `${snap.factions.length} factions, ${snap.rarities.length} rarities.\n\n` +
+          'OK = Replace all · Cancel = Merge (keep existing, imported wins on conflict)';
+
+        const replace = window.confirm(summary);
+        // User hit Escape / closed dialog — treat as cancel-the-whole-import
+        // window.confirm returns false for both Cancel and close; we use Cancel as "merge".
+        // To give a real abort path we check the choice separately.
+        const mode = replace ? 'replace' : 'merge';
+
+        const next = applySnapshot({ cards, keywords, factions, rarities }, snap, mode);
+        setCards(next.cards);
+        setKeywords(next.keywords);
+        setFactions(next.factions);
+        setRarities(next.rarities);
+        showToast(`Imported (${mode}): ${snap.cards.length} cards`);
+      } catch {
+        showToast('Import failed: invalid JSON file');
+      }
+    };
+    reader.onerror = () => showToast('Import failed: could not read file');
+    reader.readAsText(file);
   };
 
   const onExportPng = async () => {
@@ -158,11 +241,11 @@ export default function App(): React.ReactElement {
     }
   };
 
-  const themeForCard  = themes.find((t) => t.id === current.theme) ?? themes[0];
+  const factionForCard = factions.find((f) => f.id === current.faction) ?? factions[0];
   const rarityForCard = rarities.find((r) => r.id === current.rarity) ?? rarities[0];
 
   return (
-    <div className="app">
+    <div className="app" style={{ gridTemplateColumns: `${leftW}px 6px 1fr 6px ${rightW}px` }}>
       <header className="topbar">
         <div className="topbar-brand">
           <div className="topbar-mark"><Glyph name="book" size={18} /></div>
@@ -195,11 +278,18 @@ export default function App(): React.ReactElement {
         keywords={keywords}
         onOpenKeywords={() => setShowKeywords(true)}
       />
+      <div
+        className="resize-handle"
+        onMouseDown={startDrag('left')}
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize left panel"
+      />
 
       <div className="stage">
         <div className="stage-wrap">
           <div className="stage-meta">
-            <span>{themeForCard.name}</span>
+            <span>{factionForCard.name}</span>
             <span className="stage-meta-sep" />
             <b>{rarityForCard.name}</b>
             <span className="stage-meta-sep" />
@@ -207,13 +297,15 @@ export default function App(): React.ReactElement {
           </div>
           <div ref={cardRef} className="stage-card-mount">
             <CardPreview
-              card={current}
+             card={current}
               keywords={keywords}
-              themes={themes}
+              factions={factions}
               rarities={rarities}
               frame={tweaks.frame}
               font={tweaks.font}
-              statShape={tweaks.statShape}
+              costShape={tweaks.costShape}
+              attackShape={tweaks.attackShape}
+              healthShape={tweaks.healthShape}
               costColor={tweaks.costColor}
               attackColor={tweaks.attackColor}
               healthColor={tweaks.healthColor}
@@ -222,13 +314,20 @@ export default function App(): React.ReactElement {
           <div className="stage-eyebrow">Live preview · hover keywords for rules</div>
         </div>
       </div>
+      <div
+        className="resize-handle"
+        onMouseDown={startDrag('right')}
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize right panel"
+      />
 
       <RightPanel
         card={current}
         onChange={onCardChange}
-        themes={themes}
+        factions={factions}
         rarities={rarities}
-        onManageThemes={() => setShowThemes(true)}
+        onManageFactions={() => setShowFactions(true)}
         onManageRarities={() => setShowRarities(true)}
         tweaks={tweaks}
         onTweakChange={setTweak}
@@ -240,12 +339,12 @@ export default function App(): React.ReactElement {
         onClose={() => setShowKeywords(false)}
         onChange={setKeywords}
       />
-      <ThemeManager
-        open={showThemes}
-        themes={themes}
-        onClose={() => setShowThemes(false)}
-        onChange={setThemes}
-        onCardThemeMissing={onThemeDeleted}
+      <FactionManager
+        open={showFactions}
+        factions={factions}
+        onClose={() => setShowFactions(false)}
+        onChange={setFactions}
+        onCardFactionMissing={onFactionDeleted}
       />
       <RarityManager
         open={showRarities}
@@ -258,12 +357,14 @@ export default function App(): React.ReactElement {
         open={showCollection}
         cards={cards}
         currentId={current.id}
-        themes={themes}
+        factions={factions}
         rarities={rarities}
         onClose={() => setShowCollection(false)}
         onPick={onPickFromCollection}
         onDelete={onDeleteFromCollection}
         onNew={onNewCard}
+        onExportJson={onExportJson}
+        onImportJson={onImportJson}
       />
 
       {toast && <div className="toast">{toast}</div>}

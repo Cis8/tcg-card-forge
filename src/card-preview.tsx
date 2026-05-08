@@ -1,17 +1,19 @@
 import React, { useState, useRef, useId, useMemo } from 'react';
 import ReactDOM from 'react-dom';
-import { deriveTheme, deriveRarityDeep, deriveRarityGlow } from './color-utils';
+import { deriveFaction, deriveRarityDeep, deriveRarityGlow } from './color-utils';
 import { Glyph, RarityShape, CornerFlourish } from './glyphs';
-import type { Card, Theme, Rarity, Keyword, FrameVariant, FontVariant, StatShape } from './types';
+import type { Card, Faction, Rarity, Keyword, FrameVariant, FontVariant, StatShape } from './types';
 
 interface CardPreviewProps {
   card: Card;
   keywords: Keyword[];
-  themes: Theme[];
+  factions: Faction[];
   rarities: Rarity[];
   frame?: FrameVariant;
   font?: FontVariant;
-  statShape?: StatShape;
+  costShape?:   StatShape;
+  attackShape?: StatShape;
+  healthShape?: StatShape;
   costColor?:   string;
   attackColor?: string;
   healthColor?: string;
@@ -101,6 +103,25 @@ function StatGem({ variant = 'gem', tone = 'azure', rimColor, value, size = 56 }
       <ellipse cx="50" cy="32" rx="18" ry="9" fill="rgba(255,255,255,.18)"/>
     </g>
   );
+  if (variant === 'rhombus') return wrap(
+    <g>
+      <polygon points="50,4 96,50 50,96 4,50"
+               fill={`url(#${gid})`} stroke={`url(#${rid})`} strokeWidth="5"/>
+      <polygon points="50,16 84,50 50,84 16,50"
+               fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="1"/>
+      <polygon points="50,16 84,50 50,34 16,50" fill="rgba(255,255,255,.12)"/>
+    </g>
+  );
+  if (variant === 'heart') return wrap(
+    <g>
+      <path d="M50,82 C10,60,6,24,30,16 C40,12,50,22,50,30 C50,22,60,12,70,16 C94,24,90,60,50,82 Z"
+            fill={`url(#${gid})`} stroke={`url(#${rid})`} strokeWidth="4"/>
+      <path d="M50,72 C18,54,14,28,34,22 C42,19,50,28,50,35 C50,28,58,19,66,22 C86,28,82,54,50,72 Z"
+            fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="1"/>
+      <path d="M50,38 C50,30,42,22,34,25 C24,30,22,44,50,60 C78,44,76,30,66,25 C58,22,50,30,50,38 Z"
+            fill="rgba(255,255,255,.1)"/>
+    </g>
+  );
   return wrap(
     <g>
       <polygon points="50,4 92,28 92,72 50,96 8,72 8,28"
@@ -124,19 +145,21 @@ const PATTERN_BACKGROUNDS: Record<string, string> = {
     repeating-linear-gradient(-45deg, rgba(255,235,200,.06) 0 1px, transparent 1px 12px),
     repeating-linear-gradient(45deg, rgba(0,0,0,.12) 0 1px, transparent 1px 24px)`,
   rays: `
-    repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,235,200,.05) 0deg 6deg, transparent 6deg 12deg)`,
+    repeating-conic-gradient(from 0deg at 50% -10%, rgba(255,235,200,.13) 0deg 8deg, transparent 8deg 16deg),
+    repeating-conic-gradient(from 0deg at 50% 120%, rgba(0,0,0,.12) 0deg 8deg, transparent 8deg 16deg)`,
   scales: `
     radial-gradient(circle at 50% 0%, transparent 8px, rgba(0,0,0,.2) 9px, transparent 10px),
     radial-gradient(circle at 0 8px, transparent 8px, rgba(0,0,0,.2) 9px, transparent 10px),
     radial-gradient(circle at 100% 8px, transparent 8px, rgba(0,0,0,.2) 9px, transparent 10px)`,
 };
 
-export function CardPreview({ card, keywords, themes, rarities,
-                              frame = 'ornate', font = 'cinzel', statShape = 'gem',
+export function CardPreview({ card, keywords, factions, rarities,
+                              frame = 'ornate', font = 'cinzel',
+                              costShape = 'gem', attackShape = 'gem', healthShape = 'gem',
                               costColor = '#5dbce5', attackColor = '#e23a3a', healthColor = '#cfd6dd',
                             }: CardPreviewProps): React.ReactElement {
-  const themeRaw = themes.find(t => t.id === card.theme) ?? themes[0];
-  const theme = deriveTheme(themeRaw);
+  const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
+  const faction = deriveFaction(factionRaw);
   const rarity = rarities.find(r => r.id === card.rarity) ?? rarities[0];
   const rarityDeep = deriveRarityDeep(rarity.color);
   const rarityGlow = deriveRarityGlow(rarity.color);
@@ -154,12 +177,12 @@ export function CardPreview({ card, keywords, themes, rarities,
          style={{
            '--rarity-color': rarity.color, '--rarity-deep': rarityDeep,
            '--rarity-glow': rarityGlow,
-           '--theme-accent': theme.accent, '--theme-deep': theme.deep,
-           '--theme-bg-0': theme.bg[0], '--theme-bg-1': theme.bg[1],
-           '--theme-bg-2': theme.bg[2], '--theme-bg-3': theme.bg[3],
-           '--theme-parchment': theme.parchment,
-           '--theme-parchment-shade': theme.parchmentShade,
-           '--theme-plate': theme.plate, '--theme-plate-ink': theme.plateInk,
+           '--theme-accent': faction.accent, '--theme-deep': faction.deep,
+           '--theme-bg-0': faction.bg[0], '--theme-bg-1': faction.bg[1],
+           '--theme-bg-2': faction.bg[2], '--theme-bg-3': faction.bg[3],
+           '--theme-parchment': faction.parchment,
+           '--theme-parchment-shade': faction.parchmentShade,
+           '--theme-plate': faction.plate, '--theme-plate-ink': faction.plateInk,
          } as React.CSSProperties}>
       <div className="card-frame">
         <div className="card-fill"/>
@@ -192,22 +215,22 @@ export function CardPreview({ card, keywords, themes, rarities,
             <img className="art-image" src={card.art} alt=""/>
           ) : (
             <div className="art-themed" style={{
-              background: `radial-gradient(ellipse 80% 70% at 50% 30%, ${theme.bg[2]} 0%, ${theme.bg[1]} 50%, ${theme.bg[0]} 100%)`,
+              background: `radial-gradient(ellipse 80% 70% at 50% 30%, ${faction.bg[2]} 0%, ${faction.bg[1]} 50%, ${faction.bg[0]} 100%)`,
             }}>
-              <div className="art-watermark" style={{ color: theme.accent }}>
-                <Glyph name={themeRaw.glyph} size={180}/>
+              <div className="art-watermark" style={{ color: faction.accent }}>
+                <Glyph name={factionRaw.glyph} size={180}/>
               </div>
             </div>
           )}
         </div>
 
         <div className="type-plate">
-          <span className="type-glyph"><Glyph name={themeRaw.glyph} size={14}/></span>
+          <span className="type-glyph"><Glyph name={factionRaw.glyph} size={14}/></span>
           <span className="type-label">
             {isUnit ? 'Unit' : 'Spell'}
             {card.subtype ? <span className="type-sub"> · {card.subtype}</span> : null}
           </span>
-          <span className="type-glyph"><Glyph name={themeRaw.glyph} size={14}/></span>
+          <span className="type-glyph"><Glyph name={factionRaw.glyph} size={14}/></span>
         </div>
 
         <div className="text-box">
@@ -235,16 +258,16 @@ export function CardPreview({ card, keywords, themes, rarities,
       </div>
 
       <div className="cost-gem">
-        <StatGem variant={statShape} rimColor={costColor} value={card.cost ?? 0} size={64}/>
+        <StatGem variant={costShape} rimColor={costColor} value={card.cost ?? 0} size={64}/>
       </div>
 
       {isUnit && (
         <>
           <div className="stat stat-attack">
-            <StatGem variant={statShape} rimColor={attackColor} value={card.attack ?? 0} size={62}/>
+            <StatGem variant={attackShape} rimColor={attackColor} value={card.attack ?? 0} size={62}/>
           </div>
           <div className="stat stat-health">
-            <StatGem variant={statShape} rimColor={healthColor} value={card.health ?? 0} size={62}/>
+            <StatGem variant={healthShape} rimColor={healthColor} value={card.health ?? 0} size={62}/>
           </div>
         </>
       )}

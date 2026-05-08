@@ -18,14 +18,14 @@ export type RarityShapeName = 'diamond' | 'pentagon' | 'hexagon' | 'circle' | 's
 
 export type FrameVariant = 'ornate' | 'classic' | 'inscribed';
 export type FontVariant  = 'cinzel' | 'fell' | 'trajan';
-export type StatShape    = 'gem' | 'shield' | 'circle';
+export type StatShape    = 'gem' | 'shield' | 'circle' | 'rhombus' | 'heart';
 
 export interface Card {
   id: string;
   type: CardType;
   name: string;
   subtype: string;
-  theme: string;
+  faction: string;  // was: theme
   pattern: PatternName;
   rarity: string;
   cost: number;
@@ -37,7 +37,7 @@ export interface Card {
   art: string | null; // data URL or null
 }
 
-export interface Theme {
+export interface Faction {
   id: string;
   name: string;
   glyph: GlyphName;
@@ -62,15 +62,17 @@ export interface Keyword {
 export interface TweakState {
   frame: FrameVariant;
   font: FontVariant;
-  statShape: StatShape;
-  costColor: string;    // hex rim color for cost gem
-  attackColor: string;  // hex rim color for attack gem
-  healthColor: string;  // hex rim color for health gem
+  costShape: StatShape;    // shape for cost gem
+  attackShape: StatShape;  // shape for attack gem
+  healthShape: StatShape;  // shape for health gem
+  costColor: string;       // hex rim color for cost gem
+  attackColor: string;     // hex rim color for attack gem
+  healthColor: string;     // hex rim color for health gem
 }
 
-// Derived color palette returned by deriveTheme() in color-utils.ts.
-// Extends Theme because deriveTheme spreads ...theme into the result.
-export interface DerivedTheme extends Theme {
+// Derived color palette returned by deriveFaction() in color-utils.ts.
+// Extends Faction because deriveFaction spreads ...faction into the result.
+export interface DerivedFaction extends Faction {
   bg: [string, string, string, string]; // 4-stop gradient stops
   accent: string;
   deep: string;

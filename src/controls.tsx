@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { deriveTheme } from './color-utils';
+import ReactDOM from 'react-dom';
+import { deriveFaction } from './color-utils';
 import { PATTERNS } from './data';
 import { Glyph, RarityShape } from './glyphs';
-import type { Card, Keyword, Theme, Rarity, GlyphName, TweakState } from './types';
+import type { Card, Keyword, Faction, Rarity, GlyphName, TweakState } from './types';
 
 interface FieldProps {
   label: string;
@@ -40,6 +41,22 @@ const Seg = ({ value, options, onChange, columns }: SegProps): React.ReactElemen
   </div>
 );
 
+const GEM_SHAPE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'gem',     label: 'Gem' },
+  { value: 'shield',  label: 'Shield' },
+  { value: 'circle',  label: 'Disc' },
+  { value: 'rhombus', label: 'Rhombus' },
+  { value: 'heart',   label: 'Heart' },
+];
+
+const ShapeSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }): React.ReactElement => (
+  <select className="shape-select" value={value} onChange={e => onChange(e.target.value)}>
+    {GEM_SHAPE_OPTIONS.map(o => (
+      <option key={o.value} value={o.value}>{o.label}</option>
+    ))}
+  </select>
+);
+
 interface StepperProps {
   value: number;
   min?: number;
@@ -56,43 +73,138 @@ const Stepper = ({ value, min = 0, max = 99, onChange }: StepperProps): React.Re
   </div>
 );
 
-interface ThemePickerProps {
-  themes: Theme[];
+interface FactionPickerProps {
+  factions: Faction[];
   value: string;
   onChange: (v: string) => void;
   onManage: () => void;
 }
 
-const ThemePicker = ({ themes, value, onChange, onManage }: ThemePickerProps): React.ReactElement => (
+const FactionPicker = ({ factions, value, onChange, onManage }: FactionPickerProps): React.ReactElement => (
   <div>
     <div className="theme-grid">
-      {themes.map(rawT => {
-        const t = deriveTheme(rawT);
+      {factions.map(rawF => {
+        const f = deriveFaction(rawF);
         return (
-          <button type="button" key={t.id}
-                  className={`theme-chip ${value === t.id ? 'on' : ''}`}
-                  title={t.name}
-                  onClick={() => onChange(t.id)}
+          <button type="button" key={f.id}
+                  className={`theme-chip ${value === f.id ? 'on' : ''}`}
+                  title={f.name}
+                  onClick={() => onChange(f.id)}
                   style={{
-                    background: `linear-gradient(160deg, ${t.bg[1]} 0%, ${t.bg[2]} 100%)`,
-                    boxShadow: value === t.id
-                      ? `0 0 0 2px ${t.accent}, 0 0 0 3px #1a1306, 0 4px 14px ${t.bg[2]}66`
+                    background: `linear-gradient(160deg, ${f.bg[1]} 0%, ${f.bg[2]} 100%)`,
+                    boxShadow: value === f.id
+                      ? `0 0 0 2px ${f.accent}, 0 0 0 3px #1a1306, 0 4px 14px ${f.bg[2]}66`
                       : '0 0 0 1px rgba(0,0,0,.18), 0 1px 4px rgba(0,0,0,.18)',
                   }}>
-            <span className="theme-chip-glyph" style={{ color: t.bg[3] }}>
-              <Glyph name={rawT.glyph} size={22}/>
+            <span className="theme-chip-glyph" style={{ color: f.bg[3] }}>
+              <Glyph name={rawF.glyph} size={22}/>
             </span>
-            <span className="theme-chip-label">{t.name}</span>
+            <span className="theme-chip-label">{f.name}</span>
           </button>
         );
       })}
     </div>
     <button type="button" className="rail-manage-link" onClick={onManage}>
       <Glyph name="palette" size={12}/>
-      <span>Manage themes…</span>
+      <span>Manage factions…</span>
     </button>
   </div>
 );
+
+const STAT_PRESET_COLORS = [
+  '#5dbce5', '#e23a3a', '#cfd6dd', '#f1b637',
+  '#b466e6', '#4f8a3a', '#ff7a59', '#3da0e6',
+];
+
+interface SmartColorPickerProps {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+}
+
+function SmartColorPicker({ value, onChange, label }: SmartColorPickerProps): React.ReactElement {
+  const [open, setOpen] = React.useState(false);
+  const [pos, setPos] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const swatchRef = React.useRef<HTMLButtonElement>(null);
+  const popoverRef = React.useRef<HTMLDivElement>(null);
+
+  const handleOpen = () => {
+    if (!swatchRef.current) return;
+    const rect = swatchRef.current.getBoundingClientRect();
+    const popW = 172;
+    const popH = 120;
+    let left = rect.left;
+    let top = rect.bottom + 6;
+    if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+    if (top + popH > window.innerHeight - 8) top = rect.top - popH - 6;
+    setPos({ top, left });
+    setOpen(true);
+  };
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
+        swatchRef.current && !swatchRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+      <button
+        ref={swatchRef}
+        type="button"
+        onClick={handleOpen}
+        title={`${label}: ${value}`}
+        style={{
+          width: 28, height: 28, borderRadius: 6, background: value,
+          border: '2px solid rgba(255,230,180,.25)', cursor: 'pointer',
+          padding: 0, flexShrink: 0,
+          boxShadow: open ? `0 0 0 2px rgba(255,230,180,.5)` : undefined,
+        }}
+      />
+      <span style={{ fontSize: 10, color: 'rgba(255,230,180,.45)', textTransform: 'uppercase', letterSpacing: '.05em' }}>{label}</span>
+      {open && ReactDOM.createPortal(
+        <div
+          ref={popoverRef}
+          style={{
+            position: 'fixed', top: pos.top, left: pos.left,
+            background: '#1d1813', border: '1px solid rgba(255,230,180,.16)',
+            borderRadius: 8, padding: 10, zIndex: 9999,
+            boxShadow: '0 8px 24px rgba(0,0,0,.6)',
+            display: 'flex', flexDirection: 'column', gap: 8,
+          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
+            {STAT_PRESET_COLORS.map(c => (
+              <button key={c} type="button"
+                onClick={() => { onChange(c); setOpen(false); }}
+                style={{
+                  width: 28, height: 28, borderRadius: 5, background: c, padding: 0,
+                  border: value === c ? '2px solid rgba(255,230,180,.8)' : '2px solid transparent',
+                  cursor: 'pointer',
+                }}
+              />
+            ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <input type="color" value={value}
+              onChange={(e) => onChange(e.target.value)}
+              style={{ width: 28, height: 28, padding: 1, border: '1px solid rgba(255,230,180,.2)', borderRadius: 4, cursor: 'pointer', background: 'transparent' }}
+            />
+            <span style={{ fontSize: 10.5, color: 'rgba(240,230,200,.55)', fontFamily: 'ui-monospace, monospace' }}>{value}</span>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
 
 interface RarityPickerProps {
   rarities: Rarity[];
@@ -218,17 +330,17 @@ export function LeftPanel({ card, onChange, keywords, onOpenKeywords }: LeftPane
                  onChange={(e) => onChange({ subtype: e.target.value })}/>
         </Field>
         <Field label="Cost" hint="Mana cost to cast">
-          <Stepper value={card.cost ?? 0} min={0} max={20}
+          <Stepper value={card.cost ?? 0} min={0} max={99}
                    onChange={(v) => onChange({ cost: v })}/>
         </Field>
         {isUnit && (
           <div className="row-2">
             <Field label="Attack">
-              <Stepper value={card.attack ?? 0} min={0} max={30}
+              <Stepper value={card.attack ?? 0} min={0} max={99}
                        onChange={(v) => onChange({ attack: v })}/>
             </Field>
             <Field label="Health">
-              <Stepper value={card.health ?? 1} min={1} max={30}
+              <Stepper value={card.health ?? 1} min={1} max={99}
                        onChange={(v) => onChange({ health: v })}/>
             </Field>
           </div>
@@ -288,15 +400,15 @@ function KeywordChipBar({ keywords, onInsert, onManage }: KeywordChipBarProps): 
 interface RightPanelProps {
   card: Card;
   onChange: (patch: Partial<Card>) => void;
-  themes: Theme[];
+  factions: Faction[];
   rarities: Rarity[];
-  onManageThemes: () => void;
+  onManageFactions: () => void;
   onManageRarities: () => void;
   tweaks: TweakState;
   onTweakChange: (k: keyof TweakState, v: string) => void;
 }
 
-export function RightPanel({ card, onChange, themes, rarities, onManageThemes, onManageRarities, tweaks, onTweakChange }: RightPanelProps): React.ReactElement {
+export function RightPanel({ card, onChange, factions, rarities, onManageFactions, onManageRarities, tweaks, onTweakChange }: RightPanelProps): React.ReactElement {
   return (
     <aside className="rail rail-right">
       <header className="rail-header">
@@ -304,12 +416,12 @@ export function RightPanel({ card, onChange, themes, rarities, onManageThemes, o
         <h2 className="rail-title">Appearance</h2>
       </header>
       <div className="rail-body">
-        <Field label="Theme" hint="Drives palette, parchment tint and glyph">
-          <ThemePicker themes={themes} value={card.theme}
-                       onChange={(v) => onChange({ theme: v })}
-                       onManage={onManageThemes}/>
+        <Field label="Faction" hint="Drives palette, parchment tint and glyph">
+          <FactionPicker factions={factions} value={card.faction}
+                         onChange={(v) => onChange({ faction: v })}
+                         onManage={onManageFactions}/>
         </Field>
-        <Field label="Splash art" hint="Drop your own PNG / JPG, or leave blank for theme color">
+        <Field label="Splash art" hint="Drop your own PNG / JPG, or leave blank for faction color">
           <ArtUploader value={card.art} onChange={(v) => onChange({ art: v })}/>
         </Field>
         <Field label="Card pattern" hint="Texture overlay on the card frame">
@@ -338,35 +450,22 @@ export function RightPanel({ card, onChange, themes, rarities, onManageThemes, o
                ]}
                onChange={(v) => onTweakChange('font', v)}/>
         </Field>
-        <Field label="Stat shape">
-          <Seg value={tweaks.statShape}
-               options={[
-                 { value: 'gem',    label: 'Gem' },
-                 { value: 'shield', label: 'Shield' },
-                 { value: 'circle', label: 'Disc' },
-               ]}
-               onChange={(v) => onTweakChange('statShape', v)}/>
-        </Field>
-        <Field label="Gem colours">
+        <Field label="Cost gem">
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '11px', color: 'rgba(255, 254, 254, 0.55)' }}>
-              <input type="color" value={tweaks.costColor}
-                     onChange={(e) => onTweakChange('costColor', e.target.value)}
-                     style={{ width: 28, height: 22, padding: 1, border: '1px solid rgba(0,0,0,.15)', borderRadius: 4, cursor: 'pointer' }}/>
-              Cost
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '11px', color: 'rgba(255, 254, 254, 0.55)' }}>
-              <input type="color" value={tweaks.attackColor}
-                     onChange={(e) => onTweakChange('attackColor', e.target.value)}
-                     style={{ width: 28, height: 22, padding: 1, border: '1px solid rgba(0,0,0,.15)', borderRadius: 4, cursor: 'pointer' }}/>
-              Atk
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '11px', color: 'rgba(255, 254, 254, 0.55)' }}>
-              <input type="color" value={tweaks.healthColor}
-                     onChange={(e) => onTweakChange('healthColor', e.target.value)}
-                     style={{ width: 28, height: 22, padding: 1, border: '1px solid rgba(0,0,0,.15)', borderRadius: 4, cursor: 'pointer' }}/>
-              HP
-            </label>
+            <SmartColorPicker value={tweaks.costColor} onChange={(v) => onTweakChange('costColor', v)} label="Color"/>
+            <ShapeSelect value={tweaks.costShape} onChange={(v) => onTweakChange('costShape', v)}/>
+          </div>
+        </Field>
+        <Field label="Attack gem">
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <SmartColorPicker value={tweaks.attackColor} onChange={(v) => onTweakChange('attackColor', v)} label="Color"/>
+            <ShapeSelect value={tweaks.attackShape} onChange={(v) => onTweakChange('attackShape', v)}/>
+          </div>
+        </Field>
+        <Field label="Health gem">
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <SmartColorPicker value={tweaks.healthColor} onChange={(v) => onTweakChange('healthColor', v)} label="Color"/>
+            <ShapeSelect value={tweaks.healthShape} onChange={(v) => onTweakChange('healthShape', v)}/>
           </div>
         </Field>
       </div>

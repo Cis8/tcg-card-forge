@@ -8,28 +8,28 @@ import {
   verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { deriveTheme } from './color-utils';
+import { deriveFaction } from './color-utils';
 import { Glyph } from './glyphs';
-import { THEME_GLYPH_OPTIONS } from './data';
-import type { Theme, GlyphName } from './types';
+import { FACTION_GLYPH_OPTIONS } from './data';
+import type { Faction, GlyphName } from './types';
 
-const THEME_PRESET_COLORS = [
+const FACTION_PRESET_COLORS = [
   '#c84a18', '#d97706', '#e1a526',
   '#4f8a3a', '#0e7490', '#3d8ec9',
   '#7a3da8', '#9d174d', '#475569',
 ];
 
-interface ThemeManagerProps {
+interface FactionManagerProps {
   open: boolean;
-  themes: Theme[];
+  factions: Faction[];
   onClose: () => void;
-  onChange: (themes: Theme[]) => void;
-  onCardThemeMissing?: (oldId: string, newId: string) => void;
+  onChange: (factions: Faction[]) => void;
+  onCardFactionMissing?: (oldId: string, newId: string) => void;
 }
 
-function SortableThemeItem({ rawT, onEdit }: { rawT: Theme; onEdit: () => void }) {
-  const t = deriveTheme(rawT);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: rawT.id });
+function SortableFactionItem({ rawF, onEdit }: { rawF: Faction; onEdit: () => void }) {
+  const f = deriveFaction(rawF);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: rawF.id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -39,23 +39,23 @@ function SortableThemeItem({ rawT, onEdit }: { rawT: Theme; onEdit: () => void }
     <li ref={setNodeRef} style={style} className="kw-list-item" onClick={onEdit}>
       <span {...attributes} {...listeners}
             onClick={(e) => e.stopPropagation()}
-            style={{ cursor: 'grab', padding: '4px 6px', color: 'rgba(0,0,0,.35)', touchAction: 'none', userSelect: 'none', flexShrink: 0 }}
+            style={{ cursor: 'grab', padding: '4px 6px', color: 'rgba(255,230,180,.3)', touchAction: 'none', userSelect: 'none', flexShrink: 0 }}
             aria-label="Drag to reorder">⋮⋮</span>
       <span className="theme-list-swatch"
-            style={{ background: `linear-gradient(160deg, ${t.bg[1]}, ${t.bg[2]})` }}>
-        <Glyph name={rawT.glyph} size={18}/>
+            style={{ background: `linear-gradient(160deg, ${f.bg[1]}, ${f.bg[2]})` }}>
+        <Glyph name={rawF.glyph} size={18}/>
       </span>
       <span className="kw-list-text">
-        <span className="kw-list-name" style={{ color: t.accent }}>{t.name}</span>
+        <span className="kw-list-name" style={{ color: f.accent }}>{f.name}</span>
         <span className="kw-list-desc" style={{ fontFamily: 'ui-monospace, monospace' }}>
-          {rawT.primary}
+          {rawF.primary}
         </span>
       </span>
     </li>
   );
 }
 
-export function ThemeManager({ open, themes, onClose, onChange, onCardThemeMissing }: ThemeManagerProps): React.ReactElement | null {
+export function FactionManager({ open, factions, onClose, onChange, onCardFactionMissing }: FactionManagerProps): React.ReactElement | null {
   const [editing, setEditing] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -66,34 +66,34 @@ export function ThemeManager({ open, themes, onClose, onChange, onCardThemeMissi
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = themes.findIndex(t => t.id === active.id);
-      const newIndex = themes.findIndex(t => t.id === over.id);
-      onChange(arrayMove(themes, oldIndex, newIndex));
+      const oldIndex = factions.findIndex(f => f.id === active.id);
+      const newIndex = factions.findIndex(f => f.id === over.id);
+      onChange(arrayMove(factions, oldIndex, newIndex));
     }
   };
 
-  const onSave = (t: Theme) => {
-    if (t.id === '_new') {
-      const id = `t_${Date.now().toString(36)}`;
-      onChange([...themes, { ...t, id }]);
+  const onSave = (f: Faction) => {
+    if (f.id === '_new') {
+      const id = `f_${Date.now().toString(36)}`;
+      onChange([...factions, { ...f, id }]);
     } else {
-      onChange(themes.map(x => x.id === t.id ? t : x));
+      onChange(factions.map(x => x.id === f.id ? f : x));
     }
     setEditing(null);
   };
 
   const onDelete = (id: string) => {
-    if (themes.length <= 1) { alert('Keep at least one theme.'); return; }
-    if (!confirm('Delete this theme? Cards using it will fall back to the first remaining theme.')) return;
-    const remaining = themes.filter(t => t.id !== id);
+    if (factions.length <= 1) { alert('Keep at least one faction.'); return; }
+    if (!confirm('Delete this faction? Cards using it will fall back to the first remaining faction.')) return;
+    const remaining = factions.filter(f => f.id !== id);
     onChange(remaining);
-    if (onCardThemeMissing) onCardThemeMissing(id, remaining[0].id);
+    if (onCardFactionMissing) onCardFactionMissing(id, remaining[0].id);
     setEditing(null);
   };
 
-  const editingT: Theme | undefined = editing === 'new'
-    ? { id: '_new', name: '', glyph: 'flame', primary: THEME_PRESET_COLORS[0] }
-    : themes.find(t => t.id === editing);
+  const editingF: Faction | undefined = editing === 'new'
+    ? { id: '_new', name: '', glyph: 'flame', primary: FACTION_PRESET_COLORS[0] }
+    : factions.find(f => f.id === editing);
 
   return (
     <div className="modal-scrim" onClick={onClose}>
@@ -101,7 +101,7 @@ export function ThemeManager({ open, themes, onClose, onChange, onCardThemeMissi
         <header className="modal-header">
           <div>
             <span className="modal-eyebrow">Library</span>
-            <h2 className="modal-title">Themes</h2>
+            <h2 className="modal-title">Factions</h2>
           </div>
           <button type="button" className="icon-btn" onClick={onClose}>
             <Glyph name="close" size={16}/>
@@ -111,36 +111,36 @@ export function ThemeManager({ open, themes, onClose, onChange, onCardThemeMissi
         <div className="kw-modal-body">
           <div className="kw-list">
             <div className="kw-list-head">
-              <span>{themes.length} themes</span>
+              <span>{factions.length} factions</span>
               <button type="button" className="btn btn-primary btn-sm"
                       onClick={() => setEditing('new')}>
-                <Glyph name="plus" size={12}/><span>New theme</span>
+                <Glyph name="plus" size={12}/><span>New faction</span>
               </button>
             </div>
             <ul>
               {editing === null ? (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={themes.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                    {themes.map(rawT => (
-                      <SortableThemeItem key={rawT.id} rawT={rawT} onEdit={() => setEditing(rawT.id)}/>
+                  <SortableContext items={factions.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                    {factions.map(rawF => (
+                      <SortableFactionItem key={rawF.id} rawF={rawF} onEdit={() => setEditing(rawF.id)}/>
                     ))}
                   </SortableContext>
                 </DndContext>
               ) : (
-                themes.map(rawT => {
-                  const t = deriveTheme(rawT);
+                factions.map(rawF => {
+                  const f = deriveFaction(rawF);
                   return (
-                    <li key={t.id}
-                        className={`kw-list-item ${editing === t.id ? 'on' : ''}`}
-                        onClick={() => setEditing(t.id)}>
+                    <li key={f.id}
+                        className={`kw-list-item ${editing === f.id ? 'on' : ''}`}
+                        onClick={() => setEditing(f.id)}>
                       <span className="theme-list-swatch"
-                            style={{ background: `linear-gradient(160deg, ${t.bg[1]}, ${t.bg[2]})` }}>
-                        <Glyph name={rawT.glyph} size={18}/>
+                            style={{ background: `linear-gradient(160deg, ${f.bg[1]}, ${f.bg[2]})` }}>
+                        <Glyph name={rawF.glyph} size={18}/>
                       </span>
                       <span className="kw-list-text">
-                        <span className="kw-list-name" style={{ color: t.accent }}>{t.name}</span>
+                        <span className="kw-list-name" style={{ color: f.accent }}>{f.name}</span>
                         <span className="kw-list-desc" style={{ fontFamily: 'ui-monospace, monospace' }}>
-                          {rawT.primary}
+                          {rawF.primary}
                         </span>
                       </span>
                     </li>
@@ -151,16 +151,16 @@ export function ThemeManager({ open, themes, onClose, onChange, onCardThemeMissi
           </div>
 
           <div className="kw-detail">
-            {!editingT ? (
+            {!editingF ? (
               <div className="kw-empty">
                 <Glyph name="palette" size={32}/>
-                <p>Select a theme to edit, or create a new one.</p>
+                <p>Select a faction to edit, or create a new one.</p>
               </div>
             ) : (
-              <ThemeEditor key={editingT.id} theme={editingT}
-                           onSave={onSave}
-                           onCancel={() => setEditing(null)}
-                           onDelete={editingT.id !== '_new' ? () => onDelete(editingT.id) : undefined}/>
+              <FactionEditor key={editingF.id} faction={editingF}
+                             onSave={onSave}
+                             onCancel={() => setEditing(null)}
+                             onDelete={editingF.id !== '_new' ? () => onDelete(editingF.id) : undefined}/>
             )}
           </div>
         </div>
@@ -169,17 +169,17 @@ export function ThemeManager({ open, themes, onClose, onChange, onCardThemeMissi
   );
 }
 
-interface ThemeEditorProps {
-  theme: Theme;
-  onSave: (t: Theme) => void;
+interface FactionEditorProps {
+  faction: Faction;
+  onSave: (f: Faction) => void;
   onCancel: () => void;
   onDelete?: () => void;
 }
 
-function ThemeEditor({ theme, onSave, onCancel, onDelete }: ThemeEditorProps): React.ReactElement {
-  const [draft, setDraft] = useState<Theme>(theme);
-  const set = (patch: Partial<Theme>) => setDraft(d => ({ ...d, ...patch }));
-  const derived = deriveTheme(draft);
+function FactionEditor({ faction, onSave, onCancel, onDelete }: FactionEditorProps): React.ReactElement {
+  const [draft, setDraft] = useState<Faction>(faction);
+  const set = (patch: Partial<Faction>) => setDraft(d => ({ ...d, ...patch }));
+  const derived = deriveFaction(draft);
 
   return (
     <div className="kw-editor">
@@ -189,7 +189,7 @@ function ThemeEditor({ theme, onSave, onCancel, onDelete }: ThemeEditorProps): R
           <Glyph name={draft.glyph} size={64}/>
         </div>
         <div className="theme-preview-name" style={{ color: derived.bg[3] }}>
-          {draft.name || 'Theme'}
+          {draft.name || 'Faction'}
         </div>
         <div className="theme-preview-swatches">
           {derived.bg.map((c, i) => (
@@ -208,7 +208,7 @@ function ThemeEditor({ theme, onSave, onCancel, onDelete }: ThemeEditorProps): R
       <div className="field">
         <span className="field-label">Glyph</span>
         <div className="glyph-grid">
-          {THEME_GLYPH_OPTIONS.map(g => (
+          {FACTION_GLYPH_OPTIONS.map(g => (
             <button type="button" key={g}
                     className={`glyph-pick ${draft.glyph === g ? 'on' : ''}`}
                     style={draft.glyph === g ? { color: derived.accent, borderColor: derived.accent } : undefined}
@@ -225,7 +225,7 @@ function ThemeEditor({ theme, onSave, onCancel, onDelete }: ThemeEditorProps): R
           Drives parchment, frame fill, and accent highlights.
         </span>
         <div className="color-row">
-          {THEME_PRESET_COLORS.map(c => (
+          {FACTION_PRESET_COLORS.map(c => (
             <button type="button" key={c}
                     className={`color-pick ${draft.primary === c ? 'on' : ''}`}
                     onClick={() => set({ primary: c })}
@@ -247,7 +247,7 @@ function ThemeEditor({ theme, onSave, onCancel, onDelete }: ThemeEditorProps): R
         <button type="button" className="btn btn-primary"
                 disabled={!draft.name.trim()}
                 onClick={() => onSave({ ...draft, name: draft.name.trim() })}>
-          {theme.id === '_new' ? 'Create' : 'Save'}
+          {faction.id === '_new' ? 'Create' : 'Save'}
         </button>
       </div>
     </div>

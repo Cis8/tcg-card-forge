@@ -1,6 +1,6 @@
-import type { Theme, Rarity, Keyword, Card, GlyphName, RarityShapeName, PatternName } from './types';
+import type { Faction, Rarity, Keyword, Card, GlyphName, RarityShapeName, PatternName } from './types';
 
-export const DEFAULT_THEMES: Theme[] = [
+export const DEFAULT_FACTIONS: Faction[] = [
   { id: 'fire',    name: 'Fire',    glyph: 'flame', primary: '#c84a18' },
   { id: 'frost',   name: 'Frost',   glyph: 'frost', primary: '#3d8ec9' },
   { id: 'wild',    name: 'Wild',    glyph: 'leaf',  primary: '#4f8a3a' },
@@ -17,13 +17,13 @@ export const DEFAULT_RARITIES: Rarity[] = [
 
 export const PATTERNS: PatternName[] = ['plain', 'damask', 'lattice', 'rays', 'scales'];
 
-export const THEME_GLYPH_OPTIONS: GlyphName[] = [
+export const FACTION_GLYPH_OPTIONS: GlyphName[] = [
   'flame', 'frost', 'leaf', 'sun', 'skull',
   'bolt', 'shield', 'eye', 'drop', 'chalice', 'wing', 'overrun', 'star', 'diamond',
 ];
 
 export const RARITY_SHAPE_OPTIONS: RarityShapeName[] = [
-  'diamond', 'pentagon', 'hexagon', 'circle', 'shield', 'star',
+  'diamond', 'pentagon', 'hexagon', 'circle', 'shield', 'star', 'triangle',
 ];
 
 export const DEFAULT_KEYWORDS: Keyword[] = [
@@ -47,18 +47,18 @@ export const DEFAULT_KEYWORDS: Keyword[] = [
 
 export const SEED_CARDS: Card[] = [
   { id: 'seed_1', type: 'unit', name: 'Ashen Warden', subtype: 'Drake · Sentinel',
-    theme: 'fire', pattern: 'damask', rarity: 'rare',
+    faction: 'fire', pattern: 'damask', rarity: 'rare',
     cost: 4, attack: 3, health: 5,
     description: '[Guard]\nWhen this unit attacks, deal 1 damage to all enemy units.',
     flavor: '"Where it lands, the snow forgets it ever fell."',
     art: null },
   { id: 'seed_2', type: 'unit', name: 'Hollow Marchpriest', subtype: 'Undead · Cleric',
-    theme: 'umbral', pattern: 'rays', rarity: 'epic',
+    faction: 'umbral', pattern: 'rays', rarity: 'epic',
     cost: 5, attack: 4, health: 4,
     description: '[Last Breath] Summon a 2/2 Wraith with [Stealth].\nAdjacent allies have [Drain].',
     flavor: '', art: null },
   { id: 'seed_3', type: 'spell', name: 'Glacial Verdict', subtype: 'Hex',
-    theme: 'frost', pattern: 'lattice', rarity: 'legendary',
+    faction: 'frost', pattern: 'lattice', rarity: 'legendary',
     cost: 7,
     description: 'Freeze all enemy units. They lose [Rush] and [Flight] until your next turn.',
     flavor: '"The court has decided. The court is winter."',

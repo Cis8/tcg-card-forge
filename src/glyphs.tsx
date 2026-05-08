@@ -181,11 +181,17 @@ interface CornerFlourishProps {
 }
 
 export const CornerFlourish = ({ side = 'tl', color = '#caa14b' }: CornerFlourishProps): React.ReactElement => {
-  const rotMap: Record<string, number> = { tl: 0, tr: 90, br: 180, bl: 270 };
-  const rot = rotMap[side] ?? 0;
+  const transformMap: Record<string, string> = {
+    tl: 'none',
+    tr: 'scaleX(-1)',
+    bl: 'scaleY(-1)',
+    br: 'scale(-1,-1)',
+  };
+  const xform = transformMap[side] ?? 'none';
   return (
     <svg viewBox="0 0 40 40" width="100%" height="100%"
-         style={{ transform: `rotate(${rot}deg)` }}>
+         overflow="hidden"
+         style={{ transform: xform }}>
       <g fill="none" stroke={color} strokeWidth="1.1" strokeLinecap="round">
         <path d="M2 8 Q 8 8 8 14 Q 8 20 14 20"/>
         <path d="M5 14 Q 12 14 12 22"/>
