@@ -2,7 +2,7 @@ import React, { useState, useRef, useId, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { deriveFaction, deriveRarityDeep, deriveRarityGlow } from './color-utils';
 import { Glyph, RarityShape, CornerFlourish } from './glyphs';
-import type { Card, Faction, Rarity, Keyword, FrameVariant, FontVariant, StatShape } from './types';
+import type { Card, Faction, Rarity, Keyword, FrameVariant, FontVariant, StatShape, ThematicGlyphName } from './types';
 
 interface CardPreviewProps {
   card: Card;
@@ -152,6 +152,19 @@ const PATTERN_BACKGROUNDS: Record<string, string> = {
     radial-gradient(circle at 100% 8px, transparent 8px, rgba(0,0,0,.2) 9px, transparent 10px)`,
 };
 
+/** Resolves the watermark glyph name for the description box, or null for no watermark. */
+function resolveDescriptionGlyph(card: Card, factionGlyph: ThematicGlyphName): ThematicGlyphName | null {
+  if (card.descGlyph === 'none') return null;
+  if (!card.descGlyph || card.descGlyph === 'faction') return factionGlyph;
+  return card.descGlyph;
+}
+
+/** Returns a validated hex color string or undefined if invalid/absent. */
+function validHex(value: string | null | undefined): string | undefined {
+  if (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value)) return value;
+  return undefined;
+}
+
 export function CardPreview({ card, keywords, factions, rarities,
                               font = 'cinzel',
                               costShape = 'rhombus', attackShape = 'gem', healthShape = 'heart',
@@ -173,6 +186,9 @@ export function CardPreview({ card, keywords, factions, rarities,
   }, [keywords]);
   const tokens = parseDescription(card.description, kwByName);
 
+  const descWatermarkGlyph = resolveDescriptionGlyph(card, factionRaw.glyph);
+  const descBg = validHex(card.descBg);
+
   return (
     <div className={`card-shell card-frame-${frame} card-font-${font}`}
          style={{
@@ -184,6 +200,7 @@ export function CardPreview({ card, keywords, factions, rarities,
            '--theme-parchment': faction.parchment,
            '--theme-parchment-shade': faction.parchmentShade,
            '--theme-plate': faction.plate, '--theme-plate-ink': faction.plateInk,
+           ...(descBg ? { '--desc-bg': descBg } : {}),
          } as React.CSSProperties}>
       <div className="card-frame">
         <div className="card-fill"/>
@@ -235,6 +252,11 @@ export function CardPreview({ card, keywords, factions, rarities,
         </div>
 
         <div className="text-box">
+          {descWatermarkGlyph && (
+            <div className="text-box-watermark" aria-hidden="true" style={{ color: faction.accent }}>
+              <Glyph name={descWatermarkGlyph} size={80}/>
+            </div>
+          )}
           <div className="text-box-inner">
             <p className="card-text">
               {tokens.length === 0

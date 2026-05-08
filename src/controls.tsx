@@ -3,8 +3,9 @@ import ReactDOM from 'react-dom';
 import { deriveFaction } from './color-utils';
 import { PATTERNS } from './data';
 import { Glyph, RarityShape } from './glyphs';
+import { GlyphPicker } from './glyph-picker';
 import { confirmDestructiveAction } from './confirm';
-import type { Card, Keyword, Faction, Rarity, GlyphName, GlobalSettings, DeckSettings } from './types';
+import type { Card, Keyword, Faction, Rarity, GlyphName, GlobalSettings, DeckSettings, ThematicGlyphName, DescGlyph } from './types';
 
 interface FieldProps {
   label: string;
@@ -436,6 +437,76 @@ function KeywordChipBar({ keywords, onInsert, onManage }: KeywordChipBarProps): 
   );
 }
 
+// ── Description Box controls ─────────────────────────────────────────────
+
+type GlyphWatermarkMode = 'none' | 'faction' | 'custom';
+
+interface DescriptionBoxFieldProps {
+  card: Card;
+  factions: Faction[];
+  onChange: (patch: Partial<Card>) => void;
+}
+
+function DescriptionBoxField({ card, factions, onChange }: DescriptionBoxFieldProps): React.ReactElement {
+  const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
+
+  const mode: GlyphWatermarkMode =
+    card.descGlyph === 'none' ? 'none'
+    : !card.descGlyph || card.descGlyph === 'faction' ? 'faction'
+    : 'custom';
+
+  const customGlyph: ThematicGlyphName =
+    mode === 'custom' ? (card.descGlyph as ThematicGlyphName) : factionRaw.glyph;
+
+  const bgValue = typeof card.descBg === 'string' ? card.descBg : '#d4b896';
+
+  const handleModeChange = (m: string) => {
+    if (m === 'none')    onChange({ descGlyph: 'none' });
+    if (m === 'faction') onChange({ descGlyph: 'faction' });
+    if (m === 'custom')  onChange({ descGlyph: customGlyph });
+  };
+
+  return (
+    <>
+      <Field label="Box background" hint="Base parchment colour for the description panel">
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <SmartColorPicker
+            value={bgValue}
+            onChange={(v) => onChange({ descBg: v })}
+            label="Color"
+          />
+          {card.descBg && (
+            <button type="button" className="btn btn-sm btn-ghost"
+                    style={{ fontSize: 11 }}
+                    onClick={() => onChange({ descBg: null })}>
+              Reset
+            </button>
+          )}
+        </div>
+      </Field>
+      <Field label="Box watermark" hint="Decorative glyph behind the card text">
+        <Seg
+          value={mode}
+          options={[
+            { value: 'none',    label: 'Off' },
+            { value: 'faction', label: 'Faction' },
+            { value: 'custom',  label: 'Custom' },
+          ]}
+          onChange={handleModeChange}
+        />
+        {mode === 'custom' && (
+          <div style={{ marginTop: 8 }}>
+            <GlyphPicker
+              value={customGlyph}
+              onChange={(g: ThematicGlyphName) => onChange({ descGlyph: g as DescGlyph })}
+            />
+          </div>
+        )}
+      </Field>
+    </>
+  );
+}
+
 interface RightPanelProps {
   card: Card;
   onChange: (patch: Partial<Card>) => void;
@@ -485,6 +556,7 @@ export function RightPanel({ card, onChange, factions, rarities, onManageFaction
                ]}
                onChange={(v) => onChange({ frame: v as Card['frame'] })}/>
         </Field>
+        <DescriptionBoxField card={card} factions={factions} onChange={onChange}/>
       </div>
 
       {/* ── Global settings ─────────────────────────────────────────── */}

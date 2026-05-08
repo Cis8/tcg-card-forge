@@ -31,6 +31,14 @@ export type FrameVariant = 'ornate' | 'classic' | 'inscribed';
 export type FontVariant  = 'cinzel' | 'fell' | 'trajan';
 export type StatShape    = 'gem' | 'shield' | 'circle' | 'rhombus' | 'heart';
 
+/**
+ * Controls the watermark glyph shown in the description text box.
+ * - 'faction'            → show the card's faction glyph (default)
+ * - 'none'               → no watermark
+ * - ThematicGlyphName    → a specific glyph
+ */
+export type DescGlyph = 'none' | 'faction' | ThematicGlyphName;
+
 export interface Card {
   id: string;
   type: CardType;
@@ -47,6 +55,10 @@ export interface Card {
   description: string;
   flavor: string;
   art: string | null; // data URL or null
+  /** Custom hex color for the description text-box background. null = use faction parchment. */
+  descBg?: string | null;
+  /** Watermark glyph shown behind the description text. Defaults to 'faction'. */
+  descGlyph?: DescGlyph;
 }
 
 export interface Faction {
