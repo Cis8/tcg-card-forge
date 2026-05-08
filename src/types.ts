@@ -13,7 +13,8 @@ export type ThematicGlyphName =
   | 'crown' | 'anchor' | 'hourglass' | 'compass'
   | 'moon' | 'orb' | 'rune' | 'feather'
   | 'paw' | 'vine' | 'mountain' | 'wave' | 'tornado'
-  | 'chain' | 'heart';
+  | 'chain' | 'heart'
+  | 'blind' | 'fang' | 'dna' | 'skull-x' | 'bleed';
 
 // UI-only glyphs — not available as faction/keyword choices.
 export type UiGlyphName =

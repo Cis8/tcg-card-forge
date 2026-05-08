@@ -191,15 +191,6 @@ function KeywordEditor({ keyword, onSave, onCancel, onDelete }: KeywordEditorPro
       </label>
 
       <div className="field">
-        <span className="field-label">Glyph</span>
-        <GlyphPicker
-          value={draft.glyph}
-          accentColor={draft.color}
-          onChange={(g: ThematicGlyphName) => set({ glyph: g })}
-        />
-      </div>
-
-      <div className="field">
         <span className="field-label">Color</span>
         <div className="color-row">
           {PRESET_COLORS.map(c => (
@@ -211,6 +202,15 @@ function KeywordEditor({ keyword, onSave, onCancel, onDelete }: KeywordEditorPro
           <input type="color" className="color-custom" value={draft.color}
                  onChange={(e) => set({ color: e.target.value })}/>
         </div>
+      </div>
+
+      <div className="field">
+        <span className="field-label">Glyph</span>
+        <GlyphPicker
+          value={draft.glyph}
+          accentColor={draft.color}
+          onChange={(g: ThematicGlyphName) => set({ glyph: g })}
+        />
       </div>
 
       <div className="kw-editor-actions">

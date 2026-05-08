@@ -206,15 +206,6 @@ function FactionEditor({ faction, onSave, onCancel, onDelete }: FactionEditorPro
       </label>
 
       <div className="field">
-        <span className="field-label">Glyph</span>
-        <GlyphPicker
-          value={draft.glyph}
-          accentColor={derived.accent}
-          onChange={(g: ThematicGlyphName) => set({ glyph: g })}
-        />
-      </div>
-
-      <div className="field">
         <span className="field-label">Primary color</span>
         <span className="field-hint" style={{ marginBottom: 6 }}>
           Drives parchment, frame fill, and accent highlights.
@@ -229,6 +220,15 @@ function FactionEditor({ faction, onSave, onCancel, onDelete }: FactionEditorPro
           <input type="color" className="color-custom" value={draft.primary}
                  onChange={(e) => set({ primary: e.target.value })}/>
         </div>
+      </div>
+
+      <div className="field">
+        <span className="field-label">Glyph</span>
+        <GlyphPicker
+          value={draft.glyph}
+          accentColor={derived.accent}
+          onChange={(g: ThematicGlyphName) => set({ glyph: g })}
+        />
       </div>
 
       <div className="kw-editor-actions">

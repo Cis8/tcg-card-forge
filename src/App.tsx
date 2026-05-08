@@ -55,6 +55,16 @@ const BLANK_CARD = (factions: Faction[], rarities: Rarity[]): Card => ({
 
 const GLOBAL_SETTINGS_DEFAULTS: GlobalSettings = {
   font: 'cinzel',
+  costShape:   'rhombus',
+  attackShape: 'gem',
+  healthShape: 'heart',
+  costColor:   '#5dbce5',
+  attackColor: '#7c8a99',
+  healthColor: '#b21625',
+};
+
+const LEGACY_GLOBAL_SETTINGS_DEFAULTS: GlobalSettings = {
+  font: 'cinzel',
   costShape:   'gem',
   attackShape: 'gem',
   healthShape: 'gem',
@@ -62,6 +72,19 @@ const GLOBAL_SETTINGS_DEFAULTS: GlobalSettings = {
   attackColor: '#e23a3a',
   healthColor: '#cfd6dd',
 };
+
+function normalizeGlobalSettings(settings: Partial<GlobalSettings> | null | undefined): GlobalSettings {
+  if (!settings) return GLOBAL_SETTINGS_DEFAULTS;
+  const isLegacyDefault =
+    settings.font === LEGACY_GLOBAL_SETTINGS_DEFAULTS.font &&
+    settings.costShape === LEGACY_GLOBAL_SETTINGS_DEFAULTS.costShape &&
+    settings.attackShape === LEGACY_GLOBAL_SETTINGS_DEFAULTS.attackShape &&
+    settings.healthShape === LEGACY_GLOBAL_SETTINGS_DEFAULTS.healthShape &&
+    settings.costColor === LEGACY_GLOBAL_SETTINGS_DEFAULTS.costColor &&
+    settings.attackColor === LEGACY_GLOBAL_SETTINGS_DEFAULTS.attackColor &&
+    settings.healthColor === LEGACY_GLOBAL_SETTINGS_DEFAULTS.healthColor;
+  return isLegacyDefault ? GLOBAL_SETTINGS_DEFAULTS : { ...GLOBAL_SETTINGS_DEFAULTS, ...settings };
+}
 
 function load<T>(key: string, fallback: T): T {
   try {
@@ -106,7 +129,7 @@ export default function App(): React.ReactElement {
   const [showCollection, setShowCollection] = useState(false);
   const [toast, setToast]                 = useState<string | null>(null);
   const [globalSettings, setGlobalSettings] = useState<GlobalSettings>(
-    () => load(STORAGE.globalSettings, GLOBAL_SETTINGS_DEFAULTS)
+    () => normalizeGlobalSettings(load<Partial<GlobalSettings>>(STORAGE.globalSettings, {}))
   );
   const setGlobalSetting = (k: keyof GlobalSettings, v: string) =>
     setGlobalSettings(prev => ({ ...prev, [k]: v }));

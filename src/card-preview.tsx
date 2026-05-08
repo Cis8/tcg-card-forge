@@ -154,8 +154,8 @@ const PATTERN_BACKGROUNDS: Record<string, string> = {
 
 export function CardPreview({ card, keywords, factions, rarities,
                               font = 'cinzel',
-                              costShape = 'gem', attackShape = 'gem', healthShape = 'gem',
-                              costColor = '#5dbce5', attackColor = '#e23a3a', healthColor = '#cfd6dd',
+                              costShape = 'rhombus', attackShape = 'gem', healthShape = 'heart',
+                              costColor = '#5dbce5', attackColor = '#7c8a99', healthColor = '#b21625',
                             }: CardPreviewProps): React.ReactElement {
   const frame: FrameVariant =
     card.frame === 'classic' || card.frame === 'inscribed' ? card.frame : 'ornate';

@@ -72,7 +72,6 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
   shield: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
       <path d="M12 2L3 5v6c0 5.5 3.8 10.4 9 11.5 5.2-1.1 9-6 9-11.5V5l-9-3z"/>
-      <path d="M9 12l2 2 4-4" stroke="#fff" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
   eye: () => (
@@ -92,8 +91,12 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
     </svg>
   ),
   wing: () => (
-    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-      <path d="M2 18c0-7 6-12 14-13 1 5-1 9-5 11-3 1.5-6 2-9 2z"/>
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
+         strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3.5 17.5c.7-6.8 4.8-11.3 12.2-13.5 1.7 4.7 1 8.7-2.1 12-2.6 2.6-6 4-10.1 4.2z"/>
+      <path d="M7.1 16.2c2.5-1.4 5.1-4.3 7.2-8.5"/>
+      <path d="M9.8 17.8c1.8-1 3.9-2.8 5.8-5.5"/>
+      <path d="M12.8 18.5c1-.6 2.2-1.6 3.4-3.2"/>
     </svg>
   ),
   star: () => (
@@ -182,16 +185,22 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
     </svg>
   ),
   axe: () => (
-    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="4" y1="22" x2="14" y2="12"/>
-      <path d="M14 12c0 0 2-8 7-9 1 4-1 9-7 9z"/>
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
+         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 20.5L16.8 4.2"/>
+      <path d="M14.2 5c3.1-1.8 5.8-1.9 7.9-.5-.1 4.5-2.7 7.6-7.8 9.2l-3.2-3.1c.6-2.1 1.6-4 3.1-5.6z"
+            fill="currentColor" stroke="none"/>
+      <path d="M7.2 18.8l2.4 2.4"/>
     </svg>
   ),
   bow: () => (
-    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 3C4 9 4 15 5 21"/>
-      <line x1="5" y1="12" x2="19" y2="12"/>
-      <path d="M16 9l3 3-3 3"/>
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
+         strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 3C4.6 5.7 3 8.7 3 12s1.6 6.3 5 9"/>
+      <path d="M8 3L11.8 12 8 21"/>
+      <line x1="11.8" y1="12" x2="20.5" y2="12"/>
+      <path d="M17.4 9.5l3.1 2.5-3.1 2.5"/>
+      <path d="M12.7 10.2L10.8 12l1.9 1.8"/>
     </svg>
   ),
   spear: () => (
@@ -208,7 +217,8 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
   ),
   crown: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-      <path d="M2 19h20v2H2zM2 13l4-8 4 4 2-5 2 5 4-4 4 8H2z"/>
+      <path d="M2 18L5 9l4 4 3-8 3 8 4-4 3 9H2z"/>
+      <rect x="2" y="19" width="20" height="3" rx="1"/>
     </svg>
   ),
   anchor: () => (
@@ -302,6 +312,64 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
     </svg>
   ),
+
+  // eye with diagonal bar = blinded / silenced
+  blind: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      <path d="M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
+      <circle cx="12" cy="12" r="2"/>
+      <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+    </svg>
+  ),
+
+  // predator fang
+  fang: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
+         strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15.2 3.5C18.6 4.6 21 7.7 21 11c0 3-1.4 5.9-3.9 8.1L12 22l-1.1-6.6c-.5-2.9.2-5.9 2-8.2.6-.9 1.4-1.6 2.3-2.2z"/>
+      <path d="M15.1 7.2c-1.7 2.2-2.6 4.8-2.4 7.7"/>
+    </svg>
+  ),
+
+  // DNA double helix
+  dna: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
+         strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 3C7 6.5 17 7.5 17 12c0 4.5-10 5.5-10 9"/>
+      <path d="M17 3c0 3.5-10 4.5-10 9 0 4.5 10 5.5 10 9"/>
+      <path d="M9 5.5h6"/>
+      <path d="M7.6 9.3h8.8"/>
+      <path d="M7.6 14.7h8.8"/>
+      <path d="M9 18.5h6"/>
+    </svg>
+  ),
+
+  // skull with X eyes = kill / death mark
+  'skull-x': () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      {/* skull silhouette without eye holes */}
+      <path d="M12 2.2c-4.7 0-8.4 3.4-8.4 7.7 0 2.5 1.2 4.6 3 6v3.3c0 .8.6 1.4 1.4 1.4h.7v1.6c0 .4.3.7.7.7s.7-.3.7-.7v-1.6h3.8v1.6c0 .4.3.7.7.7s.7-.3.7-.7v-1.6h.7c.8 0 1.4-.6 1.4-1.4v-3.3c1.8-1.4 3-3.5 3-6 0-4.3-3.7-7.7-8.4-7.7z"/>
+      <path d="M10 16.4h4l-.5 1.6h-3l-.5-1.6z" fill="#0008"/>
+      {/* X left eye, center ~(8.7, 12.4) */}
+      <line x1="7" y1="10.8" x2="10.4" y2="14.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
+      <line x1="10.4" y1="10.8" x2="7" y2="14.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
+      {/* X right eye, center ~(15.3, 12.4) */}
+      <line x1="13.6" y1="10.8" x2="17" y2="14.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
+      <line x1="17" y1="10.8" x2="13.6" y2="14.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
+    </svg>
+  ),
+
+  // bleeding — drop with drips below
+  bleed: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      {/* main blood drop */}
+      <path d="M12 3c-2.5 3.5-6 7-6 10a6 6 0 0 0 12 0c0-3-3.5-6.5-6-10z"/>
+      {/* drips */}
+      <line x1="9" y1="19" x2="8" y2="22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="15" y1="19" x2="16" y2="22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  ),
 };
 
 interface CornerFlourishProps {
@@ -320,11 +388,10 @@ export const CornerFlourish = ({ side = 'tl', color = '#caa14b' }: CornerFlouris
   return (
     <svg viewBox="0 0 40 40" width="100%" height="100%"
          overflow="hidden"
-         style={{ transform: xform }}>
-      <g fill="none" stroke={color} strokeWidth="1.1" strokeLinecap="round">
+         style={{ transform: xform, transformOrigin: '50% 50%', transformBox: 'fill-box' }}>
+      <g fill="none" stroke={color} strokeWidth="1" strokeLinecap="round" opacity=".78">
         <path d="M2 8 Q 8 8 8 14 Q 8 20 14 20"/>
         <path d="M5 14 Q 12 14 12 22"/>
-        <circle cx="2.6" cy="8" r="1.4" fill={color} stroke="none"/>
         <path d="M14 2 Q 14 6 18 8"/>
         <path d="M20 2 Q 20 6 24 8"/>
       </g>
