@@ -1,11 +1,22 @@
 // io.ts — pure serialization / deserialization / validation for app state.
 // No React imports, no side effects.
 
-import type { Card, Faction, Rarity, Keyword } from './types';
+import type { Card, Faction, Rarity, Keyword, GlobalSettings, FrameVariant } from './types';
+
+const FRAME_VARIANTS: FrameVariant[] = ['ornate', 'classic', 'inscribed'];
+
+function normalizeCard(raw: Record<string, unknown>): Card {
+  const frame: FrameVariant =
+    FRAME_VARIANTS.includes(raw['frame'] as FrameVariant)
+      ? (raw['frame'] as FrameVariant)
+      : 'ornate';
+  return { ...(raw as unknown as Card), frame };
+}
 
 export interface AppSnapshot {
-  version: 1;
-  exportedAt: string; // ISO date string
+  version: 2;
+  exportedAt: string;
+  globalSettings: GlobalSettings;
   cards: Card[];
   keywords: Keyword[];
   factions: Faction[];
@@ -32,20 +43,18 @@ type ParseResult =
   | { ok: true; data: AppSnapshot }
   | { ok: false; error: string };
 
-/**
- * Parse and validate a JSON value that claims to be an AppSnapshot.
- * Returns a discriminated union — never throws.
- */
-export function parseSnapshot(raw: unknown): ParseResult {
+export function parseSnapshot(
+  raw: unknown,
+  globalSettingsFallback: GlobalSettings,
+): ParseResult {
   if (!isObject(raw)) {
     return { ok: false, error: 'Invalid JSON: expected an object at the root.' };
   }
 
-  const version = raw['version'];
-  if (version !== 1) {
+  if (raw['version'] !== 2) {
     return {
       ok: false,
-      error: `Unsupported snapshot version: ${JSON.stringify(version)}. Expected 1.`,
+      error: `Unsupported snapshot version: ${JSON.stringify(raw['version'])}. Expected 2.`,
     };
   }
 
@@ -54,16 +63,15 @@ export function parseSnapshot(raw: unknown): ParseResult {
     return { ok: false, error: 'Missing or invalid "exportedAt" field.' };
   }
 
-  // Sub-arrays are validated leniently: wrong type → empty array (not a crash).
-  const cards     = isArray(raw['cards'])    ? (raw['cards']    as Card[])    : [];
-  const keywords  = isArray(raw['keywords']) ? (raw['keywords'] as Keyword[]) : [];
-  const factions  = isArray(raw['factions']) ? (raw['factions'] as Faction[]) : [];
-  const rarities  = isArray(raw['rarities']) ? (raw['rarities'] as Rarity[])  : [];
+  const rawGS = isObject(raw['globalSettings']) ? (raw['globalSettings'] as Partial<GlobalSettings>) : {};
+  const globalSettings: GlobalSettings = { ...globalSettingsFallback, ...rawGS };
 
-  return {
-    ok: true,
-    data: { version: 1, exportedAt, cards, keywords, factions, rarities },
-  };
+  const cards = (isArray(raw['cards']) ? raw['cards'] : []).filter(isObject).map(normalizeCard);
+  const keywords = isArray(raw['keywords']) ? (raw['keywords'] as Keyword[]) : [];
+  const factions = isArray(raw['factions']) ? (raw['factions'] as Faction[]) : [];
+  const rarities = isArray(raw['rarities']) ? (raw['rarities'] as Rarity[])  : [];
+
+  return { ok: true, data: { version: 2, exportedAt, globalSettings, cards, keywords, factions, rarities } };
 }
 
 // ── export ─────────────────────────────────────────────────────────────────
@@ -73,10 +81,12 @@ export function exportSnapshot(
   keywords: Keyword[],
   factions: Faction[],
   rarities: Rarity[],
+  globalSettings: GlobalSettings,
 ): AppSnapshot {
   return {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
+    globalSettings,
     cards,
     keywords,
     factions,
@@ -84,7 +94,6 @@ export function exportSnapshot(
   };
 }
 
-/** Triggers a browser file download for the given snapshot. */
 export function downloadSnapshot(snapshot: AppSnapshot): void {
   const date = new Date().toISOString().slice(0, 10);
   const filename = `sigil-sinew-backup-${date}.json`;
@@ -104,14 +113,14 @@ type AppData = {
   keywords: Keyword[];
   factions: Faction[];
   rarities: Rarity[];
+  globalSettings: GlobalSettings;
 };
 
 /**
  * Apply a parsed snapshot onto existing app data.
  *
- * - replace: incoming snapshot fully replaces existing data.
- * - merge: deduplicates by `id`; imported items take precedence over
- *   existing items with the same id, new items are appended.
+ * - replace: incoming snapshot fully replaces all data including globalSettings.
+ * - merge: deduplicates by id (imported wins on conflict); globalSettings is preserved.
  */
 export function applySnapshot(
   existing: AppData,
@@ -120,24 +129,25 @@ export function applySnapshot(
 ): AppData {
   if (mode === 'replace') {
     return {
-      cards:    snapshot.cards,
-      keywords: snapshot.keywords,
-      factions: snapshot.factions,
-      rarities: snapshot.rarities,
+      cards:          snapshot.cards,
+      keywords:       snapshot.keywords,
+      factions:       snapshot.factions,
+      rarities:       snapshot.rarities,
+      globalSettings: snapshot.globalSettings,
     };
   }
 
-  // merge — incoming wins on id collision
   return {
-    cards:    mergeById(existing.cards,    snapshot.cards),
-    keywords: mergeById(existing.keywords, snapshot.keywords),
-    factions: mergeById(existing.factions, snapshot.factions),
-    rarities: mergeById(existing.rarities, snapshot.rarities),
+    cards:          mergeById(existing.cards,    snapshot.cards),
+    keywords:       mergeById(existing.keywords, snapshot.keywords),
+    factions:       mergeById(existing.factions, snapshot.factions),
+    rarities:       mergeById(existing.rarities, snapshot.rarities),
+    globalSettings: existing.globalSettings,
   };
 }
 
 function mergeById<T extends { id: string }>(existing: T[], incoming: T[]): T[] {
   const map = new Map<string, T>(existing.map(item => [item.id, item]));
-  for (const item of incoming) map.set(item.id, item); // incoming wins
+  for (const item of incoming) map.set(item.id, item);
   return [...map.values()];
 }

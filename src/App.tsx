@@ -14,16 +14,17 @@ import { Collection } from './collection';
 
 import { exportSnapshot, downloadSnapshot, parseSnapshot, applySnapshot } from './io';
 import { Glyph } from './glyphs';
-import type { Card, Faction, Rarity, Keyword, TweakState } from './types';
+import type { Card, Faction, Rarity, Keyword, GlobalSettings } from './types';
 
 type MobileTab = 'props' | 'preview' | 'appearance';
 
 const STORAGE = {
-  cards:    'tcg.cards.v2',
-  current:  'tcg.current.v2',
-  keywords: 'tcg.keywords.v2',
-  factions: 'tcg.factions.v2',
-  rarities: 'tcg.rarities.v2',
+  cards:          'tcg.cards.v2',
+  current:        'tcg.current.v2',
+  keywords:       'tcg.keywords.v2',
+  factions:       'tcg.factions.v2',
+  rarities:       'tcg.rarities.v2',
+  globalSettings: 'tcg.globalSettings.v1',
 } as const;
 
 function loadWithFallback<T>(newKey: string, oldKey: string, fallback: T): T {
@@ -43,6 +44,7 @@ const BLANK_CARD = (factions: Faction[], rarities: Rarity[]): Card => ({
   faction: factions[0]?.id ?? 'fire',
   pattern: 'damask',
   rarity: rarities[0]?.id ?? 'common',
+  frame: 'ornate',
   cost: 1,
   attack: 1,
   health: 1,
@@ -51,8 +53,7 @@ const BLANK_CARD = (factions: Faction[], rarities: Rarity[]): Card => ({
   art: null,
 });
 
-const TWEAK_DEFAULTS: TweakState = {
-  frame: 'ornate',
+const GLOBAL_SETTINGS_DEFAULTS: GlobalSettings = {
   font: 'cinzel',
   costShape:   'gem',
   attackShape: 'gem',
@@ -81,7 +82,11 @@ export default function App(): React.ReactElement {
   const [rarities, setRarities] = useState<Rarity[]>(() => load(STORAGE.rarities, DEFAULT_RARITIES));
   const [keywords, setKeywords] = useState<Keyword[]>(() => load(STORAGE.keywords, DEFAULT_KEYWORDS));
 
-  const migrateCard = (c: any): Card => ({ ...c, faction: c.faction ?? (c as any).theme ?? factions[0]?.id });
+  const migrateCard = (c: any): Card => ({
+    ...c,
+    faction: c.faction ?? (c as any).theme ?? factions[0]?.id,
+    frame: ['ornate', 'classic', 'inscribed'].includes(c.frame) ? c.frame : 'ornate',
+  });
 
   const [cards, setCards] = useState<Card[]>(() => {
     const raw = load<any[]>(STORAGE.cards, SEED_CARDS);
@@ -100,9 +105,11 @@ export default function App(): React.ReactElement {
   const [showRarities, setShowRarities]   = useState(false);
   const [showCollection, setShowCollection] = useState(false);
   const [toast, setToast]                 = useState<string | null>(null);
-  const [tweaks, setTweaks] = useState<TweakState>(TWEAK_DEFAULTS);
-  const setTweak = (k: keyof TweakState, v: string) =>
-    setTweaks(prev => ({ ...prev, [k]: v }));
+  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>(
+    () => load(STORAGE.globalSettings, GLOBAL_SETTINGS_DEFAULTS)
+  );
+  const setGlobalSetting = (k: keyof GlobalSettings, v: string) =>
+    setGlobalSettings(prev => ({ ...prev, [k]: v }));
   const cardRef = useRef<HTMLDivElement>(null);
   const [leftW, setLeftW] = useState(320);
   const [rightW, setRightW] = useState(320);
@@ -149,11 +156,12 @@ export default function App(): React.ReactElement {
     dragRef.current = { side, startX: e.clientX, startW: side === 'left' ? leftW : rightW };
   };
 
-  useEffect(() => save(STORAGE.cards,    cards),    [cards]);
-  useEffect(() => save(STORAGE.current,  current),  [current]);
-  useEffect(() => save(STORAGE.keywords, keywords), [keywords]);
-  useEffect(() => save(STORAGE.factions, factions), [factions]);
-  useEffect(() => save(STORAGE.rarities, rarities), [rarities]);
+  useEffect(() => save(STORAGE.cards,          cards),          [cards]);
+  useEffect(() => save(STORAGE.current,        current),        [current]);
+  useEffect(() => save(STORAGE.keywords,       keywords),       [keywords]);
+  useEffect(() => save(STORAGE.factions,       factions),       [factions]);
+  useEffect(() => save(STORAGE.rarities,       rarities),       [rarities]);
+  useEffect(() => save(STORAGE.globalSettings, globalSettings), [globalSettings]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -202,7 +210,7 @@ export default function App(): React.ReactElement {
   };
 
   const onExportJson = () => {
-    const snapshot = exportSnapshot(cards, keywords, factions, rarities);
+    const snapshot = exportSnapshot(cards, keywords, factions, rarities, globalSettings);
     downloadSnapshot(snapshot);
     showToast('Collection exported');
   };
@@ -212,7 +220,7 @@ export default function App(): React.ReactElement {
     reader.onload = (e) => {
       try {
         const raw = JSON.parse(e.target?.result as string);
-        const result = parseSnapshot(raw);
+        const result = parseSnapshot(raw, globalSettings);
         if (!result.ok) { showToast(`Import failed: ${result.error}`); return; }
 
         const snap = result.data;
@@ -222,16 +230,18 @@ export default function App(): React.ReactElement {
           'OK = Replace all · Cancel = Merge (keep existing, imported wins on conflict)';
 
         const replace = window.confirm(summary);
-        // User hit Escape / closed dialog — treat as cancel-the-whole-import
-        // window.confirm returns false for both Cancel and close; we use Cancel as "merge".
-        // To give a real abort path we check the choice separately.
         const mode = replace ? 'replace' : 'merge';
 
-        const next = applySnapshot({ cards, keywords, factions, rarities }, snap, mode);
+        const next = applySnapshot(
+          { cards, keywords, factions, rarities, globalSettings },
+          snap,
+          mode,
+        );
         setCards(next.cards);
         setKeywords(next.keywords);
         setFactions(next.factions);
         setRarities(next.rarities);
+        setGlobalSettings(next.globalSettings);
         showToast(`Imported (${mode}): ${snap.cards.length} cards`);
       } catch {
         showToast('Import failed: invalid JSON file');
@@ -356,14 +366,13 @@ export default function App(): React.ReactElement {
               keywords={keywords}
               factions={factions}
               rarities={rarities}
-              frame={tweaks.frame}
-              font={tweaks.font}
-              costShape={tweaks.costShape}
-              attackShape={tweaks.attackShape}
-              healthShape={tweaks.healthShape}
-              costColor={tweaks.costColor}
-              attackColor={tweaks.attackColor}
-              healthColor={tweaks.healthColor}
+              font={globalSettings.font}
+              costShape={globalSettings.costShape}
+              attackShape={globalSettings.attackShape}
+              healthShape={globalSettings.healthShape}
+              costColor={globalSettings.costColor}
+              attackColor={globalSettings.attackColor}
+              healthColor={globalSettings.healthColor}
             />
           </div>
           <div className="stage-eyebrow">Live preview · hover keywords for rules</div>
@@ -384,8 +393,8 @@ export default function App(): React.ReactElement {
         rarities={rarities}
         onManageFactions={() => setShowFactions(true)}
         onManageRarities={() => setShowRarities(true)}
-        tweaks={tweaks}
-        onTweakChange={setTweak}
+        globalSettings={globalSettings}
+        onGlobalSettingChange={setGlobalSetting}
       />
 
       <KeywordManager

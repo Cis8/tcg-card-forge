@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import type { TweakState } from './types';
+import type { GlobalSettings } from './types';
 
 const __TWEAKS_STYLE = `
   .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
@@ -102,9 +102,9 @@ const __TWEAKS_STYLE = `
     filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
 `;
 
-export function useTweaks(defaults: Partial<TweakState>): [TweakState, (key: keyof TweakState, value: string) => void] {
-  const [values, setValues] = useState<TweakState>(defaults as TweakState);
-  const setTweak = useCallback((key: keyof TweakState, value: string) => {
+export function useTweaks(defaults: Partial<GlobalSettings>): [GlobalSettings, (key: keyof GlobalSettings, value: string) => void] {
+  const [values, setValues] = useState<GlobalSettings>(defaults as GlobalSettings);
+  const setTweak = useCallback((key: keyof GlobalSettings, value: string) => {
     setValues(prev => ({ ...prev, [key]: value }));
     window.dispatchEvent(new CustomEvent('tweakchange', { detail: { [key]: value } }));
   }, []);

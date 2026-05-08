@@ -9,7 +9,6 @@ interface CardPreviewProps {
   keywords: Keyword[];
   factions: Faction[];
   rarities: Rarity[];
-  frame?: FrameVariant;
   font?: FontVariant;
   costShape?:   StatShape;
   attackShape?: StatShape;
@@ -154,10 +153,12 @@ const PATTERN_BACKGROUNDS: Record<string, string> = {
 };
 
 export function CardPreview({ card, keywords, factions, rarities,
-                              frame = 'ornate', font = 'cinzel',
+                              font = 'cinzel',
                               costShape = 'gem', attackShape = 'gem', healthShape = 'gem',
                               costColor = '#5dbce5', attackColor = '#e23a3a', healthColor = '#cfd6dd',
                             }: CardPreviewProps): React.ReactElement {
+  const frame: FrameVariant =
+    card.frame === 'classic' || card.frame === 'inscribed' ? card.frame : 'ornate';
   const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
   const faction = deriveFaction(factionRaw);
   const rarity = rarities.find(r => r.id === card.rarity) ?? rarities[0];

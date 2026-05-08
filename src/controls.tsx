@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { deriveFaction } from './color-utils';
 import { PATTERNS } from './data';
 import { Glyph, RarityShape } from './glyphs';
-import type { Card, Keyword, Faction, Rarity, GlyphName, TweakState } from './types';
+import type { Card, Keyword, Faction, Rarity, GlyphName, GlobalSettings } from './types';
 
 interface FieldProps {
   label: string;
@@ -405,11 +405,11 @@ interface RightPanelProps {
   rarities: Rarity[];
   onManageFactions: () => void;
   onManageRarities: () => void;
-  tweaks: TweakState;
-  onTweakChange: (k: keyof TweakState, v: string) => void;
+  globalSettings: GlobalSettings;
+  onGlobalSettingChange: (k: keyof GlobalSettings, v: string) => void;
 }
 
-export function RightPanel({ card, onChange, factions, rarities, onManageFactions, onManageRarities, tweaks, onTweakChange }: RightPanelProps): React.ReactElement {
+export function RightPanel({ card, onChange, factions, rarities, onManageFactions, onManageRarities, globalSettings, onGlobalSettingChange }: RightPanelProps): React.ReactElement {
   return (
     <aside className="rail rail-right">
       <header className="rail-header">
@@ -417,6 +417,11 @@ export function RightPanel({ card, onChange, factions, rarities, onManageFaction
         <h2 className="rail-title">Appearance</h2>
       </header>
       <div className="rail-body">
+
+        {/* ── Card-specific settings ───────────────────────────────────── */}
+        <div className="rail-card-section-header">
+          <span className="rail-card-section-title">This Card</span>
+        </div>
         <Field label="Faction" hint="Drives palette, parchment tint and glyph">
           <FactionPicker factions={factions} value={card.faction}
                          onChange={(v) => onChange({ faction: v })}
@@ -434,42 +439,50 @@ export function RightPanel({ card, onChange, factions, rarities, onManageFaction
                         onManage={onManageRarities}/>
         </Field>
         <Field label="Border style">
-          <Seg value={tweaks.frame}
+          <Seg value={card.frame}
                options={[
                  { value: 'ornate',    label: 'Ornate' },
                  { value: 'classic',   label: 'Classic' },
                  { value: 'inscribed', label: 'Inscribed' },
                ]}
-               onChange={(v) => onTweakChange('frame', v)}/>
-        </Field>
-        <Field label="Font set">
-          <Seg value={tweaks.font}
-               options={[
-                 { value: 'cinzel',  label: 'Cinzel' },
-                 { value: 'fell',    label: 'IM Fell' },
-                 { value: 'trajan',  label: 'Decorative' },
-               ]}
-               onChange={(v) => onTweakChange('font', v)}/>
-        </Field>
-        <Field label="Cost gem">
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <SmartColorPicker value={tweaks.costColor} onChange={(v) => onTweakChange('costColor', v)} label="Color"/>
-            <ShapeSelect value={tweaks.costShape} onChange={(v) => onTweakChange('costShape', v)}/>
-          </div>
-        </Field>
-        <Field label="Attack gem">
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <SmartColorPicker value={tweaks.attackColor} onChange={(v) => onTweakChange('attackColor', v)} label="Color"/>
-            <ShapeSelect value={tweaks.attackShape} onChange={(v) => onTweakChange('attackShape', v)}/>
-          </div>
-        </Field>
-        <Field label="Health gem">
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <SmartColorPicker value={tweaks.healthColor} onChange={(v) => onTweakChange('healthColor', v)} label="Color"/>
-            <ShapeSelect value={tweaks.healthShape} onChange={(v) => onTweakChange('healthShape', v)}/>
-          </div>
+               onChange={(v) => onChange({ frame: v as Card['frame'] })}/>
         </Field>
       </div>
+
+      {/* ── Global settings ─────────────────────────────────────────── */}
+        <div className="rail-global-section">
+          <div className="rail-global-header">
+            <span className="rail-global-title">Global Settings</span>
+            <span className="rail-global-badge">All cards</span>
+          </div>
+          <Field label="Font set">
+            <Seg value={globalSettings.font}
+                 options={[
+                   { value: 'cinzel',  label: 'Cinzel' },
+                   { value: 'fell',    label: 'IM Fell' },
+                   { value: 'trajan',  label: 'Decorative' },
+                 ]}
+                 onChange={(v) => onGlobalSettingChange('font', v)}/>
+          </Field>
+          <Field label="Cost gem">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <SmartColorPicker value={globalSettings.costColor} onChange={(v) => onGlobalSettingChange('costColor', v)} label="Color"/>
+              <ShapeSelect value={globalSettings.costShape} onChange={(v) => onGlobalSettingChange('costShape', v)}/>
+            </div>
+          </Field>
+          <Field label="Attack gem">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <SmartColorPicker value={globalSettings.attackColor} onChange={(v) => onGlobalSettingChange('attackColor', v)} label="Color"/>
+              <ShapeSelect value={globalSettings.attackShape} onChange={(v) => onGlobalSettingChange('attackShape', v)}/>
+            </div>
+          </Field>
+          <Field label="Health gem">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <SmartColorPicker value={globalSettings.healthColor} onChange={(v) => onGlobalSettingChange('healthColor', v)} label="Color"/>
+              <ShapeSelect value={globalSettings.healthShape} onChange={(v) => onGlobalSettingChange('healthShape', v)}/>
+            </div>
+          </Field>
+        </div>
     </aside>
   );
 }

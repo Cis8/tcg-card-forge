@@ -28,6 +28,7 @@ export interface Card {
   faction: string;  // was: theme
   pattern: PatternName;
   rarity: string;
+  frame: FrameVariant; // card-specific border style
   cost: number;
   // Optional: only present for units; spells omit these.
   attack?: number;
@@ -59,8 +60,8 @@ export interface Keyword {
   description: string;
 }
 
-export interface TweakState {
-  frame: FrameVariant;
+/** Settings that apply globally to every card in the collection. */
+export interface GlobalSettings {
   font: FontVariant;
   costShape: StatShape;    // shape for cost gem
   attackShape: StatShape;  // shape for attack gem

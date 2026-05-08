@@ -220,6 +220,56 @@ button { font-family: inherit; }
   gap: 14px;
 }
 
+/* ── Global settings section ─────────────────────────────────────── */
+.rail-global-section {
+  background: rgba(255, 210, 120, .055);
+  border: 1px solid rgba(255, 210, 120, .14);
+  border-radius: 10px;
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rail-global-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.rail-global-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.rail-global-badge {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: rgba(255, 210, 120, .65);
+  background: rgba(255, 210, 120, .1);
+  border: 1px solid rgba(255, 210, 120, .2);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+.rail-card-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0 2px;
+  border-top: 1px solid var(--line);
+  margin-top: 2px;
+}
+.rail-card-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+
 /* ── Fields ──────────────────────────────────────────────────────── */
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field-label {
