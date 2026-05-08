@@ -323,8 +323,8 @@ export interface CardHoverPreviewProps extends CardPreviewProps {
   children: React.ReactNode;
 }
 
-const PREVIEW_W = 170; // 340 * 0.5
-const PREVIEW_H = 244; // 488 * 0.5
+const PREVIEW_W = 340; // native card width
+const PREVIEW_H = 488; // native card height (stat gems may bleed ~30px below)
 
 export function CardHoverPreview({ children, ...previewProps }: CardHoverPreviewProps): React.ReactElement {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -358,9 +358,7 @@ export function CardHoverPreview({ children, ...previewProps }: CardHoverPreview
       {children}
       {pos && ReactDOM.createPortal(
         <div className="card-preview-hover-portal" style={{ left: pos.x, top: pos.y }}>
-          <div className="card-preview-hover-scaler">
-            <CardPreview {...previewProps} />
-          </div>
+          <CardPreview {...previewProps} />
         </div>,
         document.body
       )}

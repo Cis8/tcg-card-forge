@@ -68,6 +68,10 @@
    DECK EDITOR — full-screen layout
    ============================================================ */
 
+/* Mobile bar and tab switch are hidden on desktop */
+.deck-editor-mobile-bar { display: none; }
+.deck-editor-tab-switch  { display: none; }
+
 .deck-editor {
   display: flex;
   flex-direction: row;

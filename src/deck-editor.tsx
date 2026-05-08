@@ -58,6 +58,7 @@ function DeckCardRow({ card, factions, rarities, keywords, quantity, maxCopies, 
 export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSettings, onChange, onBack }: DeckEditorProps): React.ReactElement {
   const deckSettings: DeckSettings = globalSettings.deckSettings;
   const [search, setSearch] = useState('');
+  const [mobileTab, setMobileTab] = useState<'cards' | 'stats'>('cards');
 
   const filters = useMemo(() => ({ ...createEmptyFilters(), search }), [search]);
   const filteredCards = useMemo(() => applyFilters(cards, filters, keywords), [cards, filters, keywords]);
@@ -74,7 +75,25 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
   const handleDescChange = (description: string) => onChange({ ...deck, description });
 
   return (
-    <div className="deck-editor">
+    <div className="deck-editor" data-mobile-tab={mobileTab}>
+      {/* ── Mobile-only navigation bar (hidden on desktop via CSS) ── */}
+      <div className="deck-editor-mobile-bar">
+        <button type="button" className="btn btn-ghost btn-sm" onClick={onBack}>← Back</button>
+        <span className="deck-editor-title-sm">{deck.name || 'Untitled Deck'}</span>
+        <div className="deck-editor-tab-switch">
+          <button
+            type="button"
+            className={`deck-tab-btn${mobileTab === 'cards' ? ' on' : ''}`}
+            onClick={() => setMobileTab('cards')}
+          >Cards</button>
+          <button
+            type="button"
+            className={`deck-tab-btn${mobileTab === 'stats' ? ' on' : ''}`}
+            onClick={() => setMobileTab('stats')}
+          >Stats</button>
+        </div>
+      </div>
+
       {/* ── Left panel: deck card list + card picker ── */}
       <aside className="deck-editor-left">
         <div className="deck-editor-left-header">

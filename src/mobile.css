@@ -262,4 +262,74 @@
 
   /* ── Toast: lift above tab bar ── */
   .toast { bottom: calc(56px + 16px); }
+
+  /* ── Deck editor: tab-based two-panel layout ── */
+  .deck-editor {
+    flex-direction: column;
+  }
+
+  /* Mobile nav bar replaces the desktop left-panel header */
+  .deck-editor-mobile-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #1d1813;
+    border-bottom: 1px solid rgba(255, 230, 180, 0.12);
+    flex-shrink: 0;
+  }
+  .deck-editor-left-header { display: none; }
+
+  .deck-editor-tab-switch {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .deck-tab-btn {
+    padding: 5px 14px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 230, 180, 0.2);
+    background: transparent;
+    color: rgba(255, 230, 180, 0.6);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.04em;
+    transition: background 0.12s, color 0.12s;
+    min-height: 38px;
+  }
+  .deck-tab-btn.on {
+    background: rgba(241, 176, 55, 0.12);
+    color: var(--gold);
+    border-color: rgba(241, 176, 55, 0.3);
+  }
+
+  /* Both panels hidden; shown by data-mobile-tab */
+  .deck-editor-left,
+  .deck-editor-right {
+    display: none !important;
+    width: 100%;
+  }
+  .deck-editor[data-mobile-tab="cards"] .deck-editor-left {
+    display: flex !important;
+    flex: 1;
+    min-height: 0;
+    border-right: none;
+  }
+  .deck-editor[data-mobile-tab="stats"] .deck-editor-right {
+    display: block !important;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* iOS zoom prevention for deck editor inputs */
+  .deck-search-input { font-size: 16px; }
+  .deck-name-input   { font-size: 16px; }
+  .deck-desc-input   { font-size: 16px; }
+
+  /* Hover preview portal: hide on touch devices (hover doesn't apply) */
+  .card-preview-hover-portal { display: none; }
 }
