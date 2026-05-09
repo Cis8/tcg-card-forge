@@ -415,6 +415,7 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
                 filters={filters}
                 factions={factions}
                 keywords={keywords}
+                rarities={rarities}
                 onChange={setFilters}
                 onClear={() => setFilters(createEmptyFilters())}
               />

@@ -455,7 +455,7 @@ export default function App(): React.ReactElement {
   };
 
   const factionForCard = factions.find((f) => f.id === current.faction) ?? factions[0];
-  const rarityForCard = rarities.find((r) => r.id === current.rarity) ?? rarities[0];
+  const rarityForCard = current.rarity ? rarities.find((r) => r.id === current.rarity) : undefined;
 
   // Deck handlers
   const onDeckChange = async (deck: Deck) => {

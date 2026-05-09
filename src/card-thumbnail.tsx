@@ -13,7 +13,7 @@ export interface CardThumbnailProps {
 export function CardThumbnail({ card, factions, rarities }: CardThumbnailProps): React.ReactElement {
   const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
   const faction = deriveFaction(factionRaw);
-  const rarity = rarities.find(r => r.id === card.rarity) ?? rarities[0];
+  const rarity = card.rarity ? rarities.find(r => r.id === card.rarity) : undefined;
   return (
     <>
       <div className="coll-card-art" style={{
@@ -37,12 +37,22 @@ export function CardThumbnail({ card, factions, rarities }: CardThumbnailProps):
           </div>
         )}
       </div>
-      <div className="coll-card-meta" style={{ borderTop: `2px solid ${rarity.color}` }}>
+      <div className="coll-card-meta" style={{ borderTop: rarity ? `2px solid ${rarity.color}` : '2px solid rgba(255,220,150,0.2)' }}>
         <div className="coll-card-name">{card.name || 'Untitled'}</div>
         <div className="coll-card-sub">
           <span style={{ color: faction.accent }}>{factionRaw.name}</span>
-          <span> · </span>
-          <span style={{ color: rarity.color }}>{rarity.name}</span>
+          {rarity && (
+            <>
+              <span> · </span>
+              <span style={{ color: rarity.color }}>{rarity.name}</span>
+            </>
+          )}
+          {!rarity && (
+            <>
+              <span> · </span>
+              <span style={{ opacity: 0.45 }}>Token</span>
+            </>
+          )}
         </div>
       </div>
     </>

@@ -450,6 +450,17 @@ button { font-family: inherit; }
   font-weight: 600;
   letter-spacing: .04em;
 }
+.rarity-chip-token-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-mute);
+  opacity: .7;
+}
 
 /* Pattern picker */
 .pattern-row {

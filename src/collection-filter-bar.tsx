@@ -1,23 +1,25 @@
 import React from 'react';
-import { Glyph } from './glyphs';
-import type { Faction, Keyword } from './types';
+import { Glyph, RarityShape } from './glyphs';
+import type { Faction, Keyword, Rarity } from './types';
 import {
   type CollectionFilters,
   hasActiveFilters,
   COST_FILTER_VALUES,
   COST_PLUS_THRESHOLD,
+  TOKEN_FILTER_ID,
 } from './collection-filter';
 
 export interface CollectionFilterBarProps {
   filters:  CollectionFilters;
   factions: Faction[];
   keywords: Keyword[];
+  rarities: Rarity[];
   onChange: (f: CollectionFilters) => void;
   onClear:  () => void;
 }
 
 export function CollectionFilterBar({
-  filters, factions, keywords, onChange, onClear,
+  filters, factions, keywords, rarities, onChange, onClear,
 }: CollectionFilterBarProps): React.ReactElement {
   const active = hasActiveFilters(filters);
 
@@ -43,6 +45,14 @@ export function CollectionFilterBar({
       costs: filters.costs.includes(c)
         ? filters.costs.filter(x => x !== c)
         : [...filters.costs, c],
+    });
+
+  const toggleRarity = (id: string) =>
+    onChange({
+      ...filters,
+      rarities: filters.rarities.includes(id)
+        ? filters.rarities.filter(r => r !== id)
+        : [...filters.rarities, id],
     });
 
   return (
@@ -130,6 +140,35 @@ export function CollectionFilterBar({
           </div>
         </div>
       )}
+
+      {/* Row 5: rarities */}
+      <div className="coll-filter-row">
+        <span className="coll-filter-label">Rarity</span>
+        <div className="coll-filter-chips">
+          <button
+            type="button"
+            className={`coll-filter-chip${filters.rarities.includes(TOKEN_FILTER_ID) ? ' on' : ''}`}
+            onClick={() => toggleRarity(TOKEN_FILTER_ID)}
+          >
+            Token
+          </button>
+          {rarities.map(r => {
+            const on = filters.rarities.includes(r.id);
+            return (
+              <button
+                key={r.id}
+                type="button"
+                className={`coll-filter-chip${on ? ' on' : ''}`}
+                style={on ? { borderColor: r.color, color: r.color } : undefined}
+                onClick={() => toggleRarity(r.id)}
+              >
+                <RarityShape shape={r.shape} color={r.color} size={11}/>
+                {r.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

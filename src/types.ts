@@ -46,7 +46,7 @@ export interface Card {
   subtype: string;
   faction: string;  // was: theme
   pattern: PatternName;
-  rarity: string;
+  rarity?: string; // undefined = Token (no rarity symbol rendered)
   frame: FrameVariant; // card-specific border style
   cost: number;
   // Optional: only present for units; spells omit these.

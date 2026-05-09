@@ -211,14 +211,20 @@ function SmartColorPicker({ value, onChange, label }: SmartColorPickerProps): Re
 
 interface RarityPickerProps {
   rarities: Rarity[];
-  value: string;
-  onChange: (v: string) => void;
+  value: string | undefined;
+  onChange: (v: string | undefined) => void;
   onManage: () => void;
 }
 
 const RarityPicker = ({ rarities, value, onChange, onManage }: RarityPickerProps): React.ReactElement => (
   <div>
     <div className="rarity-row">
+      <button type="button"
+              className={`rarity-chip ${value === undefined ? 'on' : ''}`}
+              onClick={() => onChange(undefined)} title="Token (no rarity)">
+        <span className="rarity-chip-token-icon">—</span>
+        <span className="rarity-chip-label">Token</span>
+      </button>
       {rarities.map(r => (
         <button type="button" key={r.id}
                 className={`rarity-chip ${value === r.id ? 'on' : ''}`}

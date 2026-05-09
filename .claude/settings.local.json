@@ -4,7 +4,9 @@
       "Bash(npm run *)",
       "Bash(grep -E \"\\\\.\\(tsx?|json\\)$\")",
       "Bash(npm install *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(cd /d \"C:\\\\Users\\\\emaci\\\\Documents\\\\tcg-card-forge\")",
+      "Bash(findstr /S \"rarity.*common\\\\|DEFAULT_RARITIES\" src\\\\*.tsx src\\\\*.ts)"
     ]
   }
 }

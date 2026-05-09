@@ -125,7 +125,7 @@ export class ExportService {
     if (!isObject(v)) return false;
     if (!isString(v['id']) || !isString(v['name'])) return false;
     if (!isString(v['type']) || !isString(v['faction'])) return false;
-    if (!isString(v['rarity'])) return false;
+    if (v['rarity'] !== undefined && !isString(v['rarity'])) return false;
     if (isArray(v['entries'])) return false; // that's a deck
     return true;
   }

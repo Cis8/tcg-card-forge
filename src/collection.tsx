@@ -119,6 +119,7 @@ export function Collection({
             filters={filters}
             factions={factions}
             keywords={keywords}
+            rarities={rarities}
             onChange={setFilters}
             onClear={clearFilters}
           />

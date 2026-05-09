@@ -7,15 +7,19 @@ import type { Card, Keyword } from './types';
 export const COST_FILTER_VALUES = [0,1,2,3,4,5,6,7,8,9,10] as const;
 export const COST_PLUS_THRESHOLD = 10;
 
+/** Sentinel used in `rarities` filter array to match Token cards (rarity === undefined). */
+export const TOKEN_FILTER_ID = '__token__';
+
 export interface CollectionFilters {
   factions: string[];   // faction ids — OR semantics (card must be IN the set)
   costs:    number[];   // 0-9 = exact match; 10 = card.cost >= 10 — OR semantics
   keywords: string[];   // keyword ids — AND semantics (card must have ALL)
+  rarities: string[];   // rarity ids — OR semantics; TOKEN_FILTER_ID matches Token cards
   search:   string;     // case-insensitive substring: name, subtype, description
 }
 
 export function createEmptyFilters(): CollectionFilters {
-  return { factions: [], costs: [], keywords: [], search: '' };
+  return { factions: [], costs: [], keywords: [], rarities: [], search: '' };
 }
 
 export function hasActiveFilters(f: CollectionFilters): boolean {
@@ -23,6 +27,7 @@ export function hasActiveFilters(f: CollectionFilters): boolean {
     f.factions.length > 0 ||
     f.costs.length > 0 ||
     f.keywords.length > 0 ||
+    f.rarities.length > 0 ||
     f.search.trim() !== ''
   );
 }
@@ -48,7 +53,7 @@ export function applyFilters(
   filters: CollectionFilters,
   keywords: Keyword[],
 ): Card[] {
-  const { factions, costs, keywords: kwIds, search } = filters;
+  const { factions, costs, keywords: kwIds, rarities, search } = filters;
   const q = search.trim().toLowerCase();
 
   return cards.filter(card => {
@@ -59,6 +64,14 @@ export function applyFilters(
         c === COST_PLUS_THRESHOLD ? card.cost >= COST_PLUS_THRESHOLD : card.cost === c
       );
       if (!matchesCost) return false;
+    }
+
+    if (rarities.length > 0) {
+      const isToken = !card.rarity;
+      const matchesRarity =
+        (isToken && rarities.includes(TOKEN_FILTER_ID)) ||
+        (!isToken && rarities.includes(card.rarity!));
+      if (!matchesRarity) return false;
     }
 
     if (kwIds.length > 0) {

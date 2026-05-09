@@ -174,9 +174,9 @@ export function CardPreview({ card, keywords, factions, rarities,
     card.frame === 'classic' || card.frame === 'inscribed' ? card.frame : 'ornate';
   const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
   const faction = deriveFaction(factionRaw);
-  const rarity = rarities.find(r => r.id === card.rarity) ?? rarities[0];
-  const rarityDeep = deriveRarityDeep(rarity.color);
-  const rarityGlow = deriveRarityGlow(rarity.color);
+  const rarity = card.rarity ? rarities.find(r => r.id === card.rarity) : undefined;
+  const rarityDeep = rarity ? deriveRarityDeep(rarity.color) : 'transparent';
+  const rarityGlow = rarity ? deriveRarityGlow(rarity.color) : 'transparent';
   const isUnit = card.type === 'unit';
 
   const kwByName = useMemo(() => {
@@ -194,7 +194,7 @@ export function CardPreview({ card, keywords, factions, rarities,
   return (
     <div className={`card-shell card-frame-${frame} card-font-${font}`}
          style={{
-           '--rarity-color': rarity.color, '--rarity-deep': rarityDeep,
+           '--rarity-color': rarity?.color ?? 'transparent', '--rarity-deep': rarityDeep,
            '--rarity-glow': rarityGlow,
            '--theme-accent': faction.accent, '--theme-deep': faction.deep,
            '--theme-bg-0': faction.bg[0], '--theme-bg-1': faction.bg[1],
@@ -211,16 +211,18 @@ export function CardPreview({ card, keywords, factions, rarities,
 
         {frame === 'ornate' && (
           <>
-            <div className="corner tl"><CornerFlourish side="tl" color={rarity.color}/></div>
-            <div className="corner tr"><CornerFlourish side="tr" color={rarity.color}/></div>
-            <div className="corner bl"><CornerFlourish side="bl" color={rarity.color}/></div>
-            <div className="corner br"><CornerFlourish side="br" color={rarity.color}/></div>
+            <div className="corner tl"><CornerFlourish side="tl" color={rarity?.color}/></div>
+            <div className="corner tr"><CornerFlourish side="tr" color={rarity?.color}/></div>
+            <div className="corner bl"><CornerFlourish side="bl" color={rarity?.color}/></div>
+            <div className="corner br"><CornerFlourish side="br" color={rarity?.color}/></div>
           </>
         )}
 
-        <div className="rarity-gem" title={rarity.name}>
-          <RarityShape shape={rarity.shape} color={rarity.color} size={22}/>
-        </div>
+        {rarity && (
+          <div className="rarity-gem" title={rarity.name}>
+            <RarityShape shape={rarity.shape} color={rarity.color} size={22}/>
+          </div>
+        )}
 
         <div className="name-plate">
           <div className="name-plate-inner" ref={namePlateRef}>
