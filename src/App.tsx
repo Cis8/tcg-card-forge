@@ -1,10 +1,10 @@
 // App.tsx — main shell. Owns: current card, saved cards, keyword library,
-// faction list, rarity list, decks. All persisted to localStorage.
+// faction list, rarity list, decks. All persisted via IndexedDB services.
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useReducer } from 'react';
 import * as htmlToImage from 'html-to-image';
 
-import { DEFAULT_FACTIONS, DEFAULT_RARITIES, DEFAULT_KEYWORDS, SEED_CARDS } from './data';
+import { DEFAULT_FACTIONS, DEFAULT_RARITIES, DEFAULT_KEYWORDS } from './data';
 import { CardPreview } from './card-preview';
 import { LeftPanel, RightPanel } from './controls';
 import { KeywordManager } from './keyword-manager';
@@ -15,13 +15,14 @@ import { DeckManager } from './deck-manager';
 import { DeckEditor } from './deck-editor';
 import { confirmDestructiveAction } from './confirm';
 
-import { exportSnapshot, downloadSnapshot, applySnapshot, detectImport, exportCard, exportDeck, mergeById } from './io';
-import { compressSnapshotImages } from './image-utils';
 import { Glyph } from './glyphs';
-import type { Card, Deck, DeckSettings, Faction, Rarity, Keyword, GlobalSettings } from './types';
+import type { Card, CardWithArt, Deck, DeckSettings, Faction, Rarity, Keyword, GlobalSettings } from './types';
 import {
   generateId, DECK_SETTINGS_DEFAULTS, normalizeDeckSettings, deleteCardFromDecks, affectedDeckNames, normalizeDeck,
 } from './deck-utils';
+import { useServices } from './context/ServicesContext';
+import { appReducer } from './context/AppStateContext';
+import type { AppState } from './context/AppStateContext';
 
 type AppView = { kind: 'card-editor' } | { kind: 'deck-editor'; deckId: string };
 type MobileTab = 'props' | 'preview' | 'appearance';
@@ -35,26 +36,18 @@ function deckIdFromHash(): string | null {
   try { return decodeURIComponent(m[1]); } catch { return null; }
 }
 
-const STORAGE = {
-  cards:          'tcg.cards.v2',
-  current:        'tcg.current.v2',
-  keywords:       'tcg.keywords.v2',
-  factions:       'tcg.factions.v2',
-  rarities:       'tcg.rarities.v2',
-  globalSettings: 'tcg.globalSettings.v1',
-  decks:          'tcg.decks.v1',
-} as const;
+const GLOBAL_SETTINGS_DEFAULTS: GlobalSettings = {
+  font: 'cinzel',
+  costShape:   'rhombus',
+  attackShape: 'gem',
+  healthShape: 'heart',
+  costColor:   '#5dbce5',
+  attackColor: '#7c8a99',
+  healthColor: '#b21625',
+  deckSettings: DECK_SETTINGS_DEFAULTS,
+};
 
-function loadWithFallback<T>(newKey: string, oldKey: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(newKey);
-    if (raw) return JSON.parse(raw) as T;
-    const oldRaw = localStorage.getItem(oldKey);
-    return oldRaw ? (JSON.parse(oldRaw) as T) : fallback;
-  } catch { return fallback; }
-}
-
-const BLANK_CARD = (factions: Faction[], rarities: Rarity[]): Card => ({
+const BLANK_CARD = (factions: Faction[], rarities: Rarity[]): CardWithArt => ({
   id: generateId('c'),
   type: 'unit',
   name: '',
@@ -68,106 +61,31 @@ const BLANK_CARD = (factions: Faction[], rarities: Rarity[]): Card => ({
   health: 1,
   description: '',
   flavor: '',
-  art: null,
+  artId: null,
+  artHandle: null,
 });
 
-const GLOBAL_SETTINGS_DEFAULTS: GlobalSettings = {
-  font: 'cinzel',
-  costShape:   'rhombus',
-  attackShape: 'gem',
-  healthShape: 'heart',
-  costColor:   '#5dbce5',
-  attackColor: '#7c8a99',
-  healthColor: '#b21625',
-  deckSettings: DECK_SETTINGS_DEFAULTS,
-};
-
-// Legacy defaults without deckSettings — used only for migration detection
-const LEGACY_GLOBAL_SETTINGS_DEFAULTS: Partial<GlobalSettings> = {
-  font: 'cinzel',
-  costShape:   'gem',
-  attackShape: 'gem',
-  healthShape: 'gem',
-  costColor:   '#5dbce5',
-  attackColor: '#e23a3a',
-  healthColor: '#cfd6dd',
-};
-
-function normalizeGlobalSettings(settings: Partial<GlobalSettings> | null | undefined): GlobalSettings {
-  if (!settings) return GLOBAL_SETTINGS_DEFAULTS;
-  const isLegacyDefault =
-    settings.font === LEGACY_GLOBAL_SETTINGS_DEFAULTS.font &&
-    settings.costShape === LEGACY_GLOBAL_SETTINGS_DEFAULTS.costShape &&
-    settings.attackShape === LEGACY_GLOBAL_SETTINGS_DEFAULTS.attackShape &&
-    settings.healthShape === LEGACY_GLOBAL_SETTINGS_DEFAULTS.healthShape &&
-    settings.costColor === LEGACY_GLOBAL_SETTINGS_DEFAULTS.costColor &&
-    settings.attackColor === LEGACY_GLOBAL_SETTINGS_DEFAULTS.attackColor &&
-    settings.healthColor === LEGACY_GLOBAL_SETTINGS_DEFAULTS.healthColor;
-  const base = isLegacyDefault ? GLOBAL_SETTINGS_DEFAULTS : { ...GLOBAL_SETTINGS_DEFAULTS, ...settings };
-  // Always ensure deckSettings is fully populated (handles missing from localStorage)
-  return {
-    ...base,
-    deckSettings: normalizeDeckSettings({ ...DECK_SETTINGS_DEFAULTS, ...(settings.deckSettings ?? {}) }),
-  };
-}
-
-function load<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-function save<T>(key: string, value: T): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch { /* quota exceeded or private mode */ }
-}
-
 export default function App(): React.ReactElement {
-  const [factions, setFactions] = useState<Faction[]>(() => loadWithFallback(STORAGE.factions, 'tcg.themes.v2', DEFAULT_FACTIONS));
-  const [rarities, setRarities] = useState<Rarity[]>(() => load(STORAGE.rarities, DEFAULT_RARITIES));
-  const [keywords, setKeywords] = useState<Keyword[]>(() => load(STORAGE.keywords, DEFAULT_KEYWORDS));
+  const { cardService, settingsService, exportService, imageService, cardRepo, settingsRepo } = useServices();
 
-  const migrateCard = (c: any): Card => ({
-    ...c,
-    faction: c.faction ?? (c as any).theme ?? factions[0]?.id,
-    frame: ['ornate', 'classic', 'inscribed'].includes(c.frame) ? c.frame : 'ornate',
-  });
+  const [appState, dispatch] = useReducer(appReducer, null as unknown as AppState);
+  const [loading, setLoading] = useState(true);
 
-  const [cards, setCards] = useState<Card[]>(() => {
-    const raw = load<any[]>(STORAGE.cards, SEED_CARDS);
-    return raw.map(migrateCard);
-  });
-  const [current, setCurrent] = useState<Card>(() => {
-    const stored = load<any | null>(STORAGE.current, null);
-    const base = stored ? migrateCard(stored) : migrateCard({ ...SEED_CARDS[0] });
-    const validFaction = factions.find(f => f.id === base.faction) ? base.faction : factions[0]?.id ?? base.faction;
-    const validRarity  = rarities.find(r => r.id === base.rarity)  ? base.rarity  : rarities[0]?.id  ?? base.rarity;
-    return { ...base, faction: validFaction, rarity: validRarity };
-  });
+  const cards = appState?.cards ?? [];
+  const current = appState?.current ?? BLANK_CARD([], []);
+  const decks = appState?.decks ?? [];
+  const factions = appState?.factions ?? [];
+  const rarities = appState?.rarities ?? [];
+  const keywords = appState?.keywords ?? [];
+  const globalSettings = appState?.globalSettings ?? GLOBAL_SETTINGS_DEFAULTS;
 
-  const [showKeywords, setShowKeywords]   = useState(false);
-  const [showFactions, setShowFactions]   = useState(false);
-  const [showRarities, setShowRarities]   = useState(false);
+  const [showKeywords, setShowKeywords]     = useState(false);
+  const [showFactions, setShowFactions]     = useState(false);
+  const [showRarities, setShowRarities]     = useState(false);
   const [showCollection, setShowCollection] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [toast, setToast]                 = useState<string | null>(null);
-  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>(
-    () => normalizeGlobalSettings(load<Partial<GlobalSettings>>(STORAGE.globalSettings, {}))
-  );
-  const setGlobalSetting = (k: keyof GlobalSettings, v: string) =>
-    setGlobalSettings(prev => ({ ...prev, [k]: v }));
-  const setDeckSetting = (k: keyof DeckSettings, v: number) => {
-    const nextDeckSettings = normalizeDeckSettings({ ...globalSettings.deckSettings, [k]: v });
-    setGlobalSettings(prev => ({ ...prev, deckSettings: nextDeckSettings }));
-    // Hard-enforce maxCopiesPerCard immediately so no deck can hold illegal copies
-    if (k === 'maxCopiesPerCard' && nextDeckSettings.maxCopiesPerCard !== globalSettings.deckSettings.maxCopiesPerCard) {
-      const validCardIds = new Set(cards.map(c => c.id));
-      setDecks(ds => ds.map(d => normalizeDeck(d, validCardIds, nextDeckSettings)));
-    }
-  };
+  const [toast, setToast]                   = useState<string | null>(null);
+
   const cardRef = useRef<HTMLDivElement>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
   const [cardZoom, setCardZoom] = useState(100);
@@ -182,22 +100,59 @@ export default function App(): React.ReactElement {
   const [viewportW, setViewportW] = useState(() => window.innerWidth);
 
   // Deck / view state
-  const [decks, setDecks] = useState<Deck[]>(() => load<Deck[]>(STORAGE.decks, []));
   const decksRef = useRef(decks);
   useEffect(() => { decksRef.current = decks; }, [decks]);
 
-  const [appView, setAppView] = useState<AppView>(() => {
-    const deckId = deckIdFromHash();
-    if (deckId) {
-      try {
-        const raw = localStorage.getItem(STORAGE.decks);
-        const saved = raw ? (JSON.parse(raw) as Deck[]) : [];
-        if (saved.find(d => d.id === deckId)) return { kind: 'deck-editor', deckId };
-      } catch { /* ignore */ }
-    }
-    return { kind: 'card-editor' };
-  });
+  const [appView, setAppView] = useState<AppView>({ kind: 'card-editor' });
   const [showDeckManager, setShowDeckManager] = useState(false);
+
+  // Async initialization on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [loadedCards, settings] = await Promise.all([
+        cardService.loadAll(),
+        settingsService.load(),
+      ]);
+      if (cancelled) return;
+      const { factions: loadedFactions, rarities: loadedRarities, keywords: loadedKeywords, globalSettings: gs, decks: loadedDecks, currentCardId } = settings;
+      const normalizedGS = settingsService.normalizeGlobalSettings(gs, GLOBAL_SETTINGS_DEFAULTS);
+      // Find current card from loaded cards, or create blank
+      const currentCard = currentCardId
+        ? (loadedCards.find(c => c.id === currentCardId) ?? BLANK_CARD(loadedFactions, loadedRarities))
+        : (loadedCards[0] ?? BLANK_CARD(loadedFactions, loadedRarities));
+      // Normalize decks
+      const validCardIds = new Set(loadedCards.map(c => c.id));
+      const normalizedDecks = loadedDecks.map(d => normalizeDeck(d, validCardIds, normalizedGS.deckSettings));
+
+      const resolvedFactions = loadedFactions.length > 0 ? loadedFactions : DEFAULT_FACTIONS;
+      const resolvedRarities = loadedRarities.length > 0 ? loadedRarities : DEFAULT_RARITIES;
+      const resolvedKeywords = loadedKeywords.length > 0 ? loadedKeywords : DEFAULT_KEYWORDS;
+
+      dispatch({
+        type: 'LOADED',
+        payload: {
+          cards: loadedCards,
+          current: currentCard,
+          decks: normalizedDecks,
+          factions: resolvedFactions,
+          rarities: resolvedRarities,
+          keywords: resolvedKeywords,
+          globalSettings: normalizedGS,
+        },
+      });
+
+      // Sync appView from URL hash after decks are loaded
+      const deckId = deckIdFromHash();
+      if (deckId && normalizedDecks.find(d => d.id === deckId)) {
+        setAppView({ kind: 'deck-editor', deckId });
+      }
+
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const closeOverflow = useCallback(() => setShowOverflow(false), []);
 
@@ -294,25 +249,6 @@ export default function App(): React.ReactElement {
     dragRef.current = { side, startX: e.clientX, startW: side === 'left' ? leftW : rightW };
   };
 
-  useEffect(() => save(STORAGE.cards,          cards),          [cards]);
-  useEffect(() => save(STORAGE.current,        current),        [current]);
-  useEffect(() => save(STORAGE.keywords,       keywords),       [keywords]);
-  useEffect(() => save(STORAGE.factions,       factions),       [factions]);
-  useEffect(() => save(STORAGE.rarities,       rarities),       [rarities]);
-  useEffect(() => save(STORAGE.globalSettings, globalSettings), [globalSettings]);
-  useEffect(() => save(STORAGE.decks,          decks),          [decks]);
-
-  // Normalize decks once on mount against the current card collection and settings.
-  // Handles data from old localStorage (missing entries, stale cardIds, excess copies).
-  const mountNormalizedRef = useRef(false);
-  useEffect(() => {
-    if (mountNormalizedRef.current) return;
-    mountNormalizedRef.current = true;
-    const validCardIds = new Set(cards.map(c => c.id));
-    setDecks(ds => ds.map(d => normalizeDeck(d, validCardIds, globalSettings.deckSettings)));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // If the active deck-editor deck is deleted, fall back to card-editor
   useEffect(() => {
     if (appView.kind === 'deck-editor' && !decks.find(d => d.id === appView.deckId)) {
@@ -326,114 +262,155 @@ export default function App(): React.ReactElement {
     (showToast as { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => setToast(null), 2000);
   };
 
-  const onCardChange = (patch: Partial<Card>) =>
-    setCurrent((c) => ({ ...c, ...patch }));
+  const onCardChange = (patch: Partial<CardWithArt>) =>
+    dispatch({ type: 'SET_CURRENT', payload: { ...current, ...patch } });
 
-  const onSave = () => {
-    setCards((all) => {
-      const idx = all.findIndex((c) => c.id === current.id);
-      if (idx >= 0) {
-        const next = [...all];
-        next[idx] = current;
-        return next;
-      }
-      return [...all, current];
-    });
+  const onSave = async () => {
+    const prevArtId = appState?.cards.find(c => c.id === current.id)?.artId;
+    await cardService.save(current, prevArtId !== current.artId ? prevArtId ?? undefined : undefined);
+    await settingsService.saveCurrentCardId(current.id);
+    dispatch({ type: 'CARD_SAVED', payload: current });
     showToast('Card saved to collection');
   };
 
   const onNewCard = () => {
-    setCurrent(BLANK_CARD(factions, rarities));
+    const blank = BLANK_CARD(factions, rarities);
+    dispatch({ type: 'SET_CURRENT', payload: blank });
     setShowCollection(false);
     showToast('New card');
   };
 
   const onPickFromCollection = (id: string) => {
-    const c = cards.find((x) => x.id === id);
-    if (c) { setCurrent({ ...c }); setShowCollection(false); setMobileTab('preview'); }
+    const c = appState?.cardMap.get(id);
+    if (c) {
+      dispatch({ type: 'SET_CURRENT', payload: c });
+      setShowCollection(false);
+      setMobileTab('preview');
+      settingsService.saveCurrentCardId(id);
+    }
   };
 
-  const onDeleteFromCollection = (id: string) => {
+  const onDeleteFromCollection = async (id: string) => {
     const names = affectedDeckNames(decks, id);
     const list = names.slice(0, 3).join(', ') + (names.length > 3 ? ` +${names.length - 3} more` : '');
     const message = names.length > 0
       ? `Delete this card? It is used in ${names.length} deck(s): ${list}. Removing it will also remove it from those decks.`
       : 'Delete this card?';
     if (!confirmDestructiveAction(message)) return;
-    setCards(all => all.filter(c => c.id !== id));
-    setDecks(ds => deleteCardFromDecks(ds, id));
+    await cardService.delete(id);
+    const newDecks = deleteCardFromDecks(decks, id);
+    await settingsService.saveDecks(newDecks);
+    dispatch({ type: 'CARD_DELETED', payload: { id } });
+    dispatch({ type: 'DECKS_CHANGED', payload: newDecks });
   };
 
-  const onFactionDeleted = (deletedId: string, fallbackId: string) => {
-    setCards((all) => all.map((c) => c.faction === deletedId ? { ...c, faction: fallbackId } : c));
-    setCurrent((c) => c.faction === deletedId ? { ...c, faction: fallbackId } : c);
+  const onFactionDeleted = async (deletedId: string, fallbackId: string) => {
+    await cardService.bulkPatchFaction(deletedId, fallbackId);
+    const updatedCards = await cardService.loadAll();
+    const updatedCurrent = current.faction === deletedId
+      ? { ...current, faction: fallbackId }
+      : current;
+    dispatch({ type: 'LOADED', payload: { ...appState!, cards: updatedCards, current: updatedCurrent } });
   };
 
-  const onRarityDeleted = (deletedId: string, fallbackId: string) => {
-    setCards((all) => all.map((c) => c.rarity === deletedId ? { ...c, rarity: fallbackId } : c));
-    setCurrent((c) => c.rarity === deletedId ? { ...c, rarity: fallbackId } : c);
+  const onRarityDeleted = async (deletedId: string, fallbackId: string) => {
+    await cardService.bulkPatchRarity(deletedId, fallbackId);
+    const updatedCards = await cardService.loadAll();
+    const updatedCurrent = current.rarity === deletedId
+      ? { ...current, rarity: fallbackId }
+      : current;
+    dispatch({ type: 'LOADED', payload: { ...appState!, cards: updatedCards, current: updatedCurrent } });
   };
 
   const onExportJson = () => setShowExportModal(true);
 
+  const onFactionsChange = async (f: Faction[]) => {
+    await settingsService.saveFactions(f);
+    dispatch({ type: 'FACTIONS_CHANGED', payload: f });
+  };
+
+  const onRaritiesChange = async (r: Rarity[]) => {
+    await settingsService.saveRarities(r);
+    dispatch({ type: 'RARITIES_CHANGED', payload: r });
+  };
+
+  const onKeywordsChange = async (kw: Keyword[]) => {
+    await settingsService.saveKeywords(kw);
+    dispatch({ type: 'KEYWORDS_CHANGED', payload: kw });
+  };
+
+  const onGlobalSettingsChange = async (gs: GlobalSettings) => {
+    await settingsService.saveGlobalSettings(gs);
+    dispatch({ type: 'GLOBAL_SETTINGS_CHANGED', payload: gs });
+  };
+
+  const setGlobalSetting = (k: keyof GlobalSettings, v: string) =>
+    onGlobalSettingsChange({ ...globalSettings, [k]: v });
+
+  const setDeckSetting = (k: keyof DeckSettings, v: number) => {
+    const nextDeckSettings = normalizeDeckSettings({ ...globalSettings.deckSettings, [k]: v });
+    const nextGS = { ...globalSettings, deckSettings: nextDeckSettings };
+    onGlobalSettingsChange(nextGS);
+    if (k === 'maxCopiesPerCard') {
+      const validCardIds = new Set(cards.map(c => c.id));
+      const normalizedDecks = decks.map(d => normalizeDeck(d, validCardIds, nextDeckSettings));
+      onDecksChange(normalizedDecks);
+    }
+  };
+
   const doExport = async (compact: boolean) => {
     setShowExportModal(false);
-    let exportCards = cards;
-    if (compact) {
-      showToast('Compressing images…');
-      exportCards = await compressSnapshotImages(cards, 800, 0.7);
-    }
-    const snapshot = exportSnapshot(exportCards, keywords, factions, rarities, globalSettings, decks);
-    downloadSnapshot(snapshot);
+    showToast(compact ? 'Compressing images…' : 'Building snapshot…');
+    const snapshot = await exportService.buildSnapshot(
+      cards, keywords, factions, rarities, globalSettings, decks,
+      compact ? { compact: true } : undefined,
+    );
+    exportService.downloadSnapshot(snapshot);
     showToast('Collection exported');
   };
 
   const onImportJson = (file: File) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const raw = JSON.parse(e.target?.result as string);
-        const payload = detectImport(raw, globalSettings);
-
-        if (payload.kind === 'unknown') {
-          showToast(`Import failed: ${payload.error}`);
-          return;
-        }
+        const payload = exportService.detectImport(raw, globalSettings);
+        if (payload.kind === 'unknown') { showToast(`Import failed: ${payload.error}`); return; }
 
         if (payload.kind === 'snapshot') {
           const snap = payload.data;
-          const summary =
-            `${snap.cards.length} cards, ${snap.keywords.length} keywords, ` +
-            `${snap.factions.length} factions, ${snap.rarities.length} rarities, ` +
-            `${snap.decks.length} decks.\n\n` +
-            'OK = Replace all · Cancel = Merge (keep existing, imported wins on conflict)';
+          const summary = `${snap.cards.length} cards, ${snap.keywords.length} keywords, ` +
+            `${snap.factions.length} factions, ${snap.rarities.length} rarities, ${snap.decks.length} decks.\n\n` +
+            'OK = Replace all · Cancel = Merge';
           const replace = window.confirm(summary);
-          const mode = replace ? 'replace' : 'merge';
-          const next = applySnapshot(
-            { cards, keywords, factions, rarities, globalSettings, decks },
+          const result = await exportService.applySnapshot(
+            { cards: cardRepo, settings: settingsRepo },
+            imageService,
             snap,
-            mode,
+            replace ? 'replace' : 'merge',
           );
-          const validCardIds = new Set(next.cards.map(c => c.id));
-          const normalizedDecks = next.decks.map(d =>
-            normalizeDeck(d, validCardIds, next.globalSettings.deckSettings)
-          );
-          setCards(next.cards);
-          setKeywords(next.keywords);
-          setFactions(next.factions);
-          setRarities(next.rarities);
-          setGlobalSettings(next.globalSettings);
-          setDecks(normalizedDecks);
-          showToast(`Imported (${mode}): ${snap.cards.length} cards, ${snap.decks.length} decks`);
+          const validCardIds = new Set(result.cards.map(c => c.id));
+          const normalizedDecks = result.decks.map(d => normalizeDeck(d, validCardIds, result.globalSettings.deckSettings));
+          dispatch({ type: 'LOADED', payload: { ...result, decks: normalizedDecks, current: result.cards[0] ?? current } });
+          showToast(`Imported (${replace ? 'replace' : 'merge'}): ${result.cards.length} cards, ${normalizedDecks.length} decks`);
           return;
         }
 
         if (payload.kind === 'card') {
-          const incoming = payload.data;
-          const names = formatImportNames(incoming.map(c => c.name || 'Untitled'));
-          if (!window.confirm(`Import ${incoming.length} card(s)?\n\n${names}\n\nOK = Add to collection (imported wins on conflict)`)) return;
-          setCards(prev => mergeById(prev, incoming));
-          showToast(`Imported ${incoming.length} card(s)`);
+          const cardExports = payload.data;
+          if (!window.confirm(`Import ${cardExports.length} card(s)?\n\nOK = Add to collection`)) return;
+          const newCards: CardWithArt[] = [];
+          for (const ce of cardExports) {
+            const artId = ce.art ? (await imageService.storeFromDataUrl(ce.art)).id : null;
+            const artHandle = artId ? await imageService.resolve(artId) : null;
+            const card: CardWithArt = { ...ce as unknown as Card, artId, artHandle };
+            await cardService.save(card);
+            newCards.push(card);
+          }
+          // Merge with existing cards
+          const existing = cards.filter(c => !newCards.some(nc => nc.id === c.id));
+          dispatch({ type: 'LOADED', payload: { ...appState!, cards: [...existing, ...newCards] } });
+          showToast(`Imported ${newCards.length} card(s)`);
           return;
         }
 
@@ -441,33 +418,21 @@ export default function App(): React.ReactElement {
           const incoming = payload.data;
           const validCardIds = new Set(cards.map(c => c.id));
           const missingCount = incoming.reduce((n, d) =>
-            n + d.entries.filter(e => !validCardIds.has(e.cardId)).length, 0
-          );
-          const names = formatImportNames(incoming.map(d => d.name || 'Untitled'));
-          let msg = `Import ${incoming.length} deck(s)?\n\n${names}`;
-          if (missingCount > 0) {
-            msg += `\n\n⚠ ${missingCount} card reference(s) not in your collection will be removed from the imported deck(s).`;
-          }
-          msg += '\n\nOK = Add/merge decks · Cancel = Abort';
-          if (!window.confirm(msg)) return;
-          const normalizedDecks = incoming.map(d =>
-            normalizeDeck(d, validCardIds, globalSettings.deckSettings)
-          );
-          setDecks(prev => mergeById(prev, normalizedDecks));
+            n + d.entries.filter(e => !validCardIds.has(e.cardId)).length, 0);
+          let msg = `Import ${incoming.length} deck(s)?`;
+          if (missingCount > 0) msg += `\n\n⚠ ${missingCount} card reference(s) not in collection will be removed.`;
+          if (!window.confirm(msg + '\n\nOK = Add/merge')) return;
+          const normalized = incoming.map(d => normalizeDeck(d, validCardIds, globalSettings.deckSettings));
+          const merged = [...decks.filter(d => !normalized.some(n => n.id === d.id)), ...normalized];
+          await settingsService.saveDecks(merged);
+          dispatch({ type: 'DECKS_CHANGED', payload: merged });
           showToast(`Imported ${incoming.length} deck(s)`);
         }
-      } catch {
-        showToast('Import failed: invalid JSON file');
-      }
+      } catch { showToast('Import failed: invalid JSON file'); }
     };
     reader.onerror = () => showToast('Import failed: could not read file');
     reader.readAsText(file);
   };
-
-  function formatImportNames(names: string[], max = 5): string {
-    const visible = names.slice(0, max).map(n => `• ${n}`).join('\n');
-    return names.length > max ? `${visible}\n• … and ${names.length - max} more` : visible;
-  }
 
   const onExportPng = async () => {
     if (!cardRef.current) { showToast('Export unavailable'); return; }
@@ -493,8 +458,16 @@ export default function App(): React.ReactElement {
   const rarityForCard = rarities.find((r) => r.id === current.rarity) ?? rarities[0];
 
   // Deck handlers
-  const onDeckChange = (deck: Deck) =>
-    setDecks(ds => ds.map(d => d.id === deck.id ? deck : d));
+  const onDeckChange = async (deck: Deck) => {
+    const newDecks = decks.map(d => d.id === deck.id ? deck : d);
+    await settingsService.saveDecks(newDecks);
+    dispatch({ type: 'DECKS_CHANGED', payload: newDecks });
+  };
+
+  const onDecksChange = async (newDecks: Deck[]) => {
+    await settingsService.saveDecks(newDecks);
+    dispatch({ type: 'DECKS_CHANGED', payload: newDecks });
+  };
 
   const onOpenDeck = (deckId: string) =>
     setAppView({ kind: 'deck-editor', deckId });
@@ -520,10 +493,18 @@ export default function App(): React.ReactElement {
         globalSettings={globalSettings}
         onChange={onDeckChange}
         onBack={onCloseDeckEditor}
-        onExportDeck={exportDeck}
+        onExportDeck={(d) => exportService.downloadDeck(d)}
       />
     ) : null;
   })() : null;
+
+  if (loading) {
+    return (
+      <div className="app" style={{ gridTemplateColumns: '1fr', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', opacity: 0.5, fontFamily: 'Cinzel, serif' }}>Loading…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="app"
@@ -634,9 +615,9 @@ export default function App(): React.ReactElement {
           <div className="stage">
             <div className="stage-wrap">
               <div className="stage-meta">
-                <span>{factionForCard.name}</span>
+                <span>{factionForCard?.name}</span>
                 <span className="stage-meta-sep" />
-                <b>{rarityForCard.name}</b>
+                <b>{rarityForCard?.name}</b>
                 <span className="stage-meta-sep" />
                 <span>{current.type === 'unit' ? 'Unit' : 'Spell'}</span>
               </div>
@@ -722,20 +703,20 @@ export default function App(): React.ReactElement {
         open={showKeywords}
         keywords={keywords}
         onClose={() => setShowKeywords(false)}
-        onChange={setKeywords}
+        onChange={onKeywordsChange}
       />
       <FactionManager
         open={showFactions}
         factions={factions}
         onClose={() => setShowFactions(false)}
-        onChange={setFactions}
+        onChange={onFactionsChange}
         onCardFactionMissing={onFactionDeleted}
       />
       <RarityManager
         open={showRarities}
         rarities={rarities}
         onClose={() => setShowRarities(false)}
-        onChange={setRarities}
+        onChange={onRaritiesChange}
         onCardRarityMissing={onRarityDeleted}
       />
       <Collection
@@ -749,7 +730,7 @@ export default function App(): React.ReactElement {
         onPick={onPickFromCollection}
         onDelete={onDeleteFromCollection}
         onNew={onNewCard}
-        onExportCard={exportCard}
+        onExportCard={(card) => exportService.downloadCard(card as CardWithArt)}
       />
       <DeckManager
         open={showDeckManager}
@@ -758,9 +739,9 @@ export default function App(): React.ReactElement {
         factions={factions}
         deckSettings={globalSettings.deckSettings}
         onClose={() => setShowDeckManager(false)}
-        onChange={setDecks}
+        onChange={onDecksChange}
         onOpenDeck={onOpenDeck}
-        onExportDeck={exportDeck}
+        onExportDeck={(d) => exportService.downloadDeck(d)}
       />
 
       {showExportModal && (

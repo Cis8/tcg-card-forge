@@ -2,10 +2,10 @@ import React, { useState, useRef, useId, useMemo, useCallback, useLayoutEffect }
 import ReactDOM from 'react-dom';
 import { deriveFaction, deriveRarityDeep, deriveRarityGlow } from './color-utils';
 import { Glyph, RarityShape, CornerFlourish } from './glyphs';
-import type { Card, Faction, Rarity, Keyword, FrameVariant, FontVariant, StatShape, ThematicGlyphName } from './types';
+import type { Card, CardWithArt, Faction, Rarity, Keyword, FrameVariant, FontVariant, StatShape, ThematicGlyphName } from './types';
 
 interface CardPreviewProps {
-  card: Card;
+  card: CardWithArt;
   keywords: Keyword[];
   factions: Faction[];
   rarities: Rarity[];
@@ -231,8 +231,8 @@ export function CardPreview({ card, keywords, factions, rarities,
         </div>
 
         <div className="art-window">
-          {card.art ? (
-            <img className="art-image" src={card.art} alt=""/>
+          {card.artHandle ? (
+            <img className="art-image" src={card.artHandle.objectUrl} alt=""/>
           ) : (
             <div className="art-themed" style={{
               background: `radial-gradient(ellipse 80% 70% at 50% 30%, ${faction.bg[2]} 0%, ${faction.bg[1]} 50%, ${faction.bg[0]} 100%)`,

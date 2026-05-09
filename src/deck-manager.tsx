@@ -10,13 +10,13 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Glyph } from './glyphs';
 import { confirmDestructiveAction } from './confirm';
-import type { Card, Deck, DeckSettings, Faction } from './types';
+import type { CardWithArt, Deck, DeckSettings, Faction } from './types';
 import { createDeck, getDeckTotal, getDeckFactions, validateDeck } from './deck-utils';
 
 interface DeckManagerProps {
   open: boolean;
   decks: Deck[];
-  cards: Card[];
+  cards: CardWithArt[];
   factions: Faction[];
   deckSettings: DeckSettings;
   onClose: () => void;
@@ -26,7 +26,7 @@ interface DeckManagerProps {
 }
 
 function SortableDeckItem({ deck, cards, factions, deckSettings, onOpen, onDelete, onExport }: {
-  deck: Deck; cards: Card[]; factions: Faction[]; deckSettings: DeckSettings;
+  deck: Deck; cards: CardWithArt[]; factions: Faction[]; deckSettings: DeckSettings;
   onOpen: () => void; onDelete: () => void; onExport: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: deck.id });

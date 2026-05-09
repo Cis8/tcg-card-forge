@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { CardThumbnail } from './card-thumbnail';
 import { CollectionFilterBar } from './collection-filter-bar';
 import { Glyph } from './glyphs';
-import type { Card, Faction, Keyword, Rarity } from './types';
+import type { CardWithArt, Faction, Keyword, Rarity } from './types';
 import {
   type CollectionFilters,
   createEmptyFilters,
@@ -12,7 +12,7 @@ import {
 
 interface CollectionProps {
   open: boolean;
-  cards: Card[];
+  cards: CardWithArt[];
   currentId: string;
   factions: Faction[];
   rarities: Rarity[];
@@ -21,7 +21,7 @@ interface CollectionProps {
   onPick: (id: string) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
-  onExportCard: (card: Card) => void;
+  onExportCard: (card: CardWithArt) => void;
 }
 
 export function Collection({
@@ -32,7 +32,7 @@ export function Collection({
   const [showFilters, setShowFilters] = useState(true);
 
   const filteredCards = useMemo(
-    () => applyFilters(cards, filters, keywords),
+    () => applyFilters(cards, filters, keywords) as CardWithArt[],
     [cards, filters, keywords],
   );
 
@@ -123,7 +123,7 @@ export function Collection({
 // ── Collection card thumbnail ───────────────────────────────────────────────
 
 interface CollectionCardProps {
-  card: Card;
+  card: CardWithArt;
   factions: Faction[];
   rarities: Rarity[];
   active: boolean;

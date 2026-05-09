@@ -1,12 +1,12 @@
 import React, { useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { compressImage } from './image-utils';
+import { useServices } from './context/ServicesContext';
 import { deriveFaction } from './color-utils';
 import { PATTERNS } from './data';
 import { Glyph, RarityShape } from './glyphs';
 import { GlyphPicker } from './glyph-picker';
 import { confirmDestructiveAction } from './confirm';
-import type { Card, Keyword, Faction, Rarity, GlyphName, GlobalSettings, DeckSettings, ThematicGlyphName, DescGlyph } from './types';
+import type { Card, CardWithArt, ImageHandle, Keyword, Faction, Rarity, GlyphName, GlobalSettings, DeckSettings, ThematicGlyphName, DescGlyph } from './types';
 
 interface FieldProps {
   label: string;
@@ -254,40 +254,46 @@ const PatternPicker = ({ value, onChange }: PatternPickerProps): React.ReactElem
 );
 
 interface ArtUploaderProps {
-  value: string | null;
-  onChange: (v: string | null) => void;
+  artHandle: ImageHandle | null;
+  onChange: (handle: ImageHandle | null) => void;
 }
 
-const ArtUploader = ({ value, onChange }: ArtUploaderProps): React.ReactElement => {
+const ArtUploader = ({ artHandle, onChange }: ArtUploaderProps): React.ReactElement => {
+  const { imageService } = useServices();
   const inputRef = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
-  const handleFiles = (files: FileList | null) => {
+  const [uploading, setUploading] = useState(false);
+
+  const handleFiles = async (files: FileList | null) => {
     const f = files?.[0];
     if (!f || !f.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const raw = e.target!.result as string;
-      const compressed = await compressImage(raw, 1920, 0.85);
-      onChange(compressed);
-    };
-    reader.readAsDataURL(f);
+    setUploading(true);
+    try {
+      const handle = await imageService.storeFromFile(f);
+      onChange(handle);
+    } finally {
+      setUploading(false);
+    }
   };
+
+  const previewUrl = artHandle?.objectUrl ?? null;
+
   return (
     <div>
-      <div className={`art-drop ${drag ? 'drag' : ''} ${value ? 'has' : ''}`}
-           onClick={() => inputRef.current?.click()}
+      <div className={`art-drop ${drag ? 'drag' : ''} ${previewUrl ? 'has' : ''}`}
+           onClick={() => !uploading && inputRef.current?.click()}
            onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
            onDragLeave={() => setDrag(false)}
            onDrop={(e) => { e.preventDefault(); setDrag(false); handleFiles(e.dataTransfer.files); }}>
-        {value ? (
+        {previewUrl ? (
           <>
-            <img src={value} alt="" className="art-drop-preview"/>
-            <span className="art-drop-overlay">Click or drop to replace</span>
+            <img src={previewUrl} alt="" className="art-drop-preview"/>
+            <span className="art-drop-overlay">{uploading ? 'Processing…' : 'Click or drop to replace'}</span>
           </>
         ) : (
           <div className="art-drop-empty">
             <Glyph name="upload" size={20}/>
-            <span>Drop a PNG/JPG, or click to browse</span>
+            <span>{uploading ? 'Processing…' : 'Drop a PNG/JPG, or click to browse'}</span>
             <span className="art-drop-hint">Otherwise the theme color fills the art window</span>
           </div>
         )}
@@ -295,7 +301,7 @@ const ArtUploader = ({ value, onChange }: ArtUploaderProps): React.ReactElement 
                onClick={(e) => e.stopPropagation()}
                onChange={(e) => handleFiles(e.target.files)}/>
       </div>
-      {value && (
+      {previewUrl && !uploading && (
         <button type="button" className="btn btn-sm btn-ghost art-clear"
                 onClick={() => {
                   if (!confirmDestructiveAction('Remove this image from the card?')) return;
@@ -447,9 +453,9 @@ function KeywordChipBar({ keywords, onInsert, onManage }: KeywordChipBarProps): 
 type GlyphWatermarkMode = 'none' | 'faction' | 'custom';
 
 interface DescriptionBoxFieldProps {
-  card: Card;
+  card: CardWithArt;
   factions: Faction[];
-  onChange: (patch: Partial<Card>) => void;
+  onChange: (patch: Partial<CardWithArt>) => void;
 }
 
 function DescriptionBoxField({ card, factions, onChange }: DescriptionBoxFieldProps): React.ReactElement {
@@ -513,8 +519,8 @@ function DescriptionBoxField({ card, factions, onChange }: DescriptionBoxFieldPr
 }
 
 interface RightPanelProps {
-  card: Card;
-  onChange: (patch: Partial<Card>) => void;
+  card: CardWithArt;
+  onChange: (patch: Partial<CardWithArt>) => void;
   factions: Faction[];
   rarities: Rarity[];
   onManageFactions: () => void;
@@ -542,7 +548,7 @@ export function RightPanel({ card, onChange, factions, rarities, onManageFaction
                          onManage={onManageFactions}/>
         </Field>
         <Field label="Splash art" hint="Drop your own PNG / JPG, or leave blank for faction color">
-          <ArtUploader value={card.art} onChange={(v) => onChange({ art: v })}/>
+          <ArtUploader artHandle={card.artHandle ?? null} onChange={(handle) => onChange({ artId: handle?.id ?? null, artHandle: handle })}/>
         </Field>
         <Field label="Card pattern" hint="Texture overlay on the card frame">
           <PatternPicker value={card.pattern} onChange={(v) => onChange({ pattern: v as Card['pattern'] })}/>

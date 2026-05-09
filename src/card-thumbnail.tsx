@@ -2,10 +2,10 @@
 import React from 'react';
 import { deriveFaction } from './color-utils';
 import { Glyph } from './glyphs';
-import type { Card, Faction, Rarity } from './types';
+import type { CardWithArt, Faction, Rarity } from './types';
 
 export interface CardThumbnailProps {
-  card: Card;
+  card: CardWithArt;
   factions: Faction[];
   rarities: Rarity[];
 }
@@ -17,13 +17,13 @@ export function CardThumbnail({ card, factions, rarities }: CardThumbnailProps):
   return (
     <>
       <div className="coll-card-art" style={{
-        background: card.art
+        background: card.artHandle
           ? `linear-gradient(180deg, transparent 0%, ${faction.bg[0]}90 100%)`
           : `radial-gradient(ellipse at 50% 30%, ${faction.bg[2]}aa 0%, transparent 70%),
              linear-gradient(160deg, ${faction.bg[0]} 0%, ${faction.bg[1]} 100%)`,
       }}>
-        {card.art && <img src={card.art} alt="" className="coll-card-art-img"/>}
-        {!card.art && (
+        {card.artHandle && <img src={card.artHandle.objectUrl} alt="" className="coll-card-art-img"/>}
+        {!card.artHandle && (
           <div className="coll-card-watermark" style={{ color: faction.accent }}>
             <Glyph name={factionRaw.glyph} size={56}/>
           </div>

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { CardPreview, CardHoverPreview } from './card-preview';
 import { CollectionFilterBar } from './collection-filter-bar';
 import { Glyph } from './glyphs';
-import type { Card, Deck, DeckSettings, Faction, GlobalSettings, Keyword, Rarity } from './types';
+import type { CardWithArt, Deck, DeckSettings, Faction, GlobalSettings, Keyword, Rarity } from './types';
 import {
   addCardToDeck, removeCardFromDeck,
   getDeckTotal, getDeckFactions, getDeckCostCurve, validateDeck,
@@ -14,7 +14,7 @@ import {
 
 export interface DeckEditorProps {
   deck: Deck;
-  cards: Card[];
+  cards: CardWithArt[];
   factions: Faction[];
   rarities: Rarity[];
   keywords: Keyword[];
@@ -25,7 +25,7 @@ export interface DeckEditorProps {
 }
 
 interface DeckCardRowProps {
-  card: Card;
+  card: CardWithArt;
   factions: Faction[];
   rarities: Rarity[];
   keywords: Keyword[];
@@ -64,7 +64,7 @@ function DeckCardRow({ card, factions, rarities, keywords, quantity, maxCopies, 
 }
 
 interface DeckPickerCardProps {
-  card: Card;
+  card: CardWithArt;
   factions: Faction[];
   rarities: Rarity[];
   keywords: Keyword[];
@@ -72,7 +72,7 @@ interface DeckPickerCardProps {
   maxCopies: number;
   globalSettings: GlobalSettings;
   onAdd: () => void;
-  onLongPress: (card: Card) => void;
+  onLongPress: (card: CardWithArt) => void;
 }
 
 function DeckPickerCard({ card, factions, rarities, keywords, quantity, maxCopies, globalSettings, onAdd, onLongPress }: DeckPickerCardProps): React.ReactElement {
@@ -142,9 +142,9 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
   const [showStats, setShowStats] = useState(false);   // collapsed by default
   const [showFilters, setShowFilters] = useState(true); // expanded by default
   const [mobileTab, setMobileTab] = useState<'cards' | 'stats'>('cards');
-  const [touchPreviewCard, setTouchPreviewCard] = useState<Card | null>(null);
+  const [touchPreviewCard, setTouchPreviewCard] = useState<CardWithArt | null>(null);
 
-  const filteredCards = useMemo(() => applyFilters(cards, filters, keywords), [cards, filters, keywords]);
+  const filteredCards = useMemo(() => applyFilters(cards, filters, keywords) as CardWithArt[], [cards, filters, keywords]);
 
   const deckQtyByCardId = useMemo(() => {
     const map = new Map<string, number>();

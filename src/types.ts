@@ -54,12 +54,40 @@ export interface Card {
   health?: number;
   description: string;
   flavor: string;
-  art: string | null; // data URL or null
+  artId: string | null; // references a StoredImage.id in IndexedDB
   /** Custom hex color for the description text-box background. null = use faction parchment. */
   descBg?: string | null;
   /** Watermark glyph shown behind the description text. Defaults to 'faction'. */
   descGlyph?: DescGlyph;
 }
+
+/** Binary image stored in IndexedDB. Content-addressed by SHA-256 hash. */
+export interface StoredImage {
+  id: string;       // SHA-256 hex, first 40 chars
+  blob: Blob;
+  mimeType: string;
+  width: number;
+  height: number;
+  refCount: number; // number of cards referencing this image; 0 = eligible for GC
+}
+
+/** Resolved image handle — carries a live Object URL valid for the session. */
+export interface ImageHandle {
+  id: string;
+  objectUrl: string;
+  width: number;
+  height: number;
+}
+
+/** Card with its image already resolved — used throughout React state and UI components. */
+export interface CardWithArt extends Card {
+  artHandle: ImageHandle | null;
+}
+
+/** Card shape used in exported JSON — art embedded as base64 for portability. */
+export type CardExport = Omit<Card, 'artId'> & {
+  art: string | null; // base64 data URL
+};
 
 export interface Faction {
   id: string;
@@ -114,6 +142,18 @@ export interface Deck {
   name: string;
   description: string;
   entries: DeckEntry[];
+}
+
+/** Full application snapshot — version 4. Used for JSON export/import. */
+export interface AppSnapshot {
+  version: 4;
+  exportedAt: string;
+  globalSettings: GlobalSettings;
+  cards: CardExport[];   // art embedded as base64
+  keywords: Keyword[];
+  factions: Faction[];
+  rarities: Rarity[];
+  decks: Deck[];
 }
 
 // Derived color palette returned by deriveFaction() in color-utils.ts.

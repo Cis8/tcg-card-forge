@@ -1,5 +1,3 @@
-import type { Card } from './types';
-
 export async function compressImage(
   dataUrl: string,
   maxSide: number,
@@ -18,18 +16,4 @@ export async function compressImage(
     };
     img.src = dataUrl;
   });
-}
-
-export async function compressSnapshotImages(
-  cards: Card[],
-  maxSide: number,
-  quality: number,
-): Promise<Card[]> {
-  return Promise.all(
-    cards.map(async (card) => {
-      if (!card.art) return card;
-      const compressed = await compressImage(card.art, maxSide, quality);
-      return { ...card, art: compressed };
-    }),
-  );
 }
