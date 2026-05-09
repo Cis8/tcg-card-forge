@@ -451,7 +451,7 @@
   position: absolute;
   top: 8px;
   right: 8px;
-  z-index: 100;
+  z-index: 10;
   background: rgba(0, 0, 0, 0.82);
   color: var(--gold);
   font-size: 0.78rem;
