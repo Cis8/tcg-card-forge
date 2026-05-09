@@ -255,18 +255,25 @@
     height: 100dvh;
     max-height: 100dvh;
   }
-  .collection-grid {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 10px;                   /* explicit — overrides desktop 14px; prevents Chrome from inheriting incorrectly */
-    align-content: start;        /* rows pack to top → no row-height stretch or miscalculation */
+  /* Scroll wrapper: flex item that owns overflow-y.
+     Separating this from .collection-grid fixes a Chrome Android bug where
+     min-height:0 is ignored on a flex item that is also a grid container —
+     Chrome uses the grid's intrinsic height as the minimum, causing the
+     grid to overflow its flex slot and cards to visually overlap. */
+  .collection-grid-scroll {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    /* leave room for the iOS home indicator and Chrome bottom bar */
-    padding: 12px;
-    padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
     overscroll-behavior: contain;
+    /* leave room for the iOS home indicator and Chrome bottom bar */
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+  }
+  .collection-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    padding: 12px;
+    padding-bottom: 0;   /* bottom space already on the scroll wrapper */
   }
 
   /* On touch devices Chrome keeps :hover state after tap, triggering

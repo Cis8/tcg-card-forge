@@ -120,14 +120,16 @@ export function Collection({
                 ? `${filteredCards.length} of ${cards.length} cards`
                 : `${cards.length} card${cards.length !== 1 ? 's' : ''}`}
             </div>
-            <div className="collection-grid">
-              {filteredCards.map(c => (
-                <CollectionCard key={c.id} card={c}
-                                factions={factions} rarities={rarities}
-                                active={c.id === currentId}
-                                onPick={() => onPick(c.id)}
-                                onDelete={() => onDelete(c.id)}/>
-              ))}
+            <div className="collection-grid-scroll">
+              <div className="collection-grid">
+                {filteredCards.map(c => (
+                  <CollectionCard key={c.id} card={c}
+                                  factions={factions} rarities={rarities}
+                                  active={c.id === currentId}
+                                  onPick={() => onPick(c.id)}
+                                  onDelete={() => onDelete(c.id)}/>
+                ))}
+              </div>
             </div>
           </>
         )}
