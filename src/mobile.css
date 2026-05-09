@@ -257,15 +257,21 @@
   }
   .collection-grid {
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    align-content: start;       /* rows don't stretch → no row-height miscalculation */
+    gap: 10px;                   /* explicit — overrides desktop 14px; prevents Chrome from inheriting incorrectly */
+    align-content: start;        /* rows pack to top → no row-height stretch or miscalculation */
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     /* leave room for the iOS home indicator and Chrome bottom bar */
-    padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+    padding: 12px;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
     overscroll-behavior: contain;
   }
+
+  /* On touch devices Chrome keeps :hover state after tap, triggering
+     translateY(-2px) which shifts the card up over the row above it. */
+  .coll-card:hover { transform: none; }
 
   /* Delete button: always visible on touch (no :hover needed) */
   .coll-card-del { opacity: 1; }
