@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CardThumbnail } from './card-thumbnail';
 import { CollectionFilterBar } from './collection-filter-bar';
 import { Glyph } from './glyphs';
@@ -21,16 +21,14 @@ interface CollectionProps {
   onPick: (id: string) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
-  onExportJson?: () => void;
-  onImportJson?: (file: File) => void;
 }
 
 export function Collection({
   open, cards, currentId, factions, rarities, keywords,
-  onClose, onPick, onDelete, onNew, onExportJson, onImportJson,
+  onClose, onPick, onDelete, onNew,
 }: CollectionProps): React.ReactElement | null {
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<CollectionFilters>(createEmptyFilters);
+  const [showFilters, setShowFilters] = useState(true);
 
   const filteredCards = useMemo(
     () => applyFilters(cards, filters, keywords),
@@ -38,12 +36,6 @@ export function Collection({
   );
 
   if (!open) return null;
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && onImportJson) onImportJson(file);
-    e.target.value = '';
-  };
 
   const clearFilters = () => setFilters(createEmptyFilters());
   const active = hasActiveFilters(filters);
@@ -57,26 +49,14 @@ export function Collection({
             <h2 className="modal-title">Collection</h2>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            {onExportJson && (
-              <button type="button" className="btn btn-sm" onClick={onExportJson}>
-                <Glyph name="download" size={12}/>
-                <span>Export JSON</span>
+            {cards.length > 0 && (
+              <button
+                type="button"
+                className="deck-filter-toggle-btn"
+                onClick={() => setShowFilters(v => !v)}
+              >
+                {showFilters ? '▲' : '▼'} Filters
               </button>
-            )}
-            {onImportJson && (
-              <>
-                <button type="button" className="btn btn-sm" onClick={() => fileInputRef.current?.click()}>
-                  <Glyph name="upload" size={12}/>
-                  <span>Import JSON</span>
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json,application/json"
-                  style={{ display: 'none' }}
-                  onChange={handleFileChange}
-                />
-              </>
             )}
             <button type="button" className="btn btn-primary btn-sm" onClick={onNew}>
               <Glyph name="plus" size={12}/>
@@ -88,7 +68,7 @@ export function Collection({
           </div>
         </header>
 
-        {cards.length > 0 && (
+        {cards.length > 0 && showFilters && (
           <CollectionFilterBar
             filters={filters}
             factions={factions}

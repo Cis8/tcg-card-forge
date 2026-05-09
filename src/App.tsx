@@ -167,6 +167,7 @@ export default function App(): React.ReactElement {
     }
   };
   const cardRef = useRef<HTMLDivElement>(null);
+  const importFileRef = useRef<HTMLInputElement>(null);
   const [cardZoom, setCardZoom] = useState(100);
   const [leftW, setLeftW] = useState(320);
   const [rightW, setRightW] = useState(320);
@@ -501,8 +502,11 @@ export default function App(): React.ReactElement {
               <span>Collection</span>
               <span style={{ opacity: 0.5, marginLeft: 4 }}>{cards.length}</span>
             </button>
-            <button type="button" className="btn" onClick={() => setShowKeywords(true)}>
-              <Glyph name="book" size={14} /><span>Keywords</span>
+            <button type="button" className="btn" onClick={onExportJson}>
+              <Glyph name="download" size={14} /><span>Export JSON</span>
+            </button>
+            <button type="button" className="btn" onClick={() => importFileRef.current?.click()}>
+              <Glyph name="upload" size={14} /><span>Import JSON</span>
             </button>
             <button type="button" className="btn" onClick={onExportPng}>
               <Glyph name="download" size={14} /><span>Export PNG</span>
@@ -537,8 +541,12 @@ export default function App(): React.ReactElement {
                   <span style={{ opacity: 0.5, marginLeft: 4 }}>{cards.length}</span>
                 </button>
                 <button type="button" className="btn" role="menuitem"
-                        onClick={() => { setShowKeywords(true); closeOverflow(); }}>
-                  <Glyph name="book" size={14} /><span>Keywords</span>
+                        onClick={() => { onExportJson(); closeOverflow(); }}>
+                  <Glyph name="download" size={14} /><span>Export JSON</span>
+                </button>
+                <button type="button" className="btn" role="menuitem"
+                        onClick={() => { importFileRef.current?.click(); closeOverflow(); }}>
+                  <Glyph name="upload" size={14} /><span>Import JSON</span>
                 </button>
                 <button type="button" className="btn" role="menuitem"
                         onClick={() => { onExportPng(); closeOverflow(); }}>
@@ -549,6 +557,13 @@ export default function App(): React.ReactElement {
           </div>
         </div>
       </header>
+      <input
+        ref={importFileRef}
+        type="file"
+        accept=".json,application/json"
+        style={{ display: 'none' }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onImportJson(f); e.target.value = ''; }}
+      />
 
       {appView.kind === 'card-editor' ? (
         <>
@@ -686,8 +701,6 @@ export default function App(): React.ReactElement {
         onPick={onPickFromCollection}
         onDelete={onDeleteFromCollection}
         onNew={onNewCard}
-        onExportJson={onExportJson}
-        onImportJson={onImportJson}
       />
       <DeckManager
         open={showDeckManager}
