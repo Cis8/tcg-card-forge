@@ -287,11 +287,7 @@
   overflow-y: auto;
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 16px 24px 24px;
-  align-content: flex-start;
+  position: relative;
 }
 
 /* Picker panel header: section label + filter toggle */

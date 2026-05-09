@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { CardPreview, CardHoverPreview } from './card-preview';
 import { CollectionFilterBar } from './collection-filter-bar';
 import { Glyph } from './glyphs';
@@ -11,6 +12,36 @@ import {
   type CollectionFilters,
   applyFilters, createEmptyFilters,
 } from './collection-filter';
+
+// Picker grid metrics — must match deck.css / mobile.css
+const PICKER_CARD_W = 340;
+const DESKTOP_BP = 768;
+function pickerMetrics(containerW: number) {
+  const mobile = containerW < DESKTOP_BP;
+  const cols = mobile ? 2 : Math.max(1, Math.floor((containerW - 48 + 16) / (PICKER_CARD_W + 16)));
+  return {
+    cols,
+    // Mobile: 1fr so card wraps fill the column width (wrap handles overflow+scale).
+    // Desktop: auto so each column is sized to the card's natural 340px width.
+    colTemplate: mobile ? `repeat(${cols}, 1fr)` : `repeat(${cols}, auto)`,
+    itemH:   mobile ? 225 : 488,
+    gap:     mobile ? 8   : 16,
+    padH:    mobile ? 8   : 24,
+    padV:    mobile ? 8   : 16,
+  };
+}
+
+function usePickerGrid(scrollRef: React.RefObject<HTMLDivElement | null>) {
+  const [containerW, setContainerW] = useState(700);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setContainerW(e.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [scrollRef]);
+  return pickerMetrics(containerW);
+}
 
 export interface DeckEditorProps {
   deck: Deck;
@@ -145,6 +176,24 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
   const [touchPreviewCard, setTouchPreviewCard] = useState<CardWithArt | null>(null);
 
   const filteredCards = useMemo(() => applyFilters(cards, filters, keywords) as CardWithArt[], [cards, filters, keywords]);
+
+  const pickerScrollRef = useRef<HTMLDivElement>(null);
+  const { cols: pickerCols, colTemplate, itemH, gap: pickerGap, padH, padV } = usePickerGrid(pickerScrollRef);
+
+  const pickerRows = useMemo(() => {
+    const result: CardWithArt[][] = [];
+    for (let i = 0; i < filteredCards.length; i += pickerCols) result.push(filteredCards.slice(i, i + pickerCols));
+    return result;
+  }, [filteredCards, pickerCols]);
+
+  const pickerVirtualizer = useVirtualizer({
+    count: pickerRows.length,
+    getScrollElement: () => pickerScrollRef.current,
+    estimateSize: () => itemH + pickerGap,
+    overscan: 2,
+    paddingStart: padV,
+    paddingEnd: 24,
+  });
 
   const deckQtyByCardId = useMemo(() => {
     const map = new Map<string, number>();
@@ -370,23 +419,42 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
                 onClear={() => setFilters(createEmptyFilters())}
               />
             )}
-            <div className="deck-picker-grid">
-              {filteredCards.map(card => (
-                <DeckPickerCard
-                  key={card.id}
-                  card={card}
-                  factions={factions}
-                  rarities={rarities}
-                  keywords={keywords}
-                  quantity={deckQtyByCardId.get(card.id) ?? 0}
-                  maxCopies={deckSettings.maxCopiesPerCard}
-                  globalSettings={globalSettings}
-                  onAdd={() => handleAdd(card.id)}
-                  onLongPress={setTouchPreviewCard}
-                />
-              ))}
-              {filteredCards.length === 0 && (
+            <div className="deck-picker-grid" ref={pickerScrollRef}>
+              {filteredCards.length === 0 ? (
                 <div className="deck-empty-state">No cards match</div>
+              ) : (
+                <div style={{ height: pickerVirtualizer.getTotalSize(), position: 'relative' }}>
+                  {pickerVirtualizer.getVirtualItems().map(vRow => (
+                    <div
+                      key={vRow.index}
+                      style={{
+                        position: 'absolute',
+                        top: vRow.start,
+                        left: padH,
+                        right: padH,
+                        display: 'grid',
+                        gridTemplateColumns: colTemplate,
+                        justifyContent: 'start',
+                        gap: pickerGap,
+                      }}
+                    >
+                      {pickerRows[vRow.index].map(card => (
+                        <DeckPickerCard
+                          key={card.id}
+                          card={card}
+                          factions={factions}
+                          rarities={rarities}
+                          keywords={keywords}
+                          quantity={deckQtyByCardId.get(card.id) ?? 0}
+                          maxCopies={deckSettings.maxCopiesPerCard}
+                          globalSettings={globalSettings}
+                          onAdd={() => handleAdd(card.id)}
+                          onLongPress={setTouchPreviewCard}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>

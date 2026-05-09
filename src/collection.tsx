@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { CardThumbnail } from './card-thumbnail';
 import { CollectionFilterBar } from './collection-filter-bar';
 import { Glyph } from './glyphs';
@@ -9,6 +10,32 @@ import {
   hasActiveFilters,
   applyFilters,
 } from './collection-filter';
+
+// Grid metrics — must match card.css / mobile.css
+const DESKTOP_BP = 768;
+function gridMetrics(containerW: number) {
+  const mobile = containerW < DESKTOP_BP;
+  return {
+    colMinW: mobile ? 130 : 180,
+    gap:     mobile ? 10  : 14,
+    padding: mobile ? 12  : 18,
+    itemH:   162, // art(110) + meta(~52) — same on both breakpoints
+  };
+}
+
+function useCollectionGrid(scrollRef: React.RefObject<HTMLDivElement | null>) {
+  const [containerW, setContainerW] = useState(600);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setContainerW(e.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [scrollRef]);
+  const { colMinW, gap, padding, itemH } = gridMetrics(containerW);
+  const cols = Math.max(1, Math.floor((containerW - padding * 2 + gap) / (colMinW + gap)));
+  return { cols, gap, padding, itemH };
+}
 
 interface CollectionProps {
   open: boolean;
@@ -31,10 +58,28 @@ export function Collection({
   const [filters, setFilters] = useState<CollectionFilters>(createEmptyFilters);
   const [showFilters, setShowFilters] = useState(true);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { cols, gap, padding, itemH } = useCollectionGrid(scrollRef);
+
   const filteredCards = useMemo(
     () => applyFilters(cards, filters, keywords) as CardWithArt[],
     [cards, filters, keywords],
   );
+
+  const rows = useMemo(() => {
+    const result: CardWithArt[][] = [];
+    for (let i = 0; i < filteredCards.length; i += cols) result.push(filteredCards.slice(i, i + cols));
+    return result;
+  }, [filteredCards, cols]);
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => itemH + gap,
+    overscan: 3,
+    paddingStart: padding,
+    paddingEnd: padding,
+  });
 
   if (!open) return null;
 
@@ -101,15 +146,30 @@ export function Collection({
                 ? `${filteredCards.length} of ${cards.length} cards`
                 : `${cards.length} card${cards.length !== 1 ? 's' : ''}`}
             </div>
-            <div className="collection-grid-scroll">
-              <div className="collection-grid">
-                {filteredCards.map(c => (
-                  <CollectionCard key={c.id} card={c}
-                                  factions={factions} rarities={rarities}
-                                  active={c.id === currentId}
-                                  onPick={() => onPick(c.id)}
-                                  onDelete={() => onDelete(c.id)}
-                                  onExport={() => onExportCard(c)}/>
+            <div className="collection-grid-scroll" ref={scrollRef}>
+              <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+                {virtualizer.getVirtualItems().map(vRow => (
+                  <div
+                    key={vRow.index}
+                    style={{
+                      position: 'absolute',
+                      top: vRow.start,
+                      left: padding,
+                      right: padding,
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                      gap,
+                    }}
+                  >
+                    {rows[vRow.index].map(c => (
+                      <CollectionCard key={c.id} card={c}
+                                      factions={factions} rarities={rarities}
+                                      active={c.id === currentId}
+                                      onPick={() => onPick(c.id)}
+                                      onDelete={() => onDelete(c.id)}
+                                      onExport={() => onExportCard(c)}/>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>
