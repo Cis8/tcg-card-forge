@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import { compressImage } from './image-utils';
 import { deriveFaction } from './color-utils';
 import { PATTERNS } from './data';
 import { Glyph, RarityShape } from './glyphs';
@@ -264,7 +265,11 @@ const ArtUploader = ({ value, onChange }: ArtUploaderProps): React.ReactElement 
     const f = files?.[0];
     if (!f || !f.type.startsWith('image/')) return;
     const reader = new FileReader();
-    reader.onload = (e) => onChange(e.target!.result as string);
+    reader.onload = async (e) => {
+      const raw = e.target!.result as string;
+      const compressed = await compressImage(raw, 1920, 0.85);
+      onChange(compressed);
+    };
     reader.readAsDataURL(f);
   };
   return (

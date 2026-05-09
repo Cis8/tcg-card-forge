@@ -892,6 +892,21 @@
 }
 .coll-card:hover .coll-card-del { opacity: 1; }
 .coll-card-del:hover { background: #3a1212; }
+.coll-card-export {
+  position: absolute;
+  top: 6px; right: 31px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.7);
+  border: 1px solid rgba(180,210,255,.3);
+  color: #b3d4f5;
+  cursor: pointer;
+  display: grid; place-items: center;
+  opacity: 0;
+  transition: opacity .12s;
+}
+.coll-card:hover .coll-card-export { opacity: 1; }
+.coll-card-export:hover { background: #121c3a; }
 
 /* ── Toast ──────────────────────────────────────────────────────── */
 .toast {

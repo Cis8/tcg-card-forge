@@ -22,11 +22,12 @@ interface DeckManagerProps {
   onClose: () => void;
   onChange: (decks: Deck[]) => void;
   onOpenDeck: (deckId: string) => void;
+  onExportDeck: (deck: Deck) => void;
 }
 
-function SortableDeckItem({ deck, cards, factions, deckSettings, onOpen, onDelete }: {
+function SortableDeckItem({ deck, cards, factions, deckSettings, onOpen, onDelete, onExport }: {
   deck: Deck; cards: Card[]; factions: Faction[]; deckSettings: DeckSettings;
-  onOpen: () => void; onDelete: () => void;
+  onOpen: () => void; onDelete: () => void; onExport: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: deck.id });
   const style: React.CSSProperties = {
@@ -54,6 +55,10 @@ function SortableDeckItem({ deck, cards, factions, deckSettings, onOpen, onDelet
       <span className={`deck-size-badge${isValid ? ' valid' : total === 0 ? '' : ' invalid'}`}>
         {total}/{deckSettings.maxDeckSize}
       </span>
+      <button type="button" className="coll-card-del deck-del-btn" title="Export deck as JSON"
+              onClick={(e) => { e.stopPropagation(); onExport(); }}>
+        <Glyph name="download" size={12}/>
+      </button>
       <button type="button" className="coll-card-del deck-del-btn" title="Delete deck"
               onClick={(e) => { e.stopPropagation(); onDelete(); }}>
         <Glyph name="trash" size={12}/>
@@ -62,7 +67,7 @@ function SortableDeckItem({ deck, cards, factions, deckSettings, onOpen, onDelet
   );
 }
 
-export function DeckManager({ open, decks, cards, factions, deckSettings, onClose, onChange, onOpenDeck }: DeckManagerProps): React.ReactElement | null {
+export function DeckManager({ open, decks, cards, factions, deckSettings, onClose, onChange, onOpenDeck, onExportDeck }: DeckManagerProps): React.ReactElement | null {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
@@ -155,6 +160,7 @@ export function DeckManager({ open, decks, cards, factions, deckSettings, onClos
                         deckSettings={deckSettings}
                         onOpen={() => handleOpen(deck.id)}
                         onDelete={() => handleDelete(deck.id)}
+                        onExport={() => onExportDeck(deck)}
                       />
                     ))}
                   </SortableContext>

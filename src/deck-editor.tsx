@@ -21,6 +21,7 @@ export interface DeckEditorProps {
   globalSettings: GlobalSettings;
   onChange: (deck: Deck) => void;
   onBack: () => void;
+  onExportDeck: (deck: Deck) => void;
 }
 
 interface DeckCardRowProps {
@@ -134,7 +135,7 @@ function DeckPickerCard({ card, factions, rarities, keywords, quantity, maxCopie
   );
 }
 
-export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSettings, onChange, onBack }: DeckEditorProps): React.ReactElement {
+export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSettings, onChange, onBack, onExportDeck }: DeckEditorProps): React.ReactElement {
   const deckSettings: DeckSettings = globalSettings.deckSettings;
   const [filters, setFilters] = useState<CollectionFilters>(createEmptyFilters);
   const [showDesc, setShowDesc] = useState(false);
@@ -269,6 +270,14 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
               title={showStats ? 'Collapse stats' : 'Expand stats'}
             >
               {hasIssues && !showStats ? '⚠ ' : ''}Stats {showStats ? '▲' : '▼'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              title="Export deck as JSON"
+              onClick={() => onExportDeck(deck)}
+            >
+              <Glyph name="download" size={14}/><span>Export JSON</span>
             </button>
           </div>
 

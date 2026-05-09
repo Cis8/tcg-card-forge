@@ -247,3 +247,41 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* ── Export JSON modal ───────────────────────────────────────────── */
+.export-modal { width: 380px; }
+.export-modal-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.export-modal-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+.export-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.export-modal-btn {
+  justify-content: flex-start;
+  gap: 10px;
+  text-align: left;
+  height: auto;
+  padding: 10px 14px;
+}
+.export-modal-btn-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.export-modal-btn-hint {
+  font-size: 11px;
+  color: var(--text-mute);
+  font-weight: 400;
+  letter-spacing: .01em;
+}

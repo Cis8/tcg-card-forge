@@ -111,16 +111,29 @@ export function exportSnapshot(
   };
 }
 
-export function downloadSnapshot(snapshot: AppSnapshot): void {
-  const date = new Date().toISOString().slice(0, 10);
-  const filename = `sigil-sinew-backup-${date}.json`;
-  const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+function downloadJson(data: unknown, filename: string): void {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export function downloadSnapshot(snapshot: AppSnapshot): void {
+  const date = new Date().toISOString().slice(0, 10);
+  downloadJson(snapshot, `sigil-sinew-backup-${date}.json`);
+}
+
+export function exportCard(card: Card): void {
+  const safe = (card.name || 'untitled').replace(/[^\w-]+/g, '_');
+  downloadJson(card, `card-${safe}.json`);
+}
+
+export function exportDeck(deck: Deck): void {
+  const safe = (deck.name || 'untitled').replace(/[^\w-]+/g, '_');
+  downloadJson(deck, `deck-${safe}.json`);
 }
 
 // ── import / merge ─────────────────────────────────────────────────────────
@@ -172,8 +185,70 @@ function deduplicateById<T extends { id: string }>(items: T[]): T[] {
   return [...map.values()];
 }
 
-function mergeById<T extends { id: string }>(existing: T[], incoming: T[]): T[] {
+export function mergeById<T extends { id: string }>(existing: T[], incoming: T[]): T[] {
   const map = new Map<string, T>(existing.map(item => [item.id, item]));
   for (const item of incoming) map.set(item.id, item);
   return [...map.values()];
+}
+
+// ── flexible import detection ────────────────────────────────────────────────
+
+export type ImportPayload =
+  | { kind: 'snapshot'; data: AppSnapshot }
+  | { kind: 'card';     data: Card[] }
+  | { kind: 'deck';     data: Deck[] }
+  | { kind: 'unknown';  error: string };
+
+function looksLikeDeck(v: unknown): boolean {
+  if (!isObject(v)) return false;
+  if (!isString(v['id']) || !isString(v['name'])) return false;
+  if (!isArray(v['entries'])) return false;
+  const entries = v['entries'] as unknown[];
+  if (entries.length === 0) return true;
+  const first = entries[0];
+  return isObject(first) && isString((first as Record<string,unknown>)['cardId']);
+}
+
+function looksLikeCard(v: unknown): boolean {
+  if (!isObject(v)) return false;
+  if (!isString(v['id']) || !isString(v['name'])) return false;
+  if (!isString(v['type']) || !isString(v['faction'])) return false;
+  if (!isString(v['rarity'])) return false;
+  if (isArray(v['entries'])) return false; // that's a deck
+  return true;
+}
+
+export function detectImport(raw: unknown, globalSettingsFallback: GlobalSettings): ImportPayload {
+  if (!isObject(raw) && !isArray(raw)) {
+    return { kind: 'unknown', error: 'Expected a JSON object or array.' };
+  }
+
+  // Full snapshot
+  if (isObject(raw) && raw['version'] === 3) {
+    const result = parseSnapshot(raw, globalSettingsFallback);
+    if (!result.ok) return { kind: 'unknown', error: result.error };
+    return { kind: 'snapshot', data: result.data };
+  }
+
+  // Array of cards or decks
+  if (isArray(raw)) {
+    if (raw.length === 0) return { kind: 'unknown', error: 'Empty array — nothing to import.' };
+    if (looksLikeDeck(raw[0])) {
+      const decks = raw.filter(looksLikeDeck) as unknown as Deck[];
+      if (decks.length === 0) return { kind: 'unknown', error: 'No valid decks found in array.' };
+      return { kind: 'deck', data: decks };
+    }
+    if (looksLikeCard(raw[0])) {
+      const cards = raw.filter(looksLikeCard).map(c => normalizeCard(c as Record<string, unknown>));
+      if (cards.length === 0) return { kind: 'unknown', error: 'No valid cards found in array.' };
+      return { kind: 'card', data: cards };
+    }
+    return { kind: 'unknown', error: 'Array elements are neither cards nor decks.' };
+  }
+
+  // Single object
+  if (looksLikeDeck(raw)) return { kind: 'deck', data: [raw as unknown as Deck] };
+  if (looksLikeCard(raw)) return { kind: 'card', data: [normalizeCard(raw as Record<string, unknown>)] };
+
+  return { kind: 'unknown', error: 'JSON shape not recognised. Expected a card, deck, or full snapshot.' };
 }

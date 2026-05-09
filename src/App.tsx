@@ -15,7 +15,8 @@ import { DeckManager } from './deck-manager';
 import { DeckEditor } from './deck-editor';
 import { confirmDestructiveAction } from './confirm';
 
-import { exportSnapshot, downloadSnapshot, parseSnapshot, applySnapshot } from './io';
+import { exportSnapshot, downloadSnapshot, applySnapshot, detectImport, exportCard, exportDeck, mergeById } from './io';
+import { compressSnapshotImages } from './image-utils';
 import { Glyph } from './glyphs';
 import type { Card, Deck, DeckSettings, Faction, Rarity, Keyword, GlobalSettings } from './types';
 import {
@@ -151,6 +152,7 @@ export default function App(): React.ReactElement {
   const [showFactions, setShowFactions]   = useState(false);
   const [showRarities, setShowRarities]   = useState(false);
   const [showCollection, setShowCollection] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [toast, setToast]                 = useState<string | null>(null);
   const [globalSettings, setGlobalSettings] = useState<GlobalSettings>(
     () => normalizeGlobalSettings(load<Partial<GlobalSettings>>(STORAGE.globalSettings, {}))
@@ -372,8 +374,16 @@ export default function App(): React.ReactElement {
     setCurrent((c) => c.rarity === deletedId ? { ...c, rarity: fallbackId } : c);
   };
 
-  const onExportJson = () => {
-    const snapshot = exportSnapshot(cards, keywords, factions, rarities, globalSettings, decks);
+  const onExportJson = () => setShowExportModal(true);
+
+  const doExport = async (compact: boolean) => {
+    setShowExportModal(false);
+    let exportCards = cards;
+    if (compact) {
+      showToast('Compressing images…');
+      exportCards = await compressSnapshotImages(cards, 800, 0.7);
+    }
+    const snapshot = exportSnapshot(exportCards, keywords, factions, rarities, globalSettings, decks);
     downloadSnapshot(snapshot);
     showToast('Collection exported');
   };
@@ -383,37 +393,69 @@ export default function App(): React.ReactElement {
     reader.onload = (e) => {
       try {
         const raw = JSON.parse(e.target?.result as string);
-        const result = parseSnapshot(raw, globalSettings);
-        if (!result.ok) { showToast(`Import failed: ${result.error}`); return; }
+        const payload = detectImport(raw, globalSettings);
 
-        const snap = result.data;
-        const summary =
-          `${snap.cards.length} cards, ${snap.keywords.length} keywords, ` +
-          `${snap.factions.length} factions, ${snap.rarities.length} rarities, ` +
-          `${snap.decks.length} decks.\n\n` +
-          'OK = Replace all · Cancel = Merge (keep existing, imported wins on conflict)';
+        if (payload.kind === 'unknown') {
+          showToast(`Import failed: ${payload.error}`);
+          return;
+        }
 
-        const replace = window.confirm(summary);
-        const mode = replace ? 'replace' : 'merge';
+        if (payload.kind === 'snapshot') {
+          const snap = payload.data;
+          const summary =
+            `${snap.cards.length} cards, ${snap.keywords.length} keywords, ` +
+            `${snap.factions.length} factions, ${snap.rarities.length} rarities, ` +
+            `${snap.decks.length} decks.\n\n` +
+            'OK = Replace all · Cancel = Merge (keep existing, imported wins on conflict)';
+          const replace = window.confirm(summary);
+          const mode = replace ? 'replace' : 'merge';
+          const next = applySnapshot(
+            { cards, keywords, factions, rarities, globalSettings, decks },
+            snap,
+            mode,
+          );
+          const validCardIds = new Set(next.cards.map(c => c.id));
+          const normalizedDecks = next.decks.map(d =>
+            normalizeDeck(d, validCardIds, next.globalSettings.deckSettings)
+          );
+          setCards(next.cards);
+          setKeywords(next.keywords);
+          setFactions(next.factions);
+          setRarities(next.rarities);
+          setGlobalSettings(next.globalSettings);
+          setDecks(normalizedDecks);
+          showToast(`Imported (${mode}): ${snap.cards.length} cards, ${snap.decks.length} decks`);
+          return;
+        }
 
-        const next = applySnapshot(
-          { cards, keywords, factions, rarities, globalSettings, decks },
-          snap,
-          mode,
-        );
-        // Compute normalized decks BEFORE any setState — prevents partial state if normalization fails
-        const validCardIds = new Set(next.cards.map(c => c.id));
-        const normalizedDecks = next.decks.map(d =>
-          normalizeDeck(d, validCardIds, next.globalSettings.deckSettings)
-        );
-        // All data ready: apply atomically
-        setCards(next.cards);
-        setKeywords(next.keywords);
-        setFactions(next.factions);
-        setRarities(next.rarities);
-        setGlobalSettings(next.globalSettings);
-        setDecks(normalizedDecks);
-        showToast(`Imported (${mode}): ${snap.cards.length} cards, ${snap.decks.length} decks`);
+        if (payload.kind === 'card') {
+          const incoming = payload.data;
+          const names = formatImportNames(incoming.map(c => c.name || 'Untitled'));
+          if (!window.confirm(`Import ${incoming.length} card(s)?\n\n${names}\n\nOK = Add to collection (imported wins on conflict)`)) return;
+          setCards(prev => mergeById(prev, incoming));
+          showToast(`Imported ${incoming.length} card(s)`);
+          return;
+        }
+
+        if (payload.kind === 'deck') {
+          const incoming = payload.data;
+          const validCardIds = new Set(cards.map(c => c.id));
+          const missingCount = incoming.reduce((n, d) =>
+            n + d.entries.filter(e => !validCardIds.has(e.cardId)).length, 0
+          );
+          const names = formatImportNames(incoming.map(d => d.name || 'Untitled'));
+          let msg = `Import ${incoming.length} deck(s)?\n\n${names}`;
+          if (missingCount > 0) {
+            msg += `\n\n⚠ ${missingCount} card reference(s) not in your collection will be removed from the imported deck(s).`;
+          }
+          msg += '\n\nOK = Add/merge decks · Cancel = Abort';
+          if (!window.confirm(msg)) return;
+          const normalizedDecks = incoming.map(d =>
+            normalizeDeck(d, validCardIds, globalSettings.deckSettings)
+          );
+          setDecks(prev => mergeById(prev, normalizedDecks));
+          showToast(`Imported ${incoming.length} deck(s)`);
+        }
       } catch {
         showToast('Import failed: invalid JSON file');
       }
@@ -421,6 +463,11 @@ export default function App(): React.ReactElement {
     reader.onerror = () => showToast('Import failed: could not read file');
     reader.readAsText(file);
   };
+
+  function formatImportNames(names: string[], max = 5): string {
+    const visible = names.slice(0, max).map(n => `• ${n}`).join('\n');
+    return names.length > max ? `${visible}\n• … and ${names.length - max} more` : visible;
+  }
 
   const onExportPng = async () => {
     if (!cardRef.current) { showToast('Export unavailable'); return; }
@@ -473,6 +520,7 @@ export default function App(): React.ReactElement {
         globalSettings={globalSettings}
         onChange={onDeckChange}
         onBack={onCloseDeckEditor}
+        onExportDeck={exportDeck}
       />
     ) : null;
   })() : null;
@@ -701,6 +749,7 @@ export default function App(): React.ReactElement {
         onPick={onPickFromCollection}
         onDelete={onDeleteFromCollection}
         onNew={onNewCard}
+        onExportCard={exportCard}
       />
       <DeckManager
         open={showDeckManager}
@@ -711,7 +760,45 @@ export default function App(): React.ReactElement {
         onClose={() => setShowDeckManager(false)}
         onChange={setDecks}
         onOpenDeck={onOpenDeck}
+        onExportDeck={exportDeck}
       />
+
+      {showExportModal && (
+        <div className="modal-scrim" onClick={() => setShowExportModal(false)}>
+          <div className="modal export-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div className="modal-eyebrow">Export</div>
+                <h2 className="modal-title">Export JSON</h2>
+              </div>
+            </div>
+            <div className="export-modal-body">
+              <p className="export-modal-desc">
+                Choose how to handle card images in the exported file.
+              </p>
+              <div className="export-modal-actions">
+                <button type="button" className="btn export-modal-btn" onClick={() => doExport(false)}>
+                  <Glyph name="download" size={14}/>
+                  <div className="export-modal-btn-text">
+                    <span>Full quality</span>
+                    <span className="export-modal-btn-hint">1920px · JPEG 85% — ideal for backup</span>
+                  </div>
+                </button>
+                <button type="button" className="btn export-modal-btn" onClick={() => doExport(true)}>
+                  <Glyph name="download" size={14}/>
+                  <div className="export-modal-btn-text">
+                    <span>Compact</span>
+                    <span className="export-modal-btn-hint">800px · JPEG 70% — smaller file for sharing</span>
+                  </div>
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={() => setShowExportModal(false)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && <div className="toast">{toast}</div>}
 

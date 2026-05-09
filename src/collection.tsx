@@ -21,11 +21,12 @@ interface CollectionProps {
   onPick: (id: string) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
+  onExportCard: (card: Card) => void;
 }
 
 export function Collection({
   open, cards, currentId, factions, rarities, keywords,
-  onClose, onPick, onDelete, onNew,
+  onClose, onPick, onDelete, onNew, onExportCard,
 }: CollectionProps): React.ReactElement | null {
   const [filters, setFilters] = useState<CollectionFilters>(createEmptyFilters);
   const [showFilters, setShowFilters] = useState(true);
@@ -107,7 +108,8 @@ export function Collection({
                                   factions={factions} rarities={rarities}
                                   active={c.id === currentId}
                                   onPick={() => onPick(c.id)}
-                                  onDelete={() => onDelete(c.id)}/>
+                                  onDelete={() => onDelete(c.id)}
+                                  onExport={() => onExportCard(c)}/>
                 ))}
               </div>
             </div>
@@ -127,12 +129,18 @@ interface CollectionCardProps {
   active: boolean;
   onPick: () => void;
   onDelete: () => void;
+  onExport: () => void;
 }
 
-function CollectionCard({ card, factions, rarities, active, onPick, onDelete }: CollectionCardProps): React.ReactElement {
+function CollectionCard({ card, factions, rarities, active, onPick, onDelete, onExport }: CollectionCardProps): React.ReactElement {
   return (
     <div className={`coll-card ${active ? 'on' : ''}`} onClick={onPick}>
       <CardThumbnail card={card} factions={factions} rarities={rarities}/>
+      <button type="button" className="coll-card-export"
+              title="Export card as JSON"
+              onClick={(e) => { e.stopPropagation(); onExport(); }}>
+        <Glyph name="download" size={12}/>
+      </button>
       <button type="button" className="coll-card-del"
               title="Delete"
               onClick={(e) => { e.stopPropagation(); onDelete(); }}>
