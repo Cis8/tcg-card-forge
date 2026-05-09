@@ -537,6 +537,9 @@ button { font-family: inherit; }
 }
 .kw-bar-manage:hover { background: rgba(216, 178, 90, .08); }
 
+/* @ Reference insert button */
+.ref-insert-btn { align-self: flex-start; margin-top: 2px; }
+
 /* ── Stage (center) ───────────────────────────────────────────────── */
 .stage {
   display: flex;

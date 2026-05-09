@@ -6,7 +6,8 @@ import { PATTERNS } from './data';
 import { Glyph, RarityShape } from './glyphs';
 import { GlyphPicker } from './glyph-picker';
 import { confirmDestructiveAction } from './confirm';
-import type { Card, CardWithArt, ImageHandle, Keyword, Faction, Rarity, GlyphName, GlobalSettings, DeckSettings, ThematicGlyphName, DescGlyph } from './types';
+import { ReferencePicker } from './reference-picker';
+import type { Card, CardWithArt, ImageHandle, Keyword, Faction, Rarity, GlobalSettings, DeckSettings, ThematicGlyphName, DescGlyph } from './types';
 
 interface FieldProps {
   label: string;
@@ -325,14 +326,47 @@ interface LeftPanelProps {
   card: Card;
   onChange: (patch: Partial<Card>) => void;
   keywords: Keyword[];
+  cards: CardWithArt[];
+  factions: Faction[];
+  rarities: Rarity[];
+  globalSettings: GlobalSettings;
   onOpenKeywords: () => void;
   deckSettings: DeckSettings;
   onDeckSettingChange: (k: keyof DeckSettings, v: number) => void;
 }
 
-export function LeftPanel({ card, onChange, keywords, onOpenKeywords, deckSettings, onDeckSettingChange }: LeftPanelProps): React.ReactElement {
+export function LeftPanel({ card, onChange, keywords, cards, factions, rarities, globalSettings, onOpenKeywords, deckSettings, onDeckSettingChange }: LeftPanelProps): React.ReactElement {
   const isUnit = card.type === 'unit';
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const cursorPosRef = useRef<number>(0);
+  const [showRefPicker, setShowRefPicker] = useState(false);
+
+  const handleRefInsert = (token: string) => {
+    const cur = card.description ?? '';
+    const pos = cursorPosRef.current;
+    const before = cur.slice(0, pos);
+    const after = cur.slice(pos);
+    const needsLeadingSpace = before.length > 0 && !/[\s\n]$/.test(before);
+    const needsTrailingSpace = after.length > 0 && !/^[\s\n]/.test(after);
+    const insert = (needsLeadingSpace ? ' ' : '') + token + (needsTrailingSpace ? ' ' : '');
+    onChange({ description: before + insert + after });
+    setShowRefPicker(false);
+  };
+
   return (
+    <>
+    {showRefPicker && (
+      <ReferencePicker
+        keywords={keywords}
+        cards={cards}
+        factions={factions}
+        rarities={rarities}
+        globalSettings={globalSettings}
+        onInsert={handleRefInsert}
+        onClose={() => setShowRefPicker(false)}
+        onManageKeywords={onOpenKeywords}
+      />
+    )}
     <aside className="rail rail-left">
       <header className="rail-header">
         <span className="rail-eyebrow">Card</span>
@@ -370,20 +404,27 @@ export function LeftPanel({ card, onChange, keywords, onOpenKeywords, deckSettin
             </Field>
           </div>
         )}
-        <Field label="Description"
-               hint='Wrap keywords in [brackets] — e.g. [Last Breath]'>
-          <textarea className="text-input text-area" rows={5}
-                    value={card.description || ''}
-                    placeholder="Describe the card's effect…"
-                    onChange={(e) => onChange({ description: e.target.value })}/>
-          <KeywordChipBar keywords={keywords}
-                          onInsert={(name) => {
-                            const insert = `[${name}]`;
-                            const cur = card.description || '';
-                            const next = cur && !/[\s\n]$/.test(cur) ? `${cur} ${insert}` : `${cur}${insert}`;
-                            onChange({ description: next });
-                          }}
-                          onManage={onOpenKeywords}/>
+        <Field label="Description" hint="Usa @ Reference per inserire keyword e carte">
+          <textarea
+            ref={textareaRef}
+            className="text-input text-area"
+            rows={5}
+            value={card.description || ''}
+            placeholder="Describe the card's effect…"
+            onChange={(e) => onChange({ description: e.target.value })}
+            onBlur={() => { cursorPosRef.current = textareaRef.current?.selectionStart ?? cursorPosRef.current; }}
+          />
+          <button
+            type="button"
+            className="btn btn-sm btn-ghost ref-insert-btn"
+            onClick={() => {
+              cursorPosRef.current = textareaRef.current?.selectionStart ?? (card.description ?? '').length;
+              setShowRefPicker(true);
+            }}
+          >
+            <Glyph name="edit" size={12}/>
+            <span>@ Reference</span>
+          </button>
         </Field>
         <Field label="Flavor text" hint="Italic line at the bottom (optional)">
           <textarea className="text-input text-area" rows={2}
@@ -425,32 +466,7 @@ export function LeftPanel({ card, onChange, keywords, onOpenKeywords, deckSettin
         </Field>
       </div>
     </aside>
-  );
-}
-
-interface KeywordChipBarProps {
-  keywords: Keyword[];
-  onInsert: (name: string) => void;
-  onManage: () => void;
-}
-
-function KeywordChipBar({ keywords, onInsert, onManage }: KeywordChipBarProps): React.ReactElement {
-  return (
-    <div className="kw-bar">
-      <span className="kw-bar-label">Insert keyword</span>
-      <div className="kw-bar-chips">
-        {keywords.map(k => (
-          <button type="button" key={k.id} className="kw-bar-chip"
-                  style={{ color: k.color }} title={k.description}
-                  onClick={() => onInsert(k.name)}>
-            <Glyph name={k.glyph as GlyphName} size={12}/><span>{k.name}</span>
-          </button>
-        ))}
-        <button type="button" className="kw-bar-manage" onClick={onManage}>
-          <Glyph name="edit" size={12}/><span>Manage…</span>
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
 

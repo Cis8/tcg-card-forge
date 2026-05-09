@@ -57,6 +57,7 @@ export interface DeckEditorProps {
 
 interface DeckCardRowProps {
   card: CardWithArt;
+  cards: CardWithArt[];
   factions: Faction[];
   rarities: Rarity[];
   keywords: Keyword[];
@@ -67,12 +68,12 @@ interface DeckCardRowProps {
   onRemove: () => void;
 }
 
-function DeckCardRow({ card, factions, rarities, keywords, quantity, maxCopies, globalSettings, onAdd, onRemove }: DeckCardRowProps): React.ReactElement {
+function DeckCardRow({ card, cards, factions, rarities, keywords, quantity, maxCopies, globalSettings, onAdd, onRemove }: DeckCardRowProps): React.ReactElement {
   const faction = factions.find(f => f.id === card.faction) ?? factions[0];
   const { font, costShape, attackShape, healthShape, costColor, attackColor, healthColor } = globalSettings;
   return (
     <CardHoverPreview
-      card={card} factions={factions} rarities={rarities} keywords={keywords}
+      card={card} cards={cards} factions={factions} rarities={rarities} keywords={keywords}
       font={font} costShape={costShape} attackShape={attackShape} healthShape={healthShape}
       costColor={costColor} attackColor={attackColor} healthColor={healthColor}
     >
@@ -96,6 +97,7 @@ function DeckCardRow({ card, factions, rarities, keywords, quantity, maxCopies, 
 
 interface DeckPickerCardProps {
   card: CardWithArt;
+  cards: CardWithArt[];
   factions: Faction[];
   rarities: Rarity[];
   keywords: Keyword[];
@@ -106,7 +108,7 @@ interface DeckPickerCardProps {
   onLongPress: (card: CardWithArt) => void;
 }
 
-function DeckPickerCard({ card, factions, rarities, keywords, quantity, maxCopies, globalSettings, onAdd, onLongPress }: DeckPickerCardProps): React.ReactElement {
+function DeckPickerCard({ card, cards, factions, rarities, keywords, quantity, maxCopies, globalSettings, onAdd, onLongPress }: DeckPickerCardProps): React.ReactElement {
   const atMax = quantity >= maxCopies;
   const { font, costShape, attackShape, healthShape, costColor, attackColor, healthColor } = globalSettings;
 
@@ -152,7 +154,7 @@ function DeckPickerCard({ card, factions, rarities, keywords, quantity, maxCopie
     >
       <div className="deck-picker-card-inner">
         <CardPreview
-          card={card} factions={factions} rarities={rarities} keywords={keywords}
+          card={card} cards={cards} factions={factions} rarities={rarities} keywords={keywords}
           font={font} costShape={costShape} attackShape={attackShape} healthShape={healthShape}
           costColor={costColor} attackColor={attackColor} healthColor={healthColor}
         />
@@ -175,7 +177,7 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
   const [mobileTab, setMobileTab] = useState<'cards' | 'stats'>('cards');
   const [touchPreviewCard, setTouchPreviewCard] = useState<CardWithArt | null>(null);
 
-  const filteredCards = useMemo(() => applyFilters(cards, filters, keywords) as CardWithArt[], [cards, filters, keywords]);
+  const filteredCards = useMemo(() => applyFilters(cards, filters) as CardWithArt[], [cards, filters]);
 
   const pickerScrollRef = useRef<HTMLDivElement>(null);
   const { cols: pickerCols, colTemplate, itemH, gap: pickerGap, padH, padV } = usePickerGrid(pickerScrollRef);
@@ -228,7 +230,7 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
   };
 
   const previewProps = {
-    factions, rarities, keywords,
+    factions, rarities, keywords, cards,
     font: globalSettings.font,
     costShape: globalSettings.costShape,
     attackShape: globalSettings.attackShape,
@@ -281,6 +283,7 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
                 <DeckCardRow
                   key={entry.cardId}
                   card={card}
+                  cards={cards}
                   factions={factions}
                   rarities={rarities}
                   keywords={keywords}
@@ -443,6 +446,7 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
                         <DeckPickerCard
                           key={card.id}
                           card={card}
+                          cards={cards}
                           factions={factions}
                           rarities={rarities}
                           keywords={keywords}

@@ -343,6 +343,19 @@
   text-decoration-color: currentColor;
   text-underline-offset: 2px;
 }
+.card-ref {
+  display: inline;
+  font-weight: 700;
+  letter-spacing: .01em;
+  cursor: help;
+  white-space: nowrap;
+}
+.card-ref-name {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: currentColor;
+  text-underline-offset: 2px;
+}
 /* Portal'd tooltip — fixed-positioned to body so it escapes the card's
    overflow:hidden, even when the keyword is near the card edge. */
 .kw-tip-portal {

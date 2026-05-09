@@ -1,7 +1,7 @@
 // collection-filter.ts — pure filtering logic for the Collection view.
 // Keyword detection reuses the same regex/normalization as card-preview.tsx.
 
-import type { Card, Keyword } from './types';
+import type { Card } from './types';
 
 /** Cost values shown as filter chips: 0-9 exact, 10 means "10 or more". */
 export const COST_FILTER_VALUES = [0,1,2,3,4,5,6,7,8,9,10] as const;
@@ -32,15 +32,10 @@ export function hasActiveFilters(f: CollectionFilters): boolean {
   );
 }
 
-/** Extract the ids of all keywords mentioned as [Name] in a card description.
- *  Matches the same regex + normalization used in card-preview.tsx. */
-export function extractCardKeywordIds(description: string, keywords: Keyword[]): Set<string> {
+/** Extract the ids of all keywords mentioned as [kw:id] in a card description. */
+export function extractCardKeywordIds(description: string): Set<string> {
   const found = new Set<string>();
-  for (const m of description.matchAll(/\[([^\]\n]+)\]/g)) {
-    const name = m[1].trim().toLowerCase();
-    const kw = keywords.find(k => k.name.trim().toLowerCase() === name);
-    if (kw) found.add(kw.id);
-  }
+  for (const m of description.matchAll(/\[kw:([^\]\n]+)\]/g)) found.add(m[1].trim());
   return found;
 }
 
@@ -51,7 +46,6 @@ export function extractCardKeywordIds(description: string, keywords: Keyword[]):
 export function applyFilters(
   cards: Card[],
   filters: CollectionFilters,
-  keywords: Keyword[],
 ): Card[] {
   const { factions, costs, keywords: kwIds, rarities, search } = filters;
   const q = search.trim().toLowerCase();
@@ -75,7 +69,7 @@ export function applyFilters(
     }
 
     if (kwIds.length > 0) {
-      const cardKwIds = extractCardKeywordIds(card.description, keywords);
+      const cardKwIds = extractCardKeywordIds(card.description);
       if (!kwIds.every(id => cardKwIds.has(id))) return false;
     }
 

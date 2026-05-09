@@ -62,8 +62,8 @@ export function Collection({
   const { cols, gap, padding, itemH } = useCollectionGrid(scrollRef);
 
   const filteredCards = useMemo(
-    () => applyFilters(cards, filters, keywords) as CardWithArt[],
-    [cards, filters, keywords],
+    () => applyFilters(cards, filters) as CardWithArt[],
+    [cards, filters],
   );
 
   const rows = useMemo(() => {

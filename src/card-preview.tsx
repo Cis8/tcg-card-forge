@@ -9,6 +9,7 @@ interface CardPreviewProps {
   keywords: Keyword[];
   factions: Faction[];
   rarities: Rarity[];
+  cards?: CardWithArt[];
   font?: FontVariant;
   costShape?:   StatShape;
   attackShape?: StatShape;
@@ -18,23 +19,32 @@ interface CardPreviewProps {
   healthColor?: string;
 }
 
-interface Token {
-  kind: 'text' | 'kw';
-  value?: string;
-  keyword?: Keyword;
-}
+type Token =
+  | { kind: 'text'; value: string }
+  | { kind: 'kw'; keyword: Keyword }
+  | { kind: 'card'; card: CardWithArt };
 
-function parseDescription(text: string, keywordsByLowerName: Map<string, Keyword>): Token[] {
+function parseDescription(
+  text: string,
+  kwById: Map<string, Keyword>,
+  cardById: Map<string, CardWithArt>,
+): Token[] {
   if (!text) return [];
   const tokens: Token[] = [];
-  const re = /\[([^\]\n]+)\]/g;
+  const re = /\[(kw|card):([^\]\n]+)\]/g;
   let last = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) tokens.push({ kind: 'text', value: text.slice(last, m.index) });
-    const key = m[1].trim().toLowerCase();
-    const kw = keywordsByLowerName.get(key);
-    tokens.push(kw ? { kind: 'kw', keyword: kw } : { kind: 'text', value: m[0] });
+    const prefix = m[1];
+    const id = m[2].trim();
+    if (prefix === 'kw') {
+      const kw = kwById.get(id);
+      tokens.push(kw ? { kind: 'kw', keyword: kw } : { kind: 'text', value: m[0] });
+    } else {
+      const c = cardById.get(id);
+      tokens.push(c ? { kind: 'card', card: c } : { kind: 'text', value: m[0] });
+    }
     last = m.index + m[0].length;
   }
   if (last < text.length) tokens.push({ kind: 'text', value: text.slice(last) });
@@ -165,7 +175,7 @@ function validHex(value: string | null | undefined): string | undefined {
   return undefined;
 }
 
-export function CardPreview({ card, keywords, factions, rarities,
+export function CardPreview({ card, keywords, factions, rarities, cards,
                               font = 'cinzel',
                               costShape = 'rhombus', attackShape = 'gem', healthShape = 'heart',
                               costColor = '#5dbce5', attackColor = '#7c8a99', healthColor = '#b21625',
@@ -179,12 +189,17 @@ export function CardPreview({ card, keywords, factions, rarities,
   const rarityGlow = rarity ? deriveRarityGlow(rarity.color) : 'transparent';
   const isUnit = card.type === 'unit';
 
-  const kwByName = useMemo(() => {
+  const kwById = useMemo(() => {
     const m = new Map<string, Keyword>();
-    keywords.forEach(k => m.set(k.name.toLowerCase(), k));
+    keywords.forEach(k => m.set(k.id, k));
     return m;
   }, [keywords]);
-  const tokens = parseDescription(card.description, kwByName);
+  const cardById = useMemo(() => {
+    const m = new Map<string, CardWithArt>();
+    (cards ?? []).forEach(c => m.set(c.id, c));
+    return m;
+  }, [cards]);
+  const tokens = parseDescription(card.description, kwById, cardById);
 
   const descWatermarkGlyph = resolveDescriptionGlyph(card, factionRaw.glyph);
   const descBg = validHex(card.descBg);
@@ -265,17 +280,20 @@ export function CardPreview({ card, keywords, factions, rarities,
             <p className="card-text">
               {tokens.length === 0
                 ? <span style={{ opacity: .35, fontStyle: 'italic' }}>
-                    Description appears here. Wrap a keyword in [brackets] to style it.
+                    Description appears here. Use @ Reference to insert keywords and cards.
                   </span>
                 : tokens.map((t, i) => {
                     if (t.kind === 'text') {
-                      return (t.value ?? '').split('\n').map((line, j, arr) => (
+                      return t.value.split('\n').map((line, j, arr) => (
                         <React.Fragment key={`${i}-${j}`}>
                           {line}{j < arr.length - 1 ? <br/> : null}
                         </React.Fragment>
                       ));
                     }
-                    return <KeywordSpan key={i} keyword={t.keyword!}/>;
+                    if (t.kind === 'card') {
+                      return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []}/>;
+                    }
+                    return <KeywordSpan key={i} keyword={t.keyword}/>;
                   })}
             </p>
             {card.flavor && <p className="card-flavor">{card.flavor}</p>}
@@ -425,12 +443,13 @@ function KeywordSpan({ keyword }: { keyword: Keyword }): React.ReactElement {
 
 export interface CardHoverPreviewProps extends CardPreviewProps {
   children: React.ReactNode;
+  tag?: 'div' | 'span';
 }
 
 const PREVIEW_W = 340; // native card width
 const PREVIEW_H = 488; // native card height (stat gems may bleed ~30px below)
 
-export function CardHoverPreview({ children, ...previewProps }: CardHoverPreviewProps): React.ReactElement {
+export function CardHoverPreview({ children, tag, ...previewProps }: CardHoverPreviewProps): React.ReactElement {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -450,9 +469,10 @@ export function CardHoverPreview({ children, ...previewProps }: CardHoverPreview
 
   const hide = useCallback(() => setPos(null), []);
 
+  const Tag = tag ?? 'div';
   return (
-    <div
-      ref={ref}
+    <Tag
+      ref={ref as React.RefObject<HTMLDivElement & HTMLSpanElement>}
       onMouseEnter={show}
       onMouseLeave={hide}
       onFocus={show}
@@ -466,6 +486,26 @@ export function CardHoverPreview({ children, ...previewProps }: CardHoverPreview
         </div>,
         document.body
       )}
-    </div>
+    </Tag>
+  );
+}
+
+interface CardRefSpanProps {
+  card: CardWithArt;
+  factions: Faction[];
+  rarities: Rarity[];
+  keywords: Keyword[];
+  cards: CardWithArt[];
+}
+
+function CardRefSpan({ card, factions, rarities, keywords, cards }: CardRefSpanProps): React.ReactElement {
+  const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
+  const accent = factionRaw ? deriveFaction(factionRaw).accent : '#d4a017';
+  return (
+    <CardHoverPreview tag="span" card={card} factions={factions} rarities={rarities} keywords={keywords} cards={cards}>
+      <span className="card-ref" style={{ color: accent }}>
+        <span className="card-ref-name">{card.name || 'Untitled'}</span>
+      </span>
+    </CardHoverPreview>
   );
 }

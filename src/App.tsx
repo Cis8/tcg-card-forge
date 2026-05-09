@@ -600,6 +600,10 @@ export default function App(): React.ReactElement {
             card={current}
             onChange={onCardChange}
             keywords={keywords}
+            cards={cards}
+            factions={factions}
+            rarities={rarities}
+            globalSettings={globalSettings}
             onOpenKeywords={() => setShowKeywords(true)}
             deckSettings={globalSettings.deckSettings}
             onDeckSettingChange={setDeckSetting}
@@ -640,6 +644,7 @@ export default function App(): React.ReactElement {
                     <CardPreview
                       card={current}
                       keywords={keywords}
+                      cards={cards}
                       factions={factions}
                       rarities={rarities}
                       font={globalSettings.font}
