@@ -17,6 +17,7 @@ interface CardPreviewProps {
   costColor?:   string;
   attackColor?: string;
   healthColor?: string;
+  onEditCard?: (cardId: string) => void;
 }
 
 type Token =
@@ -179,6 +180,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
                               font = 'cinzel',
                               costShape = 'rhombus', attackShape = 'gem', healthShape = 'heart',
                               costColor = '#5dbce5', attackColor = '#7c8a99', healthColor = '#b21625',
+                              onEditCard,
                             }: CardPreviewProps): React.ReactElement {
   const frame: FrameVariant =
     card.frame === 'classic' || card.frame === 'inscribed' ? card.frame : 'ornate';
@@ -292,7 +294,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
                       ));
                     }
                     if (t.kind === 'card') {
-                      return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []} descBg={descEffectiveBg}/>;
+                      return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []} descBg={descEffectiveBg} onEditCard={onEditCard}/>;
                     }
                     return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg}/>;
                   })}
@@ -446,30 +448,43 @@ function KeywordSpan({ keyword, descBg }: { keyword: Keyword; descBg: string }):
 export interface CardHoverPreviewProps extends CardPreviewProps {
   children: React.ReactNode;
   tag?: 'div' | 'span';
+  /** Already-bound action for this specific card reference (click on desktop, Edit button on mobile). */
+  onEdit?: () => void;
 }
 
 const PREVIEW_W = 340; // native card width
 const PREVIEW_H = 488; // native card height (stat gems may bleed ~30px below)
 
-export function CardHoverPreview({ children, tag, ...previewProps }: CardHoverPreviewProps): React.ReactElement {
+export function CardHoverPreview({ children, tag, onEdit, ...previewProps }: CardHoverPreviewProps): React.ReactElement {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Detect touch-primary devices once at mount; stable for the component lifetime.
+  const isTouchPrimary = useMemo(() => window.matchMedia('(pointer: coarse)').matches, []);
+
   const show = useCallback(() => {
-    if (!ref.current) return;
+    if (isTouchPrimary || !ref.current) return;
     const r = ref.current.getBoundingClientRect();
     const GAP = 14;
     let x = r.right + GAP;
     let y = r.top + r.height / 2 - PREVIEW_H / 2;
-    // flip to left side if no room on the right
     if (x + PREVIEW_W > window.innerWidth - 8) x = r.left - PREVIEW_W - GAP;
-    // clamp both axes to keep inside viewport
     x = Math.max(8, Math.min(x, window.innerWidth - PREVIEW_W - 8));
     y = Math.max(8, Math.min(y, window.innerHeight - PREVIEW_H - 8));
     setPos({ x, y });
-  }, []);
+  }, [isTouchPrimary]);
 
   const hide = useCallback(() => setPos(null), []);
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (isTouchPrimary) {
+      e.stopPropagation();
+      setMobileOpen(v => !v);
+    } else {
+      onEdit?.();
+    }
+  }, [isTouchPrimary, onEdit]);
 
   const Tag = tag ?? 'div';
   return (
@@ -480,15 +495,60 @@ export function CardHoverPreview({ children, tag, ...previewProps }: CardHoverPr
       onFocus={show}
       onBlur={hide}
       onWheel={hide}
+      onClick={handleClick}
+      style={onEdit && !isTouchPrimary ? { cursor: 'pointer' } : undefined}
     >
       {children}
+
+      {/* Desktop: side hover preview */}
       {pos && ReactDOM.createPortal(
         <div className="card-preview-hover-portal" style={{ left: pos.x, top: pos.y }}>
           <CardPreview {...previewProps} />
         </div>,
         document.body
       )}
+
+      {/* Mobile: centered overlay on tap */}
+      {mobileOpen && ReactDOM.createPortal(
+        <MobileCardOverlay
+          previewProps={previewProps}
+          onEdit={onEdit}
+          onClose={() => setMobileOpen(false)}
+        />,
+        document.body
+      )}
     </Tag>
+  );
+}
+
+function MobileCardOverlay({ previewProps, onEdit, onClose }: {
+  previewProps: CardPreviewProps;
+  onEdit?: () => void;
+  onClose: () => void;
+}): React.ReactElement {
+  const scale = Math.min(
+    1,
+    (window.innerWidth  - 32) / PREVIEW_W,
+    (window.innerHeight - 120) / PREVIEW_H,
+  );
+  return (
+    <div className="card-ref-overlay" onClick={onClose}>
+      <div className="card-ref-overlay-inner" onClick={e => e.stopPropagation()}>
+        <div style={{ width: PREVIEW_W * scale, height: PREVIEW_H * scale, overflow: 'visible', flexShrink: 0 }}>
+          <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: PREVIEW_W, height: PREVIEW_H, pointerEvents: 'none' }}>
+            <CardPreview {...previewProps} />
+          </div>
+        </div>
+        <div className="card-ref-overlay-actions">
+          {onEdit && (
+            <button className="btn btn-primary btn-sm" onClick={() => { onEdit(); onClose(); }}>
+              Edit card
+            </button>
+          )}
+          <button className="btn btn-sm" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -499,14 +559,16 @@ interface CardRefSpanProps {
   keywords: Keyword[];
   cards: CardWithArt[];
   descBg: string;
+  onEditCard?: (cardId: string) => void;
 }
 
-function CardRefSpan({ card, factions, rarities, keywords, cards, descBg }: CardRefSpanProps): React.ReactElement {
+function CardRefSpan({ card, factions, rarities, keywords, cards, descBg, onEditCard }: CardRefSpanProps): React.ReactElement {
   const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
   const accent = factionRaw ? deriveFaction(factionRaw).accent : '#d4a017';
   const displayColor = adaptColorForBg(accent, descBg);
+  const onEdit = onEditCard ? () => onEditCard(card.id) : undefined;
   return (
-    <CardHoverPreview tag="span" card={card} factions={factions} rarities={rarities} keywords={keywords} cards={cards}>
+    <CardHoverPreview tag="span" card={card} factions={factions} rarities={rarities} keywords={keywords} cards={cards} onEdit={onEdit}>
       <span className="card-ref" style={{ color: displayColor }}>
         <span className="card-ref-name">{card.name || 'Untitled'}</span>
       </span>

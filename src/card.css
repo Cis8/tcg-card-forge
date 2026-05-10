@@ -347,7 +347,7 @@
   display: inline;
   font-weight: 700;
   letter-spacing: .01em;
-  cursor: help;
+  cursor: pointer;
   white-space: nowrap;
 }
 .card-ref-name {
@@ -960,4 +960,33 @@
 @keyframes card-preview-hover-in {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Card ref mobile overlay ─────────────────────────────────────────── */
+.card-ref-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, .75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: card-ref-overlay-in .15s ease-out;
+}
+.card-ref-overlay-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  filter: drop-shadow(0 16px 48px rgba(0, 0, 0, .9));
+}
+.card-ref-overlay-actions {
+  display: flex;
+  gap: 8px;
+}
+@keyframes card-ref-overlay-in {
+  from { opacity: 0; transform: scale(.96); }
+  to   { opacity: 1; transform: scale(1); }
 }

@@ -654,11 +654,19 @@ export default function App(): React.ReactElement {
                       costColor={globalSettings.costColor}
                       attackColor={globalSettings.attackColor}
                       healthColor={globalSettings.healthColor}
+                      onEditCard={(id) => {
+                        const c = appState?.cardMap.get(id);
+                        if (c) {
+                          dispatch({ type: 'SET_CURRENT', payload: c });
+                          setMobileTab('preview');
+                          void settingsService.saveCurrentCardId(id);
+                        }
+                      }}
                     />
                   </div>
                 </div>
               </div>
-              <div className="stage-eyebrow">Live preview · hover keywords for rules</div>
+              <div className="stage-eyebrow">Live preview · hover keywords for rules · click card refs to edit</div>
               <div className="stage-zoom-control">
                 <span className="stage-zoom-label">Zoom</span>
                 <input
