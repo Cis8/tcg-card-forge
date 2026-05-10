@@ -267,7 +267,6 @@ interface ArtUploaderProps {
 
 const ArtUploader = ({ artHandle, onChange }: ArtUploaderProps): React.ReactElement => {
   const { imageService } = useServices();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -288,7 +287,6 @@ const ArtUploader = ({ artHandle, onChange }: ArtUploaderProps): React.ReactElem
   return (
     <div>
       <div className={`art-drop ${drag ? 'drag' : ''} ${previewUrl ? 'has' : ''}`}
-           onClick={() => !uploading && inputRef.current?.click()}
            onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
            onDragLeave={() => setDrag(false)}
            onDrop={(e) => { e.preventDefault(); setDrag(false); handleFiles(e.dataTransfer.files); }}>
@@ -304,9 +302,11 @@ const ArtUploader = ({ artHandle, onChange }: ArtUploaderProps): React.ReactElem
             <span className="art-drop-hint">Otherwise the theme color fills the art window</span>
           </div>
         )}
-        <input ref={inputRef} type="file" accept="image/*" hidden
-               onClick={(e) => e.stopPropagation()}
-               onChange={(e) => handleFiles(e.target.files)}/>
+        <input type="file" accept="image/*"
+               disabled={uploading}
+               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+               onDrop={(e) => { e.stopPropagation(); setDrag(false); }}
+               onChange={(e) => { handleFiles(e.target.files); e.target.value = ''; }}/>
       </div>
       {previewUrl && !uploading && (
         <button type="button" className="btn btn-sm btn-ghost art-clear"
