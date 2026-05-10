@@ -1,6 +1,6 @@
 import React, { useState, useRef, useId, useMemo, useCallback, useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { deriveFaction, deriveRarityDeep, deriveRarityGlow } from './color-utils';
+import { adaptColorForBg, deriveFaction, deriveRarityDeep, deriveRarityGlow } from './color-utils';
 import { Glyph, RarityShape, CornerFlourish } from './glyphs';
 import type { Card, CardWithArt, Faction, Rarity, Keyword, FrameVariant, FontVariant, StatShape, ThematicGlyphName } from './types';
 
@@ -203,6 +203,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
 
   const descWatermarkGlyph = resolveDescriptionGlyph(card, factionRaw.glyph);
   const descBg = validHex(card.descBg);
+  const descEffectiveBg = descBg ?? faction.parchment;
   const namePlateRef = useRef<HTMLDivElement>(null);
   const nameFit = useCardNameFit(card.name || 'Untitled', font, namePlateRef);
 
@@ -291,9 +292,9 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
                       ));
                     }
                     if (t.kind === 'card') {
-                      return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []}/>;
+                      return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []} descBg={descEffectiveBg}/>;
                     }
-                    return <KeywordSpan key={i} keyword={t.keyword}/>;
+                    return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg}/>;
                   })}
             </p>
             {card.flavor && <p className="card-flavor">{card.flavor}</p>}
@@ -406,18 +407,19 @@ function useCardNameFit(
   return style;
 }
 
-function KeywordSpan({ keyword }: { keyword: Keyword }): React.ReactElement {
+function KeywordSpan({ keyword, descBg }: { keyword: Keyword; descBg: string }): React.ReactElement {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
+  const displayColor = adaptColorForBg(keyword.color, descBg);
   const updatePos = () => {
     if (!ref.current) return;
     const r = ref.current.getBoundingClientRect();
     setPos({ x: r.left + r.width / 2, y: r.top });
   };
   return (
-    <span className="kw" style={{ color: keyword.color }} ref={ref}
+    <span className="kw" style={{ color: displayColor }} ref={ref}
           onMouseEnter={updatePos} onMouseLeave={() => setPos(null)}>
-      <span className="kw-glyph" style={{ color: keyword.color }}>
+      <span className="kw-glyph" style={{ color: displayColor }}>
         <Glyph name={keyword.glyph} size={13}/>
       </span>
       <span className="kw-name">{keyword.name}</span>
@@ -496,14 +498,16 @@ interface CardRefSpanProps {
   rarities: Rarity[];
   keywords: Keyword[];
   cards: CardWithArt[];
+  descBg: string;
 }
 
-function CardRefSpan({ card, factions, rarities, keywords, cards }: CardRefSpanProps): React.ReactElement {
+function CardRefSpan({ card, factions, rarities, keywords, cards, descBg }: CardRefSpanProps): React.ReactElement {
   const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
   const accent = factionRaw ? deriveFaction(factionRaw).accent : '#d4a017';
+  const displayColor = adaptColorForBg(accent, descBg);
   return (
     <CardHoverPreview tag="span" card={card} factions={factions} rarities={rarities} keywords={keywords} cards={cards}>
-      <span className="card-ref" style={{ color: accent }}>
+      <span className="card-ref" style={{ color: displayColor }}>
         <span className="card-ref-name">{card.name || 'Untitled'}</span>
       </span>
     </CardHoverPreview>

@@ -75,6 +75,22 @@ export function deriveFaction(faction: Faction): DerivedFaction {
   };
 }
 
+/**
+ * Adjusts the lightness of `fg` so it reads well against `bg`.
+ * Hue and saturation of `fg` are preserved; only lightness is clamped.
+ * On a light background (parchment-like) the token is darkened;
+ * on a dark background it is lightened.
+ */
+export function adaptColorForBg(fg: string, bg: string): string {
+  const [, , bgL] = hexToHsl(bg);
+  const [fgH, fgS, fgL] = hexToHsl(fg);
+  const newL = bgL >= 0.55
+    ? clamp(fgL, 0.15, 0.42)   // light bg → darken
+    : clamp(fgL, 0.58, 0.88);  // dark  bg → lighten
+  if (Math.abs(newL - fgL) < 0.01) return fg;
+  return hslToHex(fgH, fgS, newL);
+}
+
 export function deriveRarityDeep(color: string): string {
   const [h, s, l] = hexToHsl(color || '#888');
   return hslToHex(h, clamp(s * 0.7, 0, 1), clamp(l * 0.4, 0.06, 0.3));
