@@ -74,6 +74,7 @@
   /* Prevent upward overflow in landscape where the card can be taller than the 1fr row */
   .app[data-mobile-tab="preview"] .stage-wrap {
     align-items: start;
+    height: auto;
   }
   .app[data-mobile-tab="appearance"] .rail-right {
     display: flex !important;

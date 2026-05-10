@@ -6,7 +6,8 @@
       "Bash(npm install *)",
       "Bash(npx tsc *)",
       "Bash(cd /d \"C:\\\\Users\\\\emaci\\\\Documents\\\\tcg-card-forge\")",
-      "Bash(findstr /S \"rarity.*common\\\\|DEFAULT_RARITIES\" src\\\\*.tsx src\\\\*.ts)"
+      "Bash(findstr /S \"rarity.*common\\\\|DEFAULT_RARITIES\" src\\\\*.tsx src\\\\*.ts)",
+      "Bash(curl -s http://localhost:5173)"
     ]
   }
 }
