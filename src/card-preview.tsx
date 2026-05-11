@@ -701,28 +701,18 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities }: K
               position: 'fixed',
               left: tipData.cardLeft,
               top: tipData.cardTop,
-              width: Math.round(PREVIEW_W * tipData.cardScale),
-              height: Math.round(PREVIEW_H * tipData.cardScale),
-              overflow: 'hidden',
-              borderRadius: 6,
-              boxShadow: '0 8px 28px rgba(0,0,0,.8)',
               pointerEvents: 'none',
               zIndex: 200,
+              filter: 'drop-shadow(0 8px 28px rgba(0,0,0,.8))',
             }}>
-              <div style={{
-                transform: `scale(${tipData.cardScale})`,
-                transformOrigin: 'top left',
-                width: PREVIEW_W,
-                height: PREVIEW_H,
-              }}>
-                <CardPreview
-                  card={firstCard}
-                  keywords={keywords ?? []}
-                  factions={factions}
-                  rarities={rarities}
-                  cards={cards}
-                />
-              </div>
+              <ScaledCardPreview
+                scale={tipData.cardScale}
+                card={firstCard}
+                keywords={keywords ?? []}
+                factions={factions}
+                rarities={rarities}
+                cards={cards}
+              />
             </div>
           )}
         </>,
@@ -744,6 +734,19 @@ export interface CardHoverPreviewProps extends CardPreviewProps {
 
 const PREVIEW_W = 340; // native card width
 const PREVIEW_H = 488; // native card height (stat gems may bleed ~30px below)
+
+/** Renders a CardPreview at an arbitrary scale without clipping gem bleeds. */
+function ScaledCardPreview({ scale, ...previewProps }: CardPreviewProps & { scale: number }): React.ReactElement {
+  const w = Math.round(PREVIEW_W * scale);
+  const h = Math.round(PREVIEW_H * scale);
+  return (
+    <div style={{ width: w, height: h, overflow: 'visible', flexShrink: 0, pointerEvents: 'none' }}>
+      <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: PREVIEW_W, height: PREVIEW_H }}>
+        <CardPreview {...previewProps} />
+      </div>
+    </div>
+  );
+}
 
 export function CardHoverPreview({ children, tag, onEdit, ...previewProps }: CardHoverPreviewProps): React.ReactElement {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -824,11 +827,7 @@ function MobileCardOverlay({ previewProps, onEdit, onClose }: {
   return (
     <div className="card-ref-overlay" onClick={onClose}>
       <div className="card-ref-overlay-inner" onClick={e => e.stopPropagation()}>
-        <div style={{ width: PREVIEW_W * scale, height: PREVIEW_H * scale, overflow: 'visible', flexShrink: 0 }}>
-          <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: PREVIEW_W, height: PREVIEW_H, pointerEvents: 'none' }}>
-            <CardPreview {...previewProps} />
-          </div>
-        </div>
+        <ScaledCardPreview scale={scale} {...previewProps} />
         <div className="card-ref-overlay-actions">
           {onEdit && (
             <button className="btn btn-primary btn-sm" onClick={() => { onEdit(); onClose(); }}>
