@@ -97,7 +97,12 @@ export default function App(): React.ReactElement {
   const batchRenderRef = useRef<HTMLDivElement>(null);
   const fontEmbedCSSRef = useRef<string | null | undefined>(undefined);
   const importFileRef = useRef<HTMLInputElement>(null);
-  const [cardZoom, setCardZoom] = useState(100);
+  const [cardZoom, setCardZoom] = useState(() => {
+    // Card bleed-box height: CARD_H(488) + BLEED_TOP(12) + BLEED_BOTTOM(8) = 508
+    // Vertical chrome: topbar(56) + stage-padding(40) + gap+eyebrow(32) + zoom-overlay-clearance(48) = 176px
+    const maxFitScale = (window.innerHeight - 176) / 508;
+    return Math.min(100, Math.max(50, Math.floor(maxFitScale / 1.2 * 100)));
+  });
   const [leftW, setLeftW] = useState(320);
   const [rightW, setRightW] = useState(320);
   const dragRef = useRef<{ side: 'left' | 'right'; startX: number; startW: number } | null>(null);
@@ -107,7 +112,6 @@ export default function App(): React.ReactElement {
   const [showOverflow, setShowOverflow] = useState(false);
   const overflowRef = useRef<HTMLDivElement>(null);
   const [viewportW, setViewportW] = useState(() => window.innerWidth);
-  const [viewportH, setViewportH] = useState(() => window.innerHeight);
 
   // Deck / view state
   const decksRef = useRef(decks);
@@ -168,12 +172,9 @@ export default function App(): React.ReactElement {
 
   const closeOverflow = useCallback(() => setShowOverflow(false), []);
 
-  // Track viewport dimensions reactively (handles orientation changes on mobile).
+  // Track viewport width reactively (handles orientation changes on mobile).
   useEffect(() => {
-    const onResize = () => {
-      setViewportW(window.innerWidth);
-      setViewportH(window.innerHeight);
-    };
+    const onResize = () => setViewportW(window.innerWidth);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
@@ -186,19 +187,12 @@ export default function App(): React.ReactElement {
   // Effective card scale.
   // Mobile: fit the full bleed-box (340 + 10 + 8 = 358 px wide) within the
   //         available stage content width (viewport − 32 px h-padding).
-  // Desktop: user zoom × 1.2 boost, capped so the card never hides the zoom slider.
-  //   Stage vertical chrome: topbar(56) + padding(40) + grid-gaps(54) + meta(22) + eyebrow(14) + zoom-row(32) ≈ 218px
+  // Desktop: user zoom × 1.2 boost. The zoom control is an absolute overlay so
+  //          the card can exceed the stage height without burying it.
   const isMobile = viewportW <= 767;
-  const cardBleedH = CARD_H + BLEED_TOP + BLEED_BOTTOM;
-  const maxFitScale = Math.max(0.4, (viewportH - 218) / cardBleedH);
-  // Maximum zoom% the current viewport height can accommodate.
-  const maxZoom = isMobile ? 150 : Math.min(150, Math.max(50, Math.floor(maxFitScale / 1.2 * 100)));
-  // effectiveZoom respects the height-derived cap; cardZoom stores the user's preference
-  // so enlarging the window restores the prior zoom.
-  const effectiveZoom = Math.min(cardZoom, maxZoom);
   const cardScale = isMobile
     ? Math.min(1.2, (viewportW - 32) / (CARD_W + BLEED_LEFT + BLEED_RIGHT))
-    : effectiveZoom / 100 * 1.2;
+    : cardZoom / 100 * 1.2;
 
   // Outer div: layout placeholder sized to the full bleed-box.
   // Inner div: absolutely positioned inside, offset so every bleed element
@@ -522,9 +516,6 @@ export default function App(): React.ReactElement {
     batchExport.start(cards, options, fontEmbedCSS, factions);
   };
 
-  const factionForCard = factions.find((f) => f.id === current.faction) ?? factions[0];
-  const rarityForCard = current.rarity ? rarities.find((r) => r.id === current.rarity) : undefined;
-
   // Deck handlers
   const onDeckChange = async (deck: Deck) => {
     const newDecks = decks.map(d => d.id === deck.id ? deck : d);
@@ -686,13 +677,6 @@ export default function App(): React.ReactElement {
 
           <div className="stage">
             <div className="stage-wrap">
-              <div className="stage-meta">
-                <span>{factionForCard?.name}</span>
-                <span className="stage-meta-sep" />
-                <b>{rarityForCard?.name}</b>
-                <span className="stage-meta-sep" />
-                <span>{current.type === 'unit' ? 'Unit' : 'Spell'}</span>
-              </div>
               {/* Outer div compensates layout space for the scaled card including bleed */}
               <div style={{
                 width: `${outerW}px`,
@@ -737,28 +721,28 @@ export default function App(): React.ReactElement {
                 </div>
               </div>
               <div className="stage-eyebrow">Live preview · hover keywords for rules · click keywords or card refs to edit</div>
-              <div className="stage-zoom-control">
-                <span className="stage-zoom-label">Zoom</span>
-                <input
-                  type="range"
-                  className="stage-zoom-slider"
-                  min={50}
-                  max={maxZoom}
-                  step={1}
-                  value={effectiveZoom}
-                  onChange={e => setCardZoom(Number(e.target.value))}
-                  aria-label="Card zoom"
-                />
-                <span className="stage-zoom-value">{effectiveZoom}%</span>
-                {effectiveZoom !== 100 && (
-                  <button
-                    type="button"
-                    className="stage-zoom-reset"
-                    onClick={() => setCardZoom(100)}
-                    title="Reset zoom"
-                  >↺</button>
-                )}
-              </div>
+            </div>
+            <div className="stage-zoom-control">
+              <span className="stage-zoom-label">Zoom</span>
+              <input
+                type="range"
+                className="stage-zoom-slider"
+                min={50}
+                max={150}
+                step={1}
+                value={cardZoom}
+                onChange={e => setCardZoom(Number(e.target.value))}
+                aria-label="Card zoom"
+              />
+              <span className="stage-zoom-value">{cardZoom}%</span>
+              {cardZoom !== 100 && (
+                <button
+                  type="button"
+                  className="stage-zoom-reset"
+                  onClick={() => setCardZoom(100)}
+                  title="Reset zoom"
+                >↺</button>
+              )}
             </div>
           </div>
           <div

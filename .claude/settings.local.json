@@ -12,7 +12,8 @@
       "Read(//tmp/**)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
       "Bash(curl *)",
-      "Bash(xargs ls -la)"
+      "Bash(xargs ls -la)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

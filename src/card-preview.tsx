@@ -302,7 +302,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
                       if (t.kind === 'card') {
                         return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []} descBg={descEffectiveBg} onEditCard={onEditCard}/>;
                       }
-                      return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg} keywords={keywords} cards={cards} factions={factions} rarities={rarities} onEditKeyword={onEditKeyword}/>;
+                      return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg} keywords={keywords} cards={cards} factions={factions} rarities={rarities} onEditKeyword={onEditKeyword} onEditCard={onEditCard}/>;
                     })}
               </p>
             )}
@@ -456,13 +456,16 @@ interface KeywordSpanProps {
   factions?: Faction[];
   rarities?: Rarity[];
   onEditKeyword?: (kwId: string) => void;
+  onEditCard?: (cardId: string) => void;
 }
 
-/** Tooltip box (visual only — no position, no arrow). Used for nested kw sub-tips. */
-function KwTipBox({ keyword, keywords, cards }: {
+/** Tooltip box (shared by main tooltip and kw sub-tips). Optionally interactive. */
+function KwTipBox({ keyword, keywords, cards, onEditKeyword, onEditCard }: {
   keyword: Keyword;
   keywords?: Keyword[];
   cards?: CardWithArt[];
+  onEditKeyword?: (kwId: string) => void;
+  onEditCard?: (cardId: string) => void;
 }): React.ReactElement {
   const kwById = useMemo(() => new Map((keywords ?? []).map(k => [k.id, k])), [keywords]);
   const cardById = useMemo(() => new Map((cards ?? []).map(c => [c.id, c])), [cards]);
@@ -485,7 +488,9 @@ function KwTipBox({ keyword, keywords, cards }: {
           if (t.kind === 'kw') {
             const kwColor = adaptColorForBg(t.keyword.color, KW_TIP_TOOLTIP_BG);
             return (
-              <span key={i} className="kw" style={{ color: kwColor }}>
+              <span key={i} className="kw"
+                    style={{ color: kwColor, ...(onEditKeyword ? { cursor: 'pointer' } : {}) }}
+                    onClick={onEditKeyword ? () => onEditKeyword(t.keyword.id) : undefined}>
                 <span className="kw-glyph" style={{ color: kwColor }}>
                   <Glyph name={t.keyword.glyph} size={13}/>
                 </span>
@@ -496,7 +501,9 @@ function KwTipBox({ keyword, keywords, cards }: {
           if (t.kind === 'card') {
             const cardColor = adaptColorForBg('#d4a017', KW_TIP_TOOLTIP_BG);
             return (
-              <span key={i} className="card-ref" style={{ color: cardColor }}>
+              <span key={i} className="card-ref"
+                    style={{ color: cardColor, ...(onEditCard ? { cursor: 'pointer' } : {}) }}
+                    onClick={onEditCard ? () => onEditCard(t.card.id) : undefined}>
                 <span className="card-ref-name">{t.card.name}</span>
               </span>
             );
@@ -508,13 +515,14 @@ function KwTipBox({ keyword, keywords, cards }: {
   );
 }
 
-function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onEditKeyword }: KeywordSpanProps): React.ReactElement {
+function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onEditKeyword, onEditCard }: KeywordSpanProps): React.ReactElement {
   const [tipData, setTipData] = useState<{
     left: number; top: number; tipW: number; arrowLeft: number; below: boolean;
     cardLeft?: number; cardTop?: number; cardScale?: number;
   } | null>(null);
   const [mobileEditOpen, setMobileEditOpen] = useState(false);
   const spanRef = useRef<HTMLSpanElement>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTouchPrimary = useMemo(() => window.matchMedia('(pointer: coarse)').matches, []);
 
   const displayColor = adaptColorForBg(keyword.color, descBg);
@@ -608,7 +616,18 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
     setTipData({ left: tooltipLeft, top: anchorY, tipW, arrowLeft, below, cardLeft, cardTop, cardScale });
   }, [firstCard]);
 
-  const hide = useCallback(() => setTipData(null), []);
+  const cancelHide = useCallback(() => {
+    if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; }
+  }, []);
+
+  const hide = useCallback(() => {
+    cancelHide();
+    setTipData(null);
+  }, [cancelHide]);
+
+  const scheduleHide = useCallback(() => {
+    hideTimerRef.current = setTimeout(() => setTipData(null), 120);
+  }, []);
 
   // Close when page scrolls or viewport resizes
   useEffect(() => {
@@ -621,24 +640,26 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
     };
   }, [tipData, hide]);
 
-  // Close when pointer-down fires outside the keyword span
+  // Close when pointer-down fires outside the keyword span and its tooltip portal
   useEffect(() => {
     if (!tipData) return;
     const handler = (e: PointerEvent) => {
-      if (!spanRef.current?.contains(e.target as Node)) hide();
+      const target = e.target as Element;
+      if (!spanRef.current?.contains(target) && !target.closest('.kw-tooltip-portal')) hide();
     };
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);
   }, [tipData, hide]);
 
-  // Inline (display-only) renderers for tokens inside the main tooltip box
   const renderTokensInTip = (toks: ReturnType<typeof parseDescription>) =>
     toks.map((t, i) => {
       if (t.kind === 'text') return <React.Fragment key={i}>{t.value}</React.Fragment>;
       if (t.kind === 'kw') {
         const kwColor = adaptColorForBg(t.keyword.color, KW_TIP_TOOLTIP_BG);
         return (
-          <span key={i} className="kw" style={{ color: kwColor }}>
+          <span key={i} className="kw"
+                style={{ color: kwColor, ...(onEditKeyword ? { cursor: 'pointer' } : {}) }}
+                onClick={onEditKeyword ? () => { onEditKeyword(t.keyword.id); hide(); } : undefined}>
             <span className="kw-glyph" style={{ color: kwColor }}>
               <Glyph name={t.keyword.glyph} size={13}/>
             </span>
@@ -649,7 +670,9 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
       if (t.kind === 'card') {
         const cardColor = adaptColorForBg('#d4a017', KW_TIP_TOOLTIP_BG);
         return (
-          <span key={i} className="card-ref" style={{ color: cardColor }}>
+          <span key={i} className="card-ref"
+                style={{ color: cardColor, ...(onEditCard ? { cursor: 'pointer' } : {}) }}
+                onClick={onEditCard ? () => { onEditCard(t.card.id); hide(); } : undefined}>
             <span className="card-ref-name">{t.card.name}</span>
           </span>
         );
@@ -690,8 +713,8 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
 
   return (
     <span className="kw" style={{ color: displayColor, ...(onEditKeyword && !isTouchPrimary ? { cursor: 'pointer' } : {}) }} ref={spanRef}
-          onMouseEnter={isTouchPrimary ? undefined : computeAndShow}
-          onMouseLeave={isTouchPrimary ? undefined : hide}
+          onMouseEnter={isTouchPrimary ? undefined : () => { cancelHide(); computeAndShow(); }}
+          onMouseLeave={isTouchPrimary ? undefined : scheduleHide}
           onClick={handleClick}>
       <span className="kw-glyph" style={{ color: displayColor }}>
         <Glyph name={keyword.glyph} size={13}/>
@@ -706,7 +729,9 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
           firstCard={firstCard}
           factions={factions}
           rarities={rarities}
-          onEdit={() => { onEditKeyword!(keyword.id); setMobileEditOpen(false); }}
+          onEditKeyword={(kwId) => { onEditKeyword?.(kwId); setMobileEditOpen(false); }}
+          onEditCard={(cardId) => { onEditCard?.(cardId); setMobileEditOpen(false); }}
+          onEdit={onEditKeyword ? () => { onEditKeyword(keyword.id); setMobileEditOpen(false); } : undefined}
           onClose={() => setMobileEditOpen(false)}
         />,
         document.body
@@ -715,39 +740,46 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
         <>
           {/* Tooltip stack: nested keyword boxes + main tooltip box */}
           <div
-            className={`kw-tip-stack${tipData.below ? ' kw-tip-stack--below' : ''}`}
+            className={`kw-tip-stack kw-tooltip-portal${tipData.below ? ' kw-tip-stack--below' : ''}`}
             style={{ left: tipData.left, top: tipData.top, width: tipData.tipW }}
+            onMouseEnter={cancelHide}
+            onMouseLeave={scheduleHide}
           >
             {tipData.below ? (
-              // Below mode: main first (closest to keyword), nested below
               <>
                 {mainTipBox}
                 {kwStack.map(kw => (
-                  <KwTipBox key={kw.id} keyword={kw} keywords={keywords} cards={cards}/>
+                  <KwTipBox key={kw.id} keyword={kw} keywords={keywords} cards={cards}
+                            onEditKeyword={onEditKeyword ? (id) => { onEditKeyword(id); hide(); } : undefined}
+                            onEditCard={onEditCard ? (id) => { onEditCard(id); hide(); } : undefined}/>
                 ))}
               </>
             ) : (
-              // Above mode: nested first (furthest from keyword), main last (closest)
               <>
                 {kwStack.map(kw => (
-                  <KwTipBox key={kw.id} keyword={kw} keywords={keywords} cards={cards}/>
+                  <KwTipBox key={kw.id} keyword={kw} keywords={keywords} cards={cards}
+                            onEditKeyword={onEditKeyword ? (id) => { onEditKeyword(id); hide(); } : undefined}
+                            onEditCard={onEditCard ? (id) => { onEditCard(id); hide(); } : undefined}/>
                 ))}
                 {mainTipBox}
               </>
             )}
           </div>
 
-          {/* Card preview: scaled CardPreview alongside the tooltip stack */}
+          {/* Card preview: clickable to edit the referenced card */}
           {tipData.cardLeft !== undefined && tipData.cardTop !== undefined &&
            tipData.cardScale !== undefined && firstCard && factions && rarities && (
-            <div style={{
+            <div className="kw-tooltip-portal" style={{
               position: 'fixed',
               left: tipData.cardLeft,
               top: tipData.cardTop,
-              pointerEvents: 'none',
               zIndex: 200,
               filter: 'drop-shadow(0 8px 28px rgba(0,0,0,.8))',
-            }}>
+              cursor: onEditCard ? 'pointer' : 'default',
+            }}
+            onMouseEnter={cancelHide}
+            onMouseLeave={scheduleHide}
+            onClick={onEditCard ? () => { onEditCard(firstCard.id); hide(); } : undefined}>
               <ScaledCardPreview
                 scale={tipData.cardScale}
                 card={firstCard}
@@ -857,7 +889,7 @@ export function CardHoverPreview({ children, tag, onEdit, ...previewProps }: Car
   );
 }
 
-function MobileKeywordOverlay({ keyword, kwStack, keywords, cards, firstCard, factions, rarities, onEdit, onClose }: {
+function MobileKeywordOverlay({ keyword, kwStack, keywords, cards, firstCard, factions, rarities, onEditKeyword, onEditCard, onEdit, onClose }: {
   keyword: Keyword;
   kwStack: Keyword[];
   keywords?: Keyword[];
@@ -865,7 +897,9 @@ function MobileKeywordOverlay({ keyword, kwStack, keywords, cards, firstCard, fa
   firstCard?: CardWithArt;
   factions?: Faction[];
   rarities?: Rarity[];
-  onEdit: () => void;
+  onEditKeyword?: (kwId: string) => void;
+  onEditCard?: (cardId: string) => void;
+  onEdit?: () => void;
   onClose: () => void;
 }): React.ReactElement {
   const cardScale = firstCard && factions?.length && rarities?.length
@@ -877,23 +911,30 @@ function MobileKeywordOverlay({ keyword, kwStack, keywords, cards, firstCard, fa
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <div className="kw-tip-stack kw-tip-stack--mobile">
             {kwStack.map(kw => (
-              <KwTipBox key={kw.id} keyword={kw} keywords={keywords} cards={cards}/>
+              <KwTipBox key={kw.id} keyword={kw} keywords={keywords} cards={cards}
+                        onEditKeyword={onEditKeyword}
+                        onEditCard={onEditCard}/>
             ))}
-            <KwTipBox keyword={keyword} keywords={keywords} cards={cards}/>
+            <KwTipBox keyword={keyword} keywords={keywords} cards={cards}
+                      onEditKeyword={onEditKeyword}
+                      onEditCard={onEditCard}/>
           </div>
           {firstCard && cardScale !== undefined && factions && rarities && (
-            <ScaledCardPreview
-              scale={cardScale}
-              card={firstCard}
-              keywords={keywords ?? []}
-              factions={factions}
-              rarities={rarities}
-              cards={cards}
-            />
+            <div style={{ cursor: onEditCard ? 'pointer' : 'default' }}
+                 onClick={onEditCard ? () => onEditCard(firstCard.id) : undefined}>
+              <ScaledCardPreview
+                scale={cardScale}
+                card={firstCard}
+                keywords={keywords ?? []}
+                factions={factions}
+                rarities={rarities}
+                cards={cards}
+              />
+            </div>
           )}
         </div>
         <div className="card-ref-overlay-actions">
-          <button className="btn btn-primary btn-sm" onClick={onEdit}>Edit keyword</button>
+          {onEdit && <button className="btn btn-primary btn-sm" onClick={onEdit}>Edit keyword</button>}
           <button className="btn btn-sm" onClick={onClose}>Close</button>
         </div>
       </div>
