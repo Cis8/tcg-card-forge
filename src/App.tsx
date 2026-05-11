@@ -480,6 +480,7 @@ export default function App(): React.ReactElement {
         width: CARD_W + BLEED_LEFT + BLEED_RIGHT,
         height: CARD_H + BLEED_TOP + BLEED_BOTTOM,
         style: { marginLeft: `${BLEED_LEFT}px`, marginTop: `${BLEED_TOP}px` },
+        filter: (node) => !(node as Element).classList?.contains('desc-placeholder'),
         ...(fontEmbedCSS != null ? { fontEmbedCSS } : { skipFonts: true }),
       });
       const a = document.createElement('a');

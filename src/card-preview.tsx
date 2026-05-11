@@ -282,7 +282,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
           <div className="text-box-inner">
             <p className="card-text">
               {tokens.length === 0
-                ? <span style={{ opacity: .35, fontStyle: 'italic' }}>
+                ? <span className="desc-placeholder" style={{ opacity: .35, fontStyle: 'italic' }}>
                     Description appears here. Use @ Reference to insert keywords and cards.
                   </span>
                 : tokens.map((t, i) => {
