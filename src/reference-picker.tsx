@@ -5,6 +5,15 @@ import { Glyph } from './glyphs';
 import { applyFilters, createEmptyFilters } from './collection-filter';
 import type { CardWithArt, Keyword, Faction, Rarity, GlobalSettings, GlyphName } from './types';
 
+/** Insert a reference token at the given cursor position, auto-spacing around it. */
+export function insertToken(text: string, pos: number, token: string): string {
+  const before = text.slice(0, pos);
+  const after = text.slice(pos);
+  const needsLeadingSpace = before.length > 0 && !/[\s\n]$/.test(before);
+  const needsTrailingSpace = after.length > 0 && !/^[\s\n]/.test(after);
+  return before + (needsLeadingSpace ? ' ' : '') + token + (needsTrailingSpace ? ' ' : '') + after;
+}
+
 export interface ReferencePickerProps {
   keywords: Keyword[];
   cards: CardWithArt[];

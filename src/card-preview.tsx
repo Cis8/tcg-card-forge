@@ -1,4 +1,4 @@
-import React, { useState, useRef, useId, useMemo, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useRef, useId, useMemo, useCallback, useLayoutEffect, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { adaptColorForBg, deriveFaction, deriveRarityDeep, deriveRarityGlow } from './color-utils';
 import { Glyph, RarityShape, CornerFlourish } from './glyphs';
@@ -296,7 +296,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
                     if (t.kind === 'card') {
                       return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []} descBg={descEffectiveBg} onEditCard={onEditCard}/>;
                     }
-                    return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg}/>;
+                    return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg} keywords={keywords} cards={cards}/>;
                   })}
             </p>
             {card.flavor && <p className="card-flavor">{card.flavor}</p>}
@@ -409,32 +409,126 @@ function useCardNameFit(
   return style;
 }
 
-function KeywordSpan({ keyword, descBg }: { keyword: Keyword; descBg: string }): React.ReactElement {
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
-  const ref = useRef<HTMLSpanElement>(null);
+const KW_TIP_W = 220;
+const KW_TIP_GAP = 10;
+const KW_TIP_MARGIN = 8;
+const KW_TIP_TOOLTIP_BG = '#1a1306';
+
+interface KeywordSpanProps {
+  keyword: Keyword;
+  descBg: string;
+  keywords?: Keyword[];
+  cards?: CardWithArt[];
+  /** Rendering depth. depth ≥ 1 = display-only (no tooltip) to avoid nested tooltips. */
+  depth?: number;
+}
+
+function KeywordSpan({ keyword, descBg, keywords, cards, depth = 0 }: KeywordSpanProps): React.ReactElement {
+  const [tipData, setTipData] = useState<{
+    left: number; top: number; arrowLeft: number; below: boolean;
+  } | null>(null);
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const isTouchPrimary = useMemo(() => window.matchMedia('(pointer: coarse)').matches, []);
+
   const displayColor = adaptColorForBg(keyword.color, descBg);
-  const updatePos = () => {
-    if (!ref.current) return;
-    const r = ref.current.getBoundingClientRect();
-    setPos({ x: r.left + r.width / 2, y: r.top });
-  };
+  const displayColorInTip = adaptColorForBg(keyword.color, KW_TIP_TOOLTIP_BG);
+
+  const kwById = useMemo(() => new Map((keywords ?? []).map(k => [k.id, k])), [keywords]);
+  const cardById = useMemo(() => new Map((cards ?? []).map(c => [c.id, c])), [cards]);
+  const tokens = useMemo(
+    () => parseDescription(keyword.description, kwById, cardById),
+    [keyword.description, kwById, cardById],
+  );
+
+  const computeAndShow = useCallback(() => {
+    if (!spanRef.current) return;
+    const r = spanRef.current.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    // Clamp left edge so tooltip stays within viewport
+    const left = Math.max(KW_TIP_MARGIN, Math.min(cx - KW_TIP_W / 2, window.innerWidth - KW_TIP_W - KW_TIP_MARGIN));
+    const arrowLeft = Math.max(10, Math.min(cx - left, KW_TIP_W - 10));
+    // Flip below keyword if there's insufficient space above
+    const below = r.top - KW_TIP_GAP - KW_TIP_MARGIN < 80;
+    const top = below ? r.bottom + KW_TIP_GAP : r.top - KW_TIP_GAP;
+    setTipData({ left, top, arrowLeft, below });
+  }, []);
+
+  const hide = useCallback(() => setTipData(null), []);
+
+  // Close when page scrolls or viewport resizes
+  useEffect(() => {
+    if (!tipData) return;
+    window.addEventListener('scroll', hide, { passive: true, capture: true });
+    window.addEventListener('resize', hide);
+    return () => {
+      window.removeEventListener('scroll', hide, true);
+      window.removeEventListener('resize', hide);
+    };
+  }, [tipData, hide]);
+
+  // Close when pointer-down fires outside the keyword span
+  useEffect(() => {
+    if (!tipData) return;
+    const handler = (e: PointerEvent) => {
+      if (!spanRef.current?.contains(e.target as Node)) hide();
+    };
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, [tipData, hide]);
+
+  // depth ≥ 1: display-only span — no tooltip to avoid nested tooltips
+  if (depth > 0) {
+    return (
+      <span className="kw" style={{ color: displayColor }}>
+        <span className="kw-glyph" style={{ color: displayColor }}>
+          <Glyph name={keyword.glyph} size={13}/>
+        </span>
+        <span className="kw-name">{keyword.name}</span>
+      </span>
+    );
+  }
+
   return (
-    <span className="kw" style={{ color: displayColor }} ref={ref}
-          onMouseEnter={updatePos} onMouseLeave={() => setPos(null)}>
+    <span className="kw" style={{ color: displayColor }} ref={spanRef}
+          onMouseEnter={isTouchPrimary ? undefined : computeAndShow}
+          onMouseLeave={isTouchPrimary ? undefined : hide}
+          onClick={isTouchPrimary ? (e) => { e.stopPropagation(); tipData ? hide() : computeAndShow(); } : undefined}>
       <span className="kw-glyph" style={{ color: displayColor }}>
         <Glyph name={keyword.glyph} size={13}/>
       </span>
       <span className="kw-name">{keyword.name}</span>
-      {pos && ReactDOM.createPortal(
-        <div className="kw-tip-portal" role="tooltip"
-             style={{ left: pos.x, top: pos.y, borderColor: keyword.color }}>
-          <b style={{ color: keyword.color }}>
+      {tipData && ReactDOM.createPortal(
+        <div className={`kw-tip-portal${tipData.below ? ' kw-tip-portal--below' : ''}`}
+             role="tooltip"
+             style={{
+               left: tipData.left, top: tipData.top,
+               borderColor: keyword.color,
+               '--kw-tip-arrow': `${tipData.arrowLeft}px`,
+             } as React.CSSProperties}>
+          <b style={{ color: displayColorInTip }}>
             <span style={{ display: 'inline-flex', verticalAlign: '-2px', marginRight: 4 }}>
               <Glyph name={keyword.glyph} size={13}/>
             </span>
             {keyword.name}
           </b>
-          <span>{keyword.description}</span>
+          <span>
+            {tokens.map((t, i) => {
+              if (t.kind === 'text') return <React.Fragment key={i}>{t.value}</React.Fragment>;
+              if (t.kind === 'kw') return (
+                <KeywordSpan key={i} keyword={t.keyword} descBg={KW_TIP_TOOLTIP_BG}
+                             keywords={keywords} cards={cards} depth={1}/>
+              );
+              if (t.kind === 'card') {
+                const cardColor = adaptColorForBg('#d4a017', KW_TIP_TOOLTIP_BG);
+                return (
+                  <span key={i} className="card-ref" style={{ color: cardColor }}>
+                    <span className="card-ref-name">{t.card.name}</span>
+                  </span>
+                );
+              }
+              return null;
+            })}
+          </span>
         </div>,
         document.body
       )}

@@ -357,10 +357,13 @@
   text-underline-offset: 2px;
 }
 /* Portal'd tooltip — fixed-positioned to body so it escapes the card's
-   overflow:hidden, even when the keyword is near the card edge. */
+   overflow:hidden, even when the keyword is near the card edge.
+   left/top are fully pre-computed in JS (clamped to viewport).
+   --kw-tip-arrow is set inline to keep the arrow pointing at the keyword
+   even when the box had to shift horizontally. */
 .kw-tip-portal {
   position: fixed;
-  transform: translate(-50%, calc(-100% - 10px));
+  transform: translateY(calc(-100% - 10px));
   width: 220px;
   background: #1a1306;
   color: #f0e6d0;
@@ -381,7 +384,7 @@
   gap: 3px;
   animation: tip-in .12s ease-out;
 }
-@keyframes tip-in { from { opacity: 0; transform: translate(-50%, calc(-100% - 4px)); } }
+@keyframes tip-in { from { opacity: 0; transform: translateY(calc(-100% - 4px)); } }
 .kw-tip-portal b {
   font-family: 'Cinzel', serif;
   letter-spacing: .04em;
@@ -392,11 +395,23 @@
   content: '';
   position: absolute;
   top: 100%;
-  left: 50%;
+  left: var(--kw-tip-arrow, 50%);
   transform: translateX(-50%);
   border: 5px solid transparent;
   border-top-color: currentColor;
   color: inherit;
+}
+/* Flipped variant: tooltip rendered below the keyword */
+.kw-tip-portal--below {
+  transform: translateY(0);
+  animation: tip-in-below .12s ease-out;
+}
+@keyframes tip-in-below { from { opacity: 0; transform: translateY(4px); } }
+.kw-tip-portal--below::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: currentColor;
 }
 
 .kw-tip {

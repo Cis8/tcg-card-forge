@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -11,7 +11,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { Glyph } from './glyphs';
 import { GlyphPicker } from './glyph-picker';
 import { confirmDestructiveAction } from './confirm';
-import type { Keyword, ThematicGlyphName } from './types';
+import { ReferencePicker, insertToken } from './reference-picker';
+import type { Keyword, ThematicGlyphName, CardWithArt, Faction, Rarity, GlobalSettings } from './types';
 
 const PRESET_COLORS = [
   '#c2410c', '#b45309', '#15803d', '#0e7490',
@@ -21,6 +22,10 @@ const PRESET_COLORS = [
 interface KeywordManagerProps {
   open: boolean;
   keywords: Keyword[];
+  cards: CardWithArt[];
+  factions: Faction[];
+  rarities: Rarity[];
+  globalSettings: GlobalSettings;
   onClose: () => void;
   onChange: (kws: Keyword[]) => void;
 }
@@ -49,7 +54,7 @@ function SortableKeywordItem({ kw, onEdit }: { kw: Keyword; onEdit: () => void }
   );
 }
 
-export function KeywordManager({ open, keywords, onClose, onChange }: KeywordManagerProps): React.ReactElement | null {
+export function KeywordManager({ open, keywords, cards, factions, rarities, globalSettings, onClose, onChange }: KeywordManagerProps): React.ReactElement | null {
   const [editing, setEditing] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -143,6 +148,11 @@ export function KeywordManager({ open, keywords, onClose, onChange }: KeywordMan
               </div>
             ) : (
               <KeywordEditor key={editingKw.id} keyword={editingKw}
+                             keywords={keywords}
+                             cards={cards}
+                             factions={factions}
+                             rarities={rarities}
+                             globalSettings={globalSettings}
                              onSave={onSave}
                              onCancel={() => setEditing(null)}
                              onDelete={editingKw.id !== '_new' ? () => onDelete(editingKw.id) : undefined}/>
@@ -156,17 +166,42 @@ export function KeywordManager({ open, keywords, onClose, onChange }: KeywordMan
 
 interface KeywordEditorProps {
   keyword: Keyword;
+  keywords: Keyword[];
+  cards: CardWithArt[];
+  factions: Faction[];
+  rarities: Rarity[];
+  globalSettings: GlobalSettings;
   onSave: (kw: Keyword) => void;
   onCancel: () => void;
   onDelete?: () => void;
 }
 
-function KeywordEditor({ keyword, onSave, onCancel, onDelete }: KeywordEditorProps): React.ReactElement {
+function KeywordEditor({ keyword, keywords, cards, factions, rarities, globalSettings, onSave, onCancel, onDelete }: KeywordEditorProps): React.ReactElement {
   const [draft, setDraft] = useState<Keyword>(keyword);
+  const [showRefPicker, setShowRefPicker] = useState(false);
   const set = (patch: Partial<Keyword>) => setDraft(d => ({ ...d, ...patch }));
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const cursorPosRef = useRef<number>(0);
+
+  const handleRefInsert = (token: string) => {
+    const newDesc = insertToken(draft.description ?? '', cursorPosRef.current, token);
+    set({ description: newDesc });
+    setShowRefPicker(false);
+  };
 
   return (
     <div className="kw-editor">
+      {showRefPicker && (
+        <ReferencePicker
+          keywords={keywords}
+          cards={cards}
+          factions={factions}
+          rarities={rarities}
+          globalSettings={globalSettings}
+          onInsert={handleRefInsert}
+          onClose={() => setShowRefPicker(false)}
+        />
+      )}
       <div className="kw-preview">
         <span className="kw" style={{ color: draft.color, fontSize: 14 }}>
           <span className="kw-glyph" style={{ color: draft.color }}>
@@ -186,9 +221,23 @@ function KeywordEditor({ keyword, onSave, onCancel, onDelete }: KeywordEditorPro
 
       <label className="field">
         <span className="field-label">Description</span>
-        <textarea className="text-input text-area" rows={2} value={draft.description}
+        <textarea className="text-input text-area" rows={2}
+                  ref={textareaRef}
+                  value={draft.description}
                   placeholder="What does this keyword do?"
-                  onChange={(e) => set({ description: e.target.value })}/>
+                  onChange={(e) => set({ description: e.target.value })}
+                  onBlur={() => { cursorPosRef.current = textareaRef.current?.selectionStart ?? cursorPosRef.current; }}/>
+        <button
+          type="button"
+          className="btn btn-sm btn-ghost ref-insert-btn"
+          onClick={() => {
+            cursorPosRef.current = textareaRef.current?.selectionStart ?? (draft.description ?? '').length;
+            setShowRefPicker(true);
+          }}
+        >
+          <Glyph name="edit" size={12}/>
+          <span>@ Reference</span>
+        </button>
       </label>
 
       <div className="field">

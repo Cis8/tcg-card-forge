@@ -753,6 +753,10 @@ export default function App(): React.ReactElement {
       <KeywordManager
         open={showKeywords}
         keywords={keywords}
+        cards={cards}
+        factions={factions}
+        rarities={rarities}
+        globalSettings={globalSettings}
         onClose={() => setShowKeywords(false)}
         onChange={onKeywordsChange}
       />

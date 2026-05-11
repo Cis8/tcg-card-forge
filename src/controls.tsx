@@ -6,7 +6,7 @@ import { PATTERNS } from './data';
 import { Glyph, RarityShape } from './glyphs';
 import { GlyphPicker } from './glyph-picker';
 import { confirmDestructiveAction } from './confirm';
-import { ReferencePicker } from './reference-picker';
+import { ReferencePicker, insertToken } from './reference-picker';
 import type { Card, CardWithArt, ImageHandle, Keyword, Faction, Rarity, GlobalSettings, DeckSettings, ThematicGlyphName, DescGlyph } from './types';
 
 interface FieldProps {
@@ -342,14 +342,7 @@ export function LeftPanel({ card, onChange, keywords, cards, factions, rarities,
   const [showRefPicker, setShowRefPicker] = useState(false);
 
   const handleRefInsert = (token: string) => {
-    const cur = card.description ?? '';
-    const pos = cursorPosRef.current;
-    const before = cur.slice(0, pos);
-    const after = cur.slice(pos);
-    const needsLeadingSpace = before.length > 0 && !/[\s\n]$/.test(before);
-    const needsTrailingSpace = after.length > 0 && !/^[\s\n]/.test(after);
-    const insert = (needsLeadingSpace ? ' ' : '') + token + (needsTrailingSpace ? ' ' : '');
-    onChange({ description: before + insert + after });
+    onChange({ description: insertToken(card.description ?? '', cursorPosRef.current, token) });
     setShowRefPicker(false);
   };
 
