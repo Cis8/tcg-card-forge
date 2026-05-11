@@ -198,8 +198,7 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M6 20.5L16.8 4.2"/>
-      <path d="M14.2 5c3.1-1.8 5.8-1.9 7.9-.5-.1 4.5-2.7 7.6-7.8 9.2l-3.2-3.1c.6-2.1 1.6-4 3.1-5.6z"
-            fill="currentColor" stroke="none"/>
+      <path d="M14.2 5c3.1-1.8 5.8-1.9 7.9-.5-.1 4.5-2.7 7.6-7.8 9.2l-3.2-3.1c.6-2.1 1.6-4 3.1-5.6z" fill="currentColor" stroke="none"/>
     </svg>
   ),
   bow: () => (
@@ -369,11 +368,11 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
       <path d="M12 2.2c-4.7 0-8.4 3.4-8.4 7.7 0 2.5 1.2 4.6 3 6v3.3c0 .8.6 1.4 1.4 1.4h.7v1.6c0 .4.3.7.7.7s.7-.3.7-.7v-1.6h3.8v1.6c0 .4.3.7.7.7s.7-.3.7-.7v-1.6h.7c.8 0 1.4-.6 1.4-1.4v-3.3c1.8-1.4 3-3.5 3-6 0-4.3-3.7-7.7-8.4-7.7z"/>
       <path d="M10 16.4h4l-.5 1.6h-3l-.5-1.6z" fill="#0008"/>
       {/* X left eye, center ~(8.7, 12.4) */}
-      <line x1="7" y1="10.8" x2="10.4" y2="14.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
-      <line x1="10.4" y1="10.8" x2="7" y2="14.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
+      <line x1="7" y1="10.8" x2="10.4" y2="14.2" stroke="#000000" strokeWidth="1.6" strokeLinecap="round"/>
+      <line x1="10.4" y1="10.8" x2="7" y2="14.2" stroke="#000000" strokeWidth="1.6" strokeLinecap="round"/>
       {/* X right eye, center ~(15.3, 12.4) */}
-      <line x1="13.6" y1="10.8" x2="17" y2="14.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
-      <line x1="17" y1="10.8" x2="13.6" y2="14.2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
+      <line x1="13.6" y1="10.8" x2="17" y2="14.2" stroke="#000000" strokeWidth="1.6" strokeLinecap="round"/>
+      <line x1="17" y1="10.8" x2="13.6" y2="14.2" stroke="#000000" strokeWidth="1.6" strokeLinecap="round"/>
     </svg>
   ),
 
@@ -423,11 +422,7 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
         3. Curva interna nitida (22,12 a 12,18), che crea un "ventre" e l'effetto taglio.
       */}
       <path 
-        d="M 2 12 
-           C 2 12, 4 18, 12 22 
-           C 20 18, 22 12, 22 12 
-           C 22 12, 18 16, 12 18 
-           C 6 16, 2 12, 2 12 Z"
+        d="M 2 12 C 2 12, 4 18, 12 22 C 20 18, 22 12, 22 12 C 22 12, 18 16, 12 18 C 6 16, 2 12, 2 12 Z"
       />
     </svg>
   ),
@@ -499,6 +494,111 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
 
       {/* Scia a sinistra */}
       <path d="M 2 12 A 9 9 0 0 1 9 3 A 7 7 0 0 0 4 10 Z" />
+    </svg>
+  ),
+
+  // radioactive: Classic Ionizing Radiation Trefoil.
+  // Built with strict 60-degree geometric precision and native SVG rotation
+  // to ensure flawless mathematical symmetry.
+  radioactive: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      {/* Nucleo centrale: un punto solido e isolato (raggio 1.5) */}
+      <circle cx="12" cy="12" r="1.5" />
+      
+      {/* PALA INFERIORE (6 o'clock): 
+          Costruita con archi geometrici puri (A). 
+          Raggio interno: 3 (crea uno stacco netto di 1.5 dal nucleo).
+          Raggio esterno: 10 (mantiene un margine di respiro dal viewBox). 
+      */}
+      <path 
+        d="M 10.5 14.6 
+           A 3 3 0 0 0 13.5 14.6 
+           L 17 20.7 
+           A 10 10 0 0 1 7 20.7 Z" 
+      />
+      
+      {/* PALA IN ALTO A SINISTRA (10 o'clock): 
+          La stessa identica pala, ruotata matematicamente di 120° sul perno centrale (12, 12) 
+      */}
+      <path 
+        d="M 10.5 14.6 
+           A 3 3 0 0 0 13.5 14.6 
+           L 17 20.7 
+           A 10 10 0 0 1 7 20.7 Z" 
+        transform="rotate(120 12 12)" 
+      />
+      
+      {/* PALA IN ALTO A DESTRA (2 o'clock): 
+          La stessa identica pala, ruotata matematicamente di 240° sul perno centrale (12, 12) 
+      */}
+      <path 
+        d="M 10.5 14.6 
+           A 3 3 0 0 0 13.5 14.6 
+           L 17 20.7 
+           A 10 10 0 0 1 7 20.7 Z" 
+        transform="rotate(240 12 12)" 
+      />
+    </svg>
+  ),
+
+// — toxic: Clean, foolproof Jolly Roger. 
+// No string comments, proper evenodd knockout, and detached bone segments.
+// Teeth are now simplified to three semicerchio fustellature for a cleaner, cartoon-like look.
+toxic: () => (
+  <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+    {/* Ossa Alto-Sinistra */}
+    <circle cx="3" cy="5" r="1.5" />
+    <circle cx="5" cy="3" r="1.5" />
+    <path d="M 3 5 L 5 3 L 7.5 5.5 L 5.5 7.5 Z" />
+    
+    {/* Ossa Alto-Destra */}
+    <circle cx="21" cy="5" r="1.5" />
+    <circle cx="19" cy="3" r="1.5" />
+    <path d="M 21 5 L 19 3 L 16.5 5.5 L 18.5 7.5 Z" />
+    
+    {/* Ossa Basso-Sinistra */}
+    <circle cx="3" cy="19" r="1.5" />
+    <circle cx="5" cy="21" r="1.5" />
+    <path d="M 3 19 L 5 21 L 7.5 18.5 L 5.5 16.5 Z" />
+    
+    {/* Ossa Basso-Destra */}
+    <circle cx="21" cy="19" r="1.5" />
+    <circle cx="19" cy="21" r="1.5" />
+    <path d="M 21 19 L 19 21 L 16.5 18.5 L 18.5 16.5 Z" />
+
+    {/* Teschio solido con fustellatura in un'unica stringa pulita, con nuovi denti fustellati cartooneschi */}
+    <path 
+      fillRule="evenodd" 
+      clipRule="evenodd"
+      d="M12 2 C6 2 4 6 4 10.5 C4 13.5 6 15.5 7 16.5 L7.5 22 H16.5 L17 16.5 C18 15.5 20 13.5 20 10.5 C20 6 18 2 12 2 Z M8.5 11 A2 2 0 1 0 8.5 7 A2 2 0 1 0 8.5 11 Z M15.5 11 A2 2 0 1 0 15.5 7 A2 2 0 1 0 15.5 11 Z M12 15 L10.5 13 H13.5 Z M11 22 H9 A1 1.2 0 0 0 11 22 Z M13 22 H11 A1 1.2 0 0 0 13 22 Z M15 22 H13 A1 1.2 0 0 0 15 22 Z" 
+    />
+  </svg>
+),
+  // explosive — explosive warning symbol inspired by roadside danger signs.
+// Features a fragmented detonation with asymmetrical shrapnel and blast rays for TCG clarity.
+explosive: () => (
+  <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+    <path 
+      d="M12 2l2 4l6-1l-3 5l5 2l-6 1l2 6l-5-2l-1 5l-2-5l-5 2l1-6l-6-1l5-2l-3-5l6 1z M12 6l1 2l2-1l-1 2l1 2l-2-1l-1 2l-1-2l-2 1l1-2l-1-2l2 1z M19 2l2 1l1-1z M3 21l-2-1l1 1z"
+    />
+  </svg>
+),
+
+  // cracked-shield: A heavily battle-damaged heater shield.
+  // Uses a single, bulletproof continuous path to carve a massive central 
+  // fissure and side notches without relying on fill-rule tricks.
+  "broken-shield": () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      {/* Tracciato continuo:
+        1. Bordo superiore sinistro
+        2. Tuffo profondo al centro (crepa a zig-zag)
+        3. Bordo superiore destro
+        4. Lato destro con scheggiatura da impatto
+        5. Lato sinistro con scheggiatura da impatto
+      */}
+      <path 
+        d="M 3 5 L 10 3.4 L 8 9 L 12.5 13 L 9.5 18 L 11.5 21 L 13 18.5 L 15 13 L 11 9 L 13.5 3.3 L 21 5 C 21 9, 20.5 11.5, 19.5 13 L 17 13.5 L 19 15.5 C 17 19.5, 14 21.5, 12 23 C 9 21.5, 6.5 19, 5.5 16 L 8 15.5 L 5 13.5 C 4 10.5, 3.5 7.5, 3 5 Z" 
+      />
     </svg>
   ),
 };

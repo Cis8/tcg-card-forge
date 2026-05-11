@@ -12,15 +12,15 @@ export const GLYPH_CATALOG = [
   },
   {
     category: 'Combat',
-    glyphs: ['bolt', 'overrun', 'shield', 'sword', 'axe', 'bow', 'spear', 'trident', 'bleed', 'wide-slash', 'arrow-storm', 'bulls-eye', 'stun'],
+    glyphs: ['bolt', 'overrun', 'shield', 'sword', 'axe', 'bow', 'spear', 'trident', 'bleed', 'wide-slash', 'arrow-storm', 'bulls-eye', 'stun', 'explosive', 'broken-shield'],
   },
   {
     category: 'Dark',
-    glyphs: ['skull', 'skull-x', 'eye', 'blind', 'moon', 'chain', 'rune', 'vampire'],
+    glyphs: ['skull', 'skull-x', 'eye', 'blind', 'moon', 'chain', 'rune', 'vampire', 'toxic'],
   },
   {
     category: 'Arcane',
-    glyphs: ['star', 'diamond', 'gem', 'chalice', 'orb', 'feather', 'hourglass', 'crown', 'compass', 'dna', 'virus'],
+    glyphs: ['star', 'diamond', 'gem', 'chalice', 'orb', 'feather', 'hourglass', 'crown', 'compass', 'dna', 'virus', 'radioactive'],
   },
   {
     category: 'Creature',
