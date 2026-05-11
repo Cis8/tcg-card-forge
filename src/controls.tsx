@@ -242,6 +242,32 @@ const RarityPicker = ({ rarities, value, onChange, onManage }: RarityPickerProps
   </div>
 );
 
+interface KeywordInlinePickerProps {
+  keywords: Keyword[];
+  onManage: (kwId?: string) => void;
+}
+
+const KeywordInlinePicker = ({ keywords, onManage }: KeywordInlinePickerProps): React.ReactElement => (
+  <div>
+    <div className="kw-bar-chips">
+      {keywords.length === 0
+        ? <span style={{ fontSize: 12, opacity: 0.45 }}>No keywords defined yet.</span>
+        : keywords.map(k => (
+          <button type="button" key={k.id} className="kw-bar-chip" style={{ color: k.color }} title={k.description}
+                  onClick={() => onManage(k.id)}>
+            <Glyph name={k.glyph as ThematicGlyphName} size={12}/>
+            <span>{k.name}</span>
+          </button>
+        ))
+      }
+    </div>
+    <button type="button" className="rail-manage-link" onClick={() => onManage()}>
+      <Glyph name="edit" size={12}/>
+      <span>Manage keywords…</span>
+    </button>
+  </div>
+);
+
 interface PatternPickerProps {
   value: string;
   onChange: (v: string) => void;
@@ -330,7 +356,7 @@ interface LeftPanelProps {
   factions: Faction[];
   rarities: Rarity[];
   globalSettings: GlobalSettings;
-  onOpenKeywords: () => void;
+  onOpenKeywords: (kwId?: string) => void;
   deckSettings: DeckSettings;
   onDeckSettingChange: (k: keyof DeckSettings, v: number) => void;
 }
@@ -424,6 +450,9 @@ export function LeftPanel({ card, onChange, keywords, cards, factions, rarities,
                     value={card.flavor || ''}
                     placeholder='"A short evocative quote."'
                     onChange={(e) => onChange({ flavor: e.target.value })}/>
+        </Field>
+        <Field label="Keywords">
+          <KeywordInlinePicker keywords={keywords} onManage={onOpenKeywords}/>
         </Field>
       </div>
 

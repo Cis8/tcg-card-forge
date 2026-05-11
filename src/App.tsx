@@ -80,6 +80,7 @@ export default function App(): React.ReactElement {
   const globalSettings = appState?.globalSettings ?? GLOBAL_SETTINGS_DEFAULTS;
 
   const [showKeywords, setShowKeywords]     = useState(false);
+  const [initialKeywordEditing, setInitialKeywordEditing] = useState<string | undefined>(undefined);
   const [showFactions, setShowFactions]     = useState(false);
   const [showRarities, setShowRarities]     = useState(false);
   const [showCollection, setShowCollection] = useState(false);
@@ -642,7 +643,7 @@ export default function App(): React.ReactElement {
             factions={factions}
             rarities={rarities}
             globalSettings={globalSettings}
-            onOpenKeywords={() => setShowKeywords(true)}
+            onOpenKeywords={(kwId) => { setInitialKeywordEditing(kwId); setShowKeywords(true); }}
             deckSettings={globalSettings.deckSettings}
             onDeckSettingChange={setDeckSetting}
           />
@@ -757,7 +758,8 @@ export default function App(): React.ReactElement {
         factions={factions}
         rarities={rarities}
         globalSettings={globalSettings}
-        onClose={() => setShowKeywords(false)}
+        initialEditing={initialKeywordEditing}
+        onClose={() => { setShowKeywords(false); setInitialKeywordEditing(undefined); }}
         onChange={onKeywordsChange}
       />
       <FactionManager

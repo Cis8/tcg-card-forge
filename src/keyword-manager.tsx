@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -26,6 +26,7 @@ interface KeywordManagerProps {
   factions: Faction[];
   rarities: Rarity[];
   globalSettings: GlobalSettings;
+  initialEditing?: string;
   onClose: () => void;
   onChange: (kws: Keyword[]) => void;
 }
@@ -54,12 +55,15 @@ function SortableKeywordItem({ kw, onEdit }: { kw: Keyword; onEdit: () => void }
   );
 }
 
-export function KeywordManager({ open, keywords, cards, factions, rarities, globalSettings, onClose, onChange }: KeywordManagerProps): React.ReactElement | null {
+export function KeywordManager({ open, keywords, cards, factions, rarities, globalSettings, initialEditing, onClose, onChange }: KeywordManagerProps): React.ReactElement | null {
   const [editing, setEditing] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+  useEffect(() => {
+    if (open) setEditing(initialEditing ?? null);
+  }, [open, initialEditing]);
   if (!open) return null;
 
   const handleDragEnd = (event: DragEndEvent) => {
