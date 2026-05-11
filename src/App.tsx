@@ -503,8 +503,8 @@ export default function App(): React.ReactElement {
   };
 
   const onDecksChange = async (newDecks: Deck[]) => {
-    await settingsService.saveDecks(newDecks);
     dispatch({ type: 'DECKS_CHANGED', payload: newDecks });
+    await settingsService.saveDecks(newDecks);
   };
 
   const onOpenDeck = (deckId: string) =>
