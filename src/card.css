@@ -343,6 +343,12 @@
   text-decoration-color: currentColor;
   text-underline-offset: 2px;
 }
+.kw-param {
+  margin-left: 2px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+}
 .card-ref {
   display: inline;
   font-weight: 700;

@@ -25,7 +25,7 @@ interface CardPreviewProps {
 
 type Token =
   | { kind: 'text'; value: string }
-  | { kind: 'kw'; keyword: Keyword }
+  | { kind: 'kw'; keyword: Keyword; param?: string }
   | { kind: 'card'; card: CardWithArt };
 
 function parseDescription(
@@ -35,7 +35,7 @@ function parseDescription(
 ): Token[] {
   if (!text) return [];
   const tokens: Token[] = [];
-  const re = /\[(kw|card):([^\]\n]+)\]/g;
+  const re = /\[(kw|card):([^\]|\n]+)(?:\|([^\]\n]*))?\]/g;
   let last = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
@@ -44,7 +44,8 @@ function parseDescription(
     const id = m[2].trim();
     if (prefix === 'kw') {
       const kw = kwById.get(id);
-      tokens.push(kw ? { kind: 'kw', keyword: kw } : { kind: 'text', value: m[0] });
+      const param = m[3]?.trim() || undefined;
+      tokens.push(kw ? { kind: 'kw', keyword: kw, param } : { kind: 'text', value: m[0] });
     } else {
       const c = cardById.get(id);
       tokens.push(c ? { kind: 'card', card: c } : { kind: 'text', value: m[0] });
@@ -302,7 +303,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
                       if (t.kind === 'card') {
                         return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []} descBg={descEffectiveBg} onEditCard={onEditCard}/>;
                       }
-                      return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg} keywords={keywords} cards={cards} factions={factions} rarities={rarities} onEditKeyword={onEditKeyword} onEditCard={onEditCard}/>;
+                      return <KeywordSpan key={i} keyword={t.keyword} param={t.param} descBg={descEffectiveBg} keywords={keywords} cards={cards} factions={factions} rarities={rarities} onEditKeyword={onEditKeyword} onEditCard={onEditCard}/>;
                     })}
               </p>
             )}
@@ -450,6 +451,7 @@ function collectKwStack(kw: Keyword, kwById: Map<string, Keyword>, seen: Set<str
 
 interface KeywordSpanProps {
   keyword: Keyword;
+  param?: string;
   descBg: string;
   keywords?: Keyword[];
   cards?: CardWithArt[];
@@ -495,6 +497,7 @@ function KwTipBox({ keyword, keywords, cards, onEditKeyword, onEditCard }: {
                   <Glyph name={t.keyword.glyph} size={13}/>
                 </span>
                 <span className="kw-name">{t.keyword.name}</span>
+                {t.param && <span className="kw-param">[{t.param}]</span>}
               </span>
             );
           }
@@ -515,7 +518,7 @@ function KwTipBox({ keyword, keywords, cards, onEditKeyword, onEditCard }: {
   );
 }
 
-function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onEditKeyword, onEditCard }: KeywordSpanProps): React.ReactElement {
+function KeywordSpan({ keyword, param, descBg, keywords, cards, factions, rarities, onEditKeyword, onEditCard }: KeywordSpanProps): React.ReactElement {
   const [tipData, setTipData] = useState<{
     left: number; top: number; tipW: number; arrowLeft: number; below: boolean;
     cardLeft?: number; cardTop?: number; cardScale?: number;
@@ -664,6 +667,7 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
               <Glyph name={t.keyword.glyph} size={13}/>
             </span>
             <span className="kw-name">{t.keyword.name}</span>
+            {t.param && <span className="kw-param">[{t.param}]</span>}
           </span>
         );
       }
@@ -687,6 +691,7 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
           <Glyph name={keyword.glyph} size={13}/>
         </span>
         {keyword.name}
+        {param && <span className="kw-param">[{param}]</span>}
       </b>
       <span>{renderTokensInTip(tokens)}</span>
       {/* Arrow points toward the keyword span */}
@@ -720,6 +725,7 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
         <Glyph name={keyword.glyph} size={13}/>
       </span>
       <span className="kw-name">{keyword.name}</span>
+      {param && <span className="kw-param">[{param}]</span>}
       {mobileEditOpen && ReactDOM.createPortal(
         <MobileKeywordOverlay
           keyword={keyword}
