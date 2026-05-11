@@ -271,7 +271,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
           <span className="type-glyph"><Glyph name={factionRaw.glyph} size={14}/></span>
           <span className="type-label">
             {isUnit ? 'Unit' : 'Spell'}
-            {card.subtype ? <span className="type-sub"> · {card.subtype}</span> : null}
+            {card.subtype ? <span className="type-sub"> · {card.subtype.split(',').map(s => s.trim()).join(' · ')}</span> : null}
           </span>
           <span className="type-glyph"><Glyph name={factionRaw.glyph} size={14}/></span>
         </div>

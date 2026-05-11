@@ -403,7 +403,7 @@ export function LeftPanel({ card, onChange, keywords, cards, factions, rarities,
                  onChange={(e) => onChange({ name: e.target.value })}/>
         </Field>
         <Field label={isUnit ? 'Type line' : 'School'}
-               hint={isUnit ? 'e.g. Drake · Sentinel' : 'e.g. Hex'}>
+               hint={isUnit ? 'e.g. Drake,Sentinel (comma-separated, renders as ·)' : 'e.g. Hex'}>
           <input className="text-input" type="text" value={card.subtype || ''}
                  onChange={(e) => onChange({ subtype: e.target.value })}/>
         </Field>
