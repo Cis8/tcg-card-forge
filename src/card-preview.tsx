@@ -147,7 +147,7 @@ function StatGem({ variant = 'gem', tone = 'azure', rimColor, value, size = 56 }
 }
 
 const PATTERN_BACKGROUNDS: Record<string, string> = {
-  plain: 'transparent',
+  plain: 'none',
   damask: `
     radial-gradient(circle at 25% 25%, rgba(255,235,200,.07) 0%, transparent 18%),
     radial-gradient(circle at 75% 75%, rgba(255,235,200,.07) 0%, transparent 18%),
@@ -230,7 +230,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
       <div className="card-frame">
         <div className="card-fill"/>
         <div className="card-pattern"
-             style={{ backgroundImage: PATTERN_BACKGROUNDS[card.pattern] ?? 'transparent' }}/>
+             style={{ backgroundImage: PATTERN_BACKGROUNDS[card.pattern] ?? 'none' }}/>
 
         {frame === 'ornate' && (
           <>
