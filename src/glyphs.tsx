@@ -363,18 +363,33 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
 
   // skull with X eyes = kill / death mark
   'skull-x': () => (
-    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-      {/* skull silhouette without eye holes */}
-      <path d="M12 2.2c-4.7 0-8.4 3.4-8.4 7.7 0 2.5 1.2 4.6 3 6v3.3c0 .8.6 1.4 1.4 1.4h.7v1.6c0 .4.3.7.7.7s.7-.3.7-.7v-1.6h3.8v1.6c0 .4.3.7.7.7s.7-.3.7-.7v-1.6h.7c.8 0 1.4-.6 1.4-1.4v-3.3c1.8-1.4 3-3.5 3-6 0-4.3-3.7-7.7-8.4-7.7z"/>
-      <path d="M10 16.4h4l-.5 1.6h-3l-.5-1.6z" fill="#0008"/>
-      {/* X left eye, center ~(8.7, 12.4) */}
-      <line x1="7" y1="10.8" x2="10.4" y2="14.2" stroke="#000000" strokeWidth="1.6" strokeLinecap="round"/>
-      <line x1="10.4" y1="10.8" x2="7" y2="14.2" stroke="#000000" strokeWidth="1.6" strokeLinecap="round"/>
-      {/* X right eye, center ~(15.3, 12.4) */}
-      <line x1="13.6" y1="10.8" x2="17" y2="14.2" stroke="#000000" strokeWidth="1.6" strokeLinecap="round"/>
-      <line x1="17" y1="10.8" x2="13.6" y2="14.2" stroke="#000000" strokeWidth="1.6" strokeLinecap="round"/>
-    </svg>
-  ),
+  <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+    <defs>
+      {/* Definisci una maschera */}
+      <mask id="skull-x-mask">
+        {/* Il rettangolo bianco rende visibile l'intero teschio */}
+        <rect width="24" height="24" fill="white" />
+        
+        {/* L'area scura inferiore, ora nera nella maschera per ritagliare */}
+        <path d="M10 16.4h4l-.5 1.6h-3l-.5-1.6z" fill="black"/>
+        
+        {/* X occhio sinistro, ora nera nella maschera per ritagliare */}
+        <line x1="7" y1="10.8" x2="10.4" y2="14.2" stroke="black" strokeWidth="1.6" strokeLinecap="round"/>
+        <line x1="10.4" y1="10.8" x2="7" y2="14.2" stroke="black" strokeWidth="1.6" strokeLinecap="round"/>
+        
+        {/* X occhio destro, ora nera nella maschera per ritagliare */}
+        <line x1="13.6" y1="10.8" x2="17" y2="14.2" stroke="black" strokeWidth="1.6" strokeLinecap="round"/>
+        <line x1="17" y1="10.8" x2="13.6" y2="14.2" stroke="black" strokeWidth="1.6" strokeLinecap="round"/>
+      </mask>
+    </defs>
+
+    {/* Applica la maschera alla sagoma del teschio */}
+    <path 
+      d="M12 2.2c-4.7 0-8.4 3.4-8.4 7.7 0 2.5 1.2 4.6 3 6v3.3c0 .8.6 1.4 1.4 1.4h.7v1.6c0 .4.3.7.7.7s.7-.3.7-.7v-1.6h3.8v1.6c0 .4.3.7.7.7s.7-.3.7-.7v-1.6h.7c.8 0 1.4-.6 1.4-1.4v-3.3c1.8-1.4 3-3.5 3-6 0-4.3-3.7-7.7-8.4-7.7z"
+      mask="url(#skull-x-mask)"
+    />
+  </svg>
+),
 
   // bleeding — dynamic diagonal slash with anatomically correct blood drops
   bleed: () => (
