@@ -286,6 +286,59 @@
   letter-spacing: .01em;
 }
 
+/* ── Batch PNG export modal ──────────────────────────────────────── */
+.batch-png-scrim { z-index: 60; } /* stacks above any open collection modal */
+.batch-png-modal { width: 420px; }
+
+.batch-png-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.batch-png-option {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+.batch-png-option input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+.batch-png-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.batch-png-bar-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-input, #1a1510);
+  overflow: hidden;
+}
+.batch-png-bar-fill {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 3px;
+  transition: width .15s ease-out;
+}
+.batch-png-pct {
+  font-size: 11px;
+  color: var(--text-mute);
+  align-self: flex-end;
+  margin-top: -6px;
+}
+
+.batch-png-result { display: flex; flex-direction: column; gap: 14px; }
+.batch-png-error  { color: #c94040 !important; }
+
 /* ── Reference picker modal ──────────────────────────────────────── */
 .ref-picker-modal { width: 640px; height: 520px; }
 .ref-picker-tabs {

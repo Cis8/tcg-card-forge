@@ -2,6 +2,7 @@
 // faction list, rarity list, decks. All persisted via IndexedDB services.
 
 import React, { useState, useEffect, useRef, useCallback, useReducer } from 'react';
+import { flushSync } from 'react-dom';
 import * as htmlToImage from 'html-to-image';
 
 import { DEFAULT_FACTIONS, DEFAULT_RARITIES, DEFAULT_KEYWORDS } from './data';
@@ -13,7 +14,10 @@ import { RarityManager } from './rarity-manager';
 import { Collection } from './collection';
 import { DeckManager } from './deck-manager';
 import { DeckEditor } from './deck-editor';
+import { BatchPngExportModal } from './batch-png-export-modal';
 import { confirmDestructiveAction } from './confirm';
+import { useBatchPngExport } from './hooks/useBatchPngExport';
+import type { BatchPngExportOptions } from './hooks/useBatchPngExport';
 
 import { Glyph } from './glyphs';
 import type { Card, CardWithArt, Deck, DeckSettings, Faction, Rarity, Keyword, GlobalSettings } from './types';
@@ -85,9 +89,12 @@ export default function App(): React.ReactElement {
   const [showRarities, setShowRarities]     = useState(false);
   const [showCollection, setShowCollection] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showBatchPngExport, setShowBatchPngExport] = useState(false);
   const [toast, setToast]                   = useState<string | null>(null);
+  const [isExporting, setIsExporting]       = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
+  const batchRenderRef = useRef<HTMLDivElement>(null);
   const fontEmbedCSSRef = useRef<string | null | undefined>(undefined);
   const importFileRef = useRef<HTMLInputElement>(null);
   const [cardZoom, setCardZoom] = useState(100);
@@ -107,6 +114,8 @@ export default function App(): React.ReactElement {
 
   const [appView, setAppView] = useState<AppView>({ kind: 'card-editor' });
   const [showDeckManager, setShowDeckManager] = useState(false);
+
+  const batchExport = useBatchPngExport(batchRenderRef);
 
   // Async initialization on mount
   useEffect(() => {
@@ -469,6 +478,7 @@ export default function App(): React.ReactElement {
   const onExportPng = async () => {
     if (!cardRef.current) { showToast('Export unavailable'); return; }
     showToast('Rendering PNG…');
+    flushSync(() => setIsExporting(true));
     try {
       const fontEmbedCSS = await buildFontEmbedCSS();
       const dataUrl = await htmlToImage.toPng(cardRef.current, {
@@ -480,7 +490,6 @@ export default function App(): React.ReactElement {
         width: CARD_W + BLEED_LEFT + BLEED_RIGHT,
         height: CARD_H + BLEED_TOP + BLEED_BOTTOM,
         style: { marginLeft: `${BLEED_LEFT}px`, marginTop: `${BLEED_TOP}px` },
-        filter: (node) => !(node as Element).classList?.contains('desc-placeholder'),
         ...(fontEmbedCSS != null ? { fontEmbedCSS } : { skipFonts: true }),
       });
       const a = document.createElement('a');
@@ -491,7 +500,14 @@ export default function App(): React.ReactElement {
     } catch (e) {
       console.error(e);
       showToast('Export failed');
+    } finally {
+      setIsExporting(false);
     }
+  };
+
+  const onStartBatchExport = async (options: BatchPngExportOptions) => {
+    const fontEmbedCSS = await buildFontEmbedCSS();
+    batchExport.start(cards, options, fontEmbedCSS, factions);
   };
 
   const factionForCard = factions.find((f) => f.id === current.faction) ?? factions[0];
@@ -694,6 +710,7 @@ export default function App(): React.ReactElement {
                       costColor={globalSettings.costColor}
                       attackColor={globalSettings.attackColor}
                       healthColor={globalSettings.healthColor}
+                      hidePlaceholder={isExporting}
                       onEditCard={(id) => {
                         const c = appState?.cardMap.get(id);
                         if (c) {
@@ -789,6 +806,7 @@ export default function App(): React.ReactElement {
         onDelete={onDeleteFromCollection}
         onNew={onNewCard}
         onExportCard={(card) => exportService.downloadCard(card as CardWithArt)}
+        onExportAllPng={() => { setShowCollection(false); setShowBatchPngExport(true); }}
       />
       <DeckManager
         open={showDeckManager}
@@ -838,6 +856,40 @@ export default function App(): React.ReactElement {
           </div>
         </div>
       )}
+
+      {/* Off-screen container for batch PNG rendering — must stay in the DOM */}
+      <div
+        style={{ position: 'fixed', left: -9999, top: -9999, width: `${CARD_W}px`, pointerEvents: 'none' }}
+        aria-hidden="true"
+      >
+        <div ref={batchRenderRef} className="stage-card-mount">
+          {batchExport.cardToRender && (
+            <CardPreview
+              card={batchExport.cardToRender}
+              keywords={keywords}
+              cards={cards}
+              factions={factions}
+              rarities={rarities}
+              font={globalSettings.font}
+              costShape={globalSettings.costShape}
+              attackShape={globalSettings.attackShape}
+              healthShape={globalSettings.healthShape}
+              costColor={globalSettings.costColor}
+              attackColor={globalSettings.attackColor}
+              healthColor={globalSettings.healthColor}
+            />
+          )}
+        </div>
+      </div>
+
+      <BatchPngExportModal
+        open={showBatchPngExport}
+        cardCount={cards.length}
+        state={batchExport.state}
+        onStart={onStartBatchExport}
+        onCancel={batchExport.cancel}
+        onClose={() => { setShowBatchPngExport(false); batchExport.reset(); }}
+      />
 
       {toast && <div className="toast">{toast}</div>}
 

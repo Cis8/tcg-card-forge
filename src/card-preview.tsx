@@ -18,6 +18,8 @@ interface CardPreviewProps {
   attackColor?: string;
   healthColor?: string;
   onEditCard?: (cardId: string) => void;
+  /** When true, suppresses the authoring placeholder and its associated spacing (used during PNG export). */
+  hidePlaceholder?: boolean;
 }
 
 type Token =
@@ -181,6 +183,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
                               costShape = 'rhombus', attackShape = 'gem', healthShape = 'heart',
                               costColor = '#5dbce5', attackColor = '#7c8a99', healthColor = '#b21625',
                               onEditCard,
+                              hidePlaceholder = false,
                             }: CardPreviewProps): React.ReactElement {
   const frame: FrameVariant =
     card.frame === 'classic' || card.frame === 'inscribed' ? card.frame : 'ornate';
@@ -280,26 +283,32 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
             </div>
           )}
           <div className="text-box-inner">
-            <p className="card-text">
-              {tokens.length === 0
-                ? <span className="desc-placeholder" style={{ opacity: .35, fontStyle: 'italic' }}>
-                    Description appears here. Use @ Reference to insert keywords and cards.
-                  </span>
-                : tokens.map((t, i) => {
-                    if (t.kind === 'text') {
-                      return t.value.split('\n').map((line, j, arr) => (
-                        <React.Fragment key={`${i}-${j}`}>
-                          {line}{j < arr.length - 1 ? <br/> : null}
-                        </React.Fragment>
-                      ));
-                    }
-                    if (t.kind === 'card') {
-                      return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []} descBg={descEffectiveBg} onEditCard={onEditCard}/>;
-                    }
-                    return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg} keywords={keywords} cards={cards} factions={factions} rarities={rarities}/>;
-                  })}
-            </p>
-            {card.flavor && <p className="card-flavor">{card.flavor}</p>}
+            {(tokens.length > 0 || !hidePlaceholder) && (
+              <p className="card-text">
+                {tokens.length === 0
+                  ? <span className="desc-placeholder" style={{ opacity: .35, fontStyle: 'italic' }}>
+                      Description appears here. Use @ Reference to insert keywords and cards.
+                    </span>
+                  : tokens.map((t, i) => {
+                      if (t.kind === 'text') {
+                        return t.value.split('\n').map((line, j, arr) => (
+                          <React.Fragment key={`${i}-${j}`}>
+                            {line}{j < arr.length - 1 ? <br/> : null}
+                          </React.Fragment>
+                        ));
+                      }
+                      if (t.kind === 'card') {
+                        return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []} descBg={descEffectiveBg} onEditCard={onEditCard}/>;
+                      }
+                      return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg} keywords={keywords} cards={cards} factions={factions} rarities={rarities}/>;
+                    })}
+              </p>
+            )}
+            {card.flavor && (
+              <p className="card-flavor" style={tokens.length === 0 && hidePlaceholder ? { borderTop: 'none', marginTop: 0 } : undefined}>
+                {card.flavor}
+              </p>
+            )}
           </div>
         </div>
 

@@ -49,11 +49,12 @@ interface CollectionProps {
   onDelete: (id: string) => void;
   onNew: () => void;
   onExportCard: (card: CardWithArt) => void;
+  onExportAllPng: () => void;
 }
 
 export function Collection({
   open, cards, currentId, factions, rarities, keywords,
-  onClose, onPick, onDelete, onNew, onExportCard,
+  onClose, onPick, onDelete, onNew, onExportCard, onExportAllPng,
 }: CollectionProps): React.ReactElement | null {
   const [filters, setFilters] = useState<CollectionFilters>(createEmptyFilters);
   const [showFilters, setShowFilters] = useState(true);
@@ -102,6 +103,17 @@ export function Collection({
                 onClick={() => setShowFilters(v => !v)}
               >
                 {showFilters ? '▲' : '▼'} Filters
+              </button>
+            )}
+            {cards.length > 0 && (
+              <button
+                type="button"
+                className="btn btn-sm"
+                title="Export all cards as PNG images in a ZIP file"
+                onClick={onExportAllPng}
+              >
+                <Glyph name="download" size={12}/>
+                <span>Export PNGs</span>
               </button>
             )}
             <button type="button" className="btn btn-primary btn-sm" onClick={onNew}>
