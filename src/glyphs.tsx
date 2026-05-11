@@ -107,7 +107,7 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
       <polygon points="12,2 14.4,9.2 22,9.2 15.8,13.7 18.2,21 12,16.4 5.8,21 8.2,13.7 2,9.2 9.6,9.2"/>
     </svg>
   ),
-  diamond: () => (
+  gem: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
       <polygon points="12,2 22,12 12,22 2,12"/>
     </svg>
@@ -164,7 +164,7 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
       <circle cx="16" cy="9" r="1.2" fill="currentColor"/>
     </svg>
   ),
-  gem: () => (
+  diamond: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
       <polygon points="6,2 18,2 22,9 12,22 2,9"/>
     </svg>
@@ -388,6 +388,117 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
       
       {/* Goccia Piccola: Leggermente sfalsata in alto a destra */}
       <path d="M 16 12 C 16 12 14.5 14.5 14.5 16 A 1.5 1.5 0 0 0 17.5 16 C 17.5 14.5 16 12 16 12 Z" />
+    </svg>
+  ),
+  // — virus: spherical body with radiating spike proteins
+  virus: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      {/* Corpo centrale sferico */}
+      <circle cx="12" cy="12" r="5" />
+      
+      {/* 8 proteine Spike radiali: una combinazione di stelo (L) e testa a "T" capovolta (C) */}
+      {/* In alto (12:00) */}
+      <path d="M 11.5 2 V 7 H 12.5 V 2 H 14.5 C 14.5 1.2 13.8 0.5 13 0.5 H 11 C 10.2 0.5 9.5 1.2 9.5 2 Z" />
+      {/* In basso (6:00) */}
+      <path d="M 11.5 22 V 17 H 12.5 V 22 H 14.5 C 14.5 22.8 13.8 23.5 13 23.5 H 11 C 10.2 23.5 9.5 22.8 9.5 22 Z" />
+      {/* A destra (3:00) */}
+      <path d="M 22 11.5 H 17 V 12.5 H 22 V 14.5 C 22.8 14.5 23.5 13.8 23.5 13 V 11 C 23.5 10.2 22.8 9.5 22 9.5 Z" />
+      {/* A sinistra (9:00) */}
+      <path d="M 2 11.5 H 7 V 12.5 H 2 V 14.5 C 1.2 14.5 0.5 13.8 0.5 13 V 11 C 0.5 10.2 1.2 9.5 2 9.5 Z" />
+      
+      {/* 4 Spike diagonali (ruotati di 45°) per completezza */}
+      <path d="M 5 19 L 8.5 15.5 L 9.2 16.2 L 5.7 19.7 C 6.3 20.3 6.3 21.3 5.7 21.9 C 5.1 22.5 4.1 22.5 3.5 21.9 L 2.1 20.5 C 1.5 19.9 1.5 18.9 2.1 18.3 C 2.7 17.7 3.7 17.7 4.3 18.3 Z" />
+      <path d="M 19 5 L 15.5 8.5 L 14.8 7.8 L 18.3 4.3 C 17.7 3.7 17.7 2.7 18.3 2.1 C 18.9 1.5 19.9 1.5 20.5 2.1 L 21.9 3.5 C 22.5 4.1 22.5 5.1 21.9 5.7 C 21.3 6.3 20.3 6.3 19.7 5.7 Z" />
+      <path d="M 5 5 L 8.5 8.5 L 7.8 9.2 L 4.3 5.7 C 3.7 6.3 2.7 6.3 2.1 5.7 C 1.5 5.1 1.5 4.1 2.1 3.5 L 3.5 2.1 C 4.1 1.5 5.1 1.5 5.7 2.1 C 6.3 2.7 6.3 3.7 5.7 4.3 Z" />
+      <path d="M 19 19 L 15.5 15.5 L 16.2 14.8 L 19.7 18.3 C 20.3 17.7 21.3 17.7 21.9 18.3 C 22.5 18.9 22.5 19.9 21.9 20.5 L 20.5 21.9 C 19.9 22.5 18.9 22.5 18.3 21.9 C 17.7 21.3 17.7 20.3 18.3 19.7 Z" />
+    </svg>
+  ),
+
+  // — wide-slash (v2): Aggressive, tapered crescent for high visual impact
+  "wide-slash": () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      {/* Questo path cattura la potenza del design generato:
+        1. Estrema conicità: le punte sono quasi invisibili (M 2 12 ... 22 12).
+        2. Curva esterna profonda (2,12 a 12,22), che simula la forza centrifuga.
+        3. Curva interna nitida (22,12 a 12,18), che crea un "ventre" e l'effetto taglio.
+      */}
+      <path 
+        d="M 2 12 
+           C 2 12, 4 18, 12 22 
+           C 20 18, 22 12, 22 12 
+           C 22 12, 18 16, 12 18 
+           C 6 16, 2 12, 2 12 Z"
+      />
+    </svg>
+  ),
+
+// — arrow-storm: Precision synchronized raining arrow volley, oriented diagonally
+  // Three instances of the redesigned arrow, diagonally oriented (45 degrees down-right), 
+  // with equal-sized side arrows for a balanced depth effect.
+  "arrow-storm": () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      {/* Freccia laterale 1 (In alto a destra, orientata a 45 gradi verso il basso-destra) */}
+      <path 
+        d="M 12 23 L 9.5 20.5 L 11 19 L 11 6 L 9.5 4.5 L 10 4 L 12 1 L 14 4 L 14.5 4.5 L 13 6 L 13 19 L 14.5 20.5 Z" 
+        transform="translate(4.5, -4.5) scale(0.75) rotate(-45 12 12)" 
+        opacity="0.85"
+      />
+      
+      {/* Freccia laterale 2 (In basso a sinistra, orientata a 45 gradi verso il basso-destra) */}
+      <path 
+        d="M 12 23 L 9.5 20.5 L 11 19 L 11 6 L 9.5 4.5 L 10 4 L 12 1 L 14 4 L 14.5 4.5 L 13 6 L 13 19 L 14.5 20.5 Z" 
+        transform="translate(-3.5, 3.5) scale(0.75) rotate(-45 12 12)" 
+        opacity="0.85"
+      />
+      
+      {/* Freccia centrale in foreground (Grande, a fuoco, orientata a 45 gradi verso il basso-destra) */}
+      <path 
+        d="M 12 23 L 9.5 20.5 L 11 19 L 11 6 L 9.5 4.5 L 10 4 L 12 1 L 14 4 L 14.5 4.5 L 13 6 L 13 19 L 14.5 20.5 Z" 
+        transform="translate(1.5, 1.5) scale(0.9) rotate(-45 12 12)" 
+      />
+    </svg>
+  ),
+
+  // bulls-eye: layered target with crosshair and central dot
+  "bulls-eye": () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      {/* Cerchio esterno "bucato" a forma di anello: 
+          Tracciato esterno e interno combinati in un singolo 'd' con fillRule="evenodd" */}
+      <path 
+        fillRule="evenodd" 
+        clipRule="evenodd" 
+        d="M 12 2 A 10 10 0 0 0 12 22 A 10 10 0 0 0 12 2 Z M 12 5 A 7 7 0 0 1 12 19 A 7 7 0 0 1 12 5 Z"
+      />
+      
+      {/* Il mirino a croce centrale */}
+      <path d="M 11.5 4 V 20 H 12.5 V 4 H 11.5 Z M 4 11.5 H 20 V 12.5 H 4 V 11.5 Z" />
+      
+      {/* Il punto centrale per la messa a fuoco */}
+      <circle cx="12" cy="12" r="2" />
+    </svg>
+  ),
+
+  // — stun (v3): Classic gaming "dizzy" effect with spinning stars and motion trails
+  stun: () => (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      {/* Stella 1 (In alto al centro) */}
+      <path d="M 12 1 L 13.5 4.5 L 17 6 L 13.5 7.5 L 12 11 L 10.5 7.5 L 7 6 L 10.5 4.5 Z" />
+      
+      {/* Stella 2 (In basso a destra) */}
+      <path d="M 19 13 L 20.2 15.8 L 23 17 L 20.2 18.2 L 19 21 L 17.8 18.2 L 15 17 L 17.8 15.8 Z" />
+      
+      {/* Stella 3 (In basso a sinistra) */}
+      <path d="M 5 13 L 6.2 15.8 L 9 17 L 6.2 18.2 L 5 21 L 3.8 18.2 L 1 17 L 3.8 15.8 Z" />
+
+      {/* Scie di movimento circolari (Creano l'effetto di rotazione) */}
+      {/* Scia in alto a destra */}
+      <path d="M 15 3 A 9 9 0 0 1 22 12 A 7 7 0 0 0 14 5 Z" />
+      
+      {/* Scia in basso */}
+      <path d="M 21 19 A 9 9 0 0 1 9 22 A 7 7 0 0 0 18 18 Z" />
+
+      {/* Scia a sinistra */}
+      <path d="M 2 12 A 9 9 0 0 1 9 3 A 7 7 0 0 0 4 10 Z" />
     </svg>
   ),
 };

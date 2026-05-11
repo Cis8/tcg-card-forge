@@ -12,7 +12,7 @@ export const GLYPH_CATALOG = [
   },
   {
     category: 'Combat',
-    glyphs: ['bolt', 'overrun', 'shield', 'sword', 'axe', 'bow', 'spear', 'trident', 'bleed'],
+    glyphs: ['bolt', 'overrun', 'shield', 'sword', 'axe', 'bow', 'spear', 'trident', 'bleed', 'wide-slash', 'arrow-storm', 'bulls-eye', 'stun'],
   },
   {
     category: 'Dark',
@@ -20,7 +20,7 @@ export const GLYPH_CATALOG = [
   },
   {
     category: 'Arcane',
-    glyphs: ['star', 'diamond', 'gem', 'chalice', 'orb', 'feather', 'hourglass', 'crown', 'compass', 'dna'],
+    glyphs: ['star', 'diamond', 'gem', 'chalice', 'orb', 'feather', 'hourglass', 'crown', 'compass', 'dna', 'virus'],
   },
   {
     category: 'Creature',

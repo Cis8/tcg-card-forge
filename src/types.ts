@@ -14,7 +14,8 @@ export type ThematicGlyphName =
   | 'moon' | 'orb' | 'rune' | 'feather'
   | 'paw' | 'vine' | 'mountain' | 'wave' | 'tornado'
   | 'chain' | 'heart'
-  | 'blind' | 'vampire' | 'dna' | 'skull-x' | 'bleed';
+  | 'blind' | 'vampire' | 'dna' | 'skull-x' | 'bleed'
+  | 'virus' | 'wide-slash' | 'arrow-storm' | 'bulls-eye' | 'stun';
 
 // UI-only glyphs — not available as faction/keyword choices.
 export type UiGlyphName =
