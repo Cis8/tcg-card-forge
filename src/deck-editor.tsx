@@ -6,7 +6,7 @@ import { Glyph } from './glyphs';
 import type { CardWithArt, Deck, DeckSettings, Faction, GlobalSettings, Keyword, Rarity } from './types';
 import {
   addCardToDeck, removeCardFromDeck,
-  getDeckTotal, getDeckFactions, getDeckCostCurve, validateDeck,
+  getDeckTotal, getDeckFactions, getDeckCostCurve, validateDeck, sortCardsByCost,
 } from './deck-utils';
 import {
   type CollectionFilters,
@@ -177,7 +177,7 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
   const [mobileTab, setMobileTab] = useState<'cards' | 'stats'>('cards');
   const [touchPreviewCard, setTouchPreviewCard] = useState<CardWithArt | null>(null);
 
-  const filteredCards = useMemo(() => applyFilters(cards, filters) as CardWithArt[], [cards, filters]);
+  const filteredCards = useMemo(() => sortCardsByCost(applyFilters(cards, filters) as CardWithArt[]), [cards, filters]);
 
   const pickerScrollRef = useRef<HTMLDivElement>(null);
   const { cols: pickerCols, colTemplate, itemH, gap: pickerGap, padH, padV } = usePickerGrid(pickerScrollRef);
@@ -207,6 +207,9 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
     [...deck.entries].sort((a, b) => {
       const ca = cards.find(c => c.id === a.cardId);
       const cb = cards.find(c => c.id === b.cardId);
+      const aToken = ca != null && ca.rarity == null;
+      const bToken = cb != null && cb.rarity == null;
+      if (aToken !== bToken) return aToken ? 1 : -1;
       return (ca?.cost ?? 0) - (cb?.cost ?? 0);
     }),
     [deck.entries, cards],

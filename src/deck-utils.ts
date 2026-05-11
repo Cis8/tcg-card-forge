@@ -112,6 +112,16 @@ export function affectedDeckNames(decks: Deck[], cardId: string): string[] {
   return decks.filter(d => d.entries.some(e => e.cardId === cardId)).map(d => d.name);
 }
 
+/** Sort cards by cost ascending; Token cards (rarity === undefined) go last. */
+export function sortCardsByCost<T extends Card>(cards: T[]): T[] {
+  return [...cards].sort((a, b) => {
+    const aToken = a.rarity == null;
+    const bToken = b.rarity == null;
+    if (aToken !== bToken) return aToken ? 1 : -1;
+    return a.cost - b.cost;
+  });
+}
+
 /** Total card count (sum of all quantities). */
 export function getDeckTotal(deck: Deck): number {
   return deck.entries.reduce((sum, e) => sum + e.quantity, 0);

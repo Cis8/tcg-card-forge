@@ -10,6 +10,7 @@ import {
   hasActiveFilters,
   applyFilters,
 } from './collection-filter';
+import { sortCardsByCost } from './deck-utils';
 
 // Grid metrics — must match card.css / mobile.css
 const DESKTOP_BP = 768;
@@ -63,7 +64,7 @@ export function Collection({
   const { cols, gap, padding, itemH } = useCollectionGrid(scrollRef);
 
   const filteredCards = useMemo(
-    () => applyFilters(cards, filters) as CardWithArt[],
+    () => sortCardsByCost(applyFilters(cards, filters) as CardWithArt[]),
     [cards, filters],
   );
 
