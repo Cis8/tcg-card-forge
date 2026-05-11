@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ServicesProvider } from './context/ServicesContext';
 
+import './fonts.css';
 import './styles.css';
 import './card.css';
 import './card-extras.css';

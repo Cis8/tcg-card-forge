@@ -441,7 +441,6 @@ export default function App(): React.ReactElement {
       const dataUrl = await htmlToImage.toPng(cardRef.current, {
         pixelRatio: 2,
         backgroundColor: undefined,
-        cacheBust: true,
       });
       const a = document.createElement('a');
       a.download = `${(current.name || 'card').replace(/[^\w-]+/g, '_')}.png`;

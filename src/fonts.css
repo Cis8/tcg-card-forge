@@ -1,0 +1,30 @@
+/* Cinzel — card headings, UI labels */
+@import '@fontsource/cinzel/latin-500.css';
+@import '@fontsource/cinzel/latin-600.css';
+@import '@fontsource/cinzel/latin-700.css';
+
+/* Cinzel Decorative — "trajan" font variant headings */
+@import '@fontsource/cinzel-decorative/latin-700.css';
+@import '@fontsource/cinzel-decorative/latin-900.css';
+
+/* Cormorant Garamond — default card body text */
+@import '@fontsource/cormorant-garamond/latin-500.css';
+@import '@fontsource/cormorant-garamond/latin-600.css';
+@import '@fontsource/cormorant-garamond/latin-500-italic.css';
+
+/* EB Garamond — "fell" font variant body text */
+@import '@fontsource/eb-garamond/latin-500.css';
+@import '@fontsource/eb-garamond/latin-500-italic.css';
+
+/* IM Fell English SC — "fell" font variant headings */
+@import '@fontsource/im-fell-english-sc/latin-400.css';
+
+/* Crimson Pro — "trajan" font variant body text */
+@import '@fontsource/crimson-pro/latin-500.css';
+@import '@fontsource/crimson-pro/latin-600.css';
+
+/* Inter — UI font */
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/inter/latin-700.css';

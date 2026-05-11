@@ -7,7 +7,8 @@
       "Bash(npx tsc *)",
       "Bash(cd /d \"C:\\\\Users\\\\emaci\\\\Documents\\\\tcg-card-forge\")",
       "Bash(findstr /S \"rarity.*common\\\\|DEFAULT_RARITIES\" src\\\\*.tsx src\\\\*.ts)",
-      "Bash(curl -s http://localhost:5173)"
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(git checkout *)"
     ]
   }
 }
