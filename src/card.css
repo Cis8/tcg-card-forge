@@ -356,15 +356,33 @@
   text-decoration-color: currentColor;
   text-underline-offset: 2px;
 }
-/* Portal'd tooltip — fixed-positioned to body so it escapes the card's
-   overflow:hidden, even when the keyword is near the card edge.
-   left/top are fully pre-computed in JS (clamped to viewport).
-   --kw-tip-arrow is set inline to keep the arrow pointing at the keyword
-   even when the box had to shift horizontally. */
-.kw-tip-portal {
+/* ── Keyword tooltip stack ───────────────────────────────────────────────
+   Fixed-positioned flex column holding all tooltip boxes (nested refs on
+   top, main tooltip at bottom in above mode; reversed in below mode).
+   left/top are pre-computed in JS; translateY(-100%) keeps the stack's
+   bottom at the anchor point. */
+.kw-tip-stack {
   position: fixed;
-  transform: translateY(calc(-100% - 10px));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   width: 220px;
+  pointer-events: none;
+  z-index: 200;
+  transform: translateY(-100%);
+  animation: tip-in .12s ease-out;
+}
+/* Below-keyword variant: stack grows downward from keyword */
+.kw-tip-stack--below {
+  transform: none;
+  animation: tip-in-below .12s ease-out;
+}
+@keyframes tip-in { from { opacity: 0; transform: translateY(calc(-100% - 4px)); } }
+@keyframes tip-in-below { from { opacity: 0; transform: translateY(4px); } }
+
+/* Individual keyword tooltip box (shared by main tooltip and sub-tooltips) */
+.kw-tip-box {
+  position: relative;
   background: #1a1306;
   color: #f0e6d0;
   border: 1px solid;
@@ -376,38 +394,26 @@
   font-style: normal;
   line-height: 1.4;
   letter-spacing: 0;
-  z-index: 200;
   box-shadow: 0 12px 28px rgba(0,0,0,.7);
-  pointer-events: none;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  animation: tip-in .12s ease-out;
 }
-@keyframes tip-in { from { opacity: 0; transform: translateY(calc(-100% - 4px)); } }
-.kw-tip-portal b {
+.kw-tip-box b {
   font-family: 'Cinzel', serif;
   letter-spacing: .04em;
   font-size: 11px;
   text-transform: uppercase;
 }
-.kw-tip-portal::after {
-  content: '';
+/* Arrow on the main tooltip only (explicit child div; left set inline by JS) */
+.kw-tip-box-arrow {
   position: absolute;
   top: 100%;
-  left: var(--kw-tip-arrow, 50%);
   transform: translateX(-50%);
   border: 5px solid transparent;
   border-top-color: currentColor;
-  color: inherit;
 }
-/* Flipped variant: tooltip rendered below the keyword */
-.kw-tip-portal--below {
-  transform: translateY(0);
-  animation: tip-in-below .12s ease-out;
-}
-@keyframes tip-in-below { from { opacity: 0; transform: translateY(4px); } }
-.kw-tip-portal--below::after {
+.kw-tip-box-arrow--below {
   top: auto;
   bottom: 100%;
   border-top-color: transparent;

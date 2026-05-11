@@ -296,7 +296,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
                     if (t.kind === 'card') {
                       return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []} descBg={descEffectiveBg} onEditCard={onEditCard}/>;
                     }
-                    return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg} keywords={keywords} cards={cards}/>;
+                    return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg} keywords={keywords} cards={cards} factions={factions} rarities={rarities}/>;
                   })}
             </p>
             {card.flavor && <p className="card-flavor">{card.flavor}</p>}
@@ -413,19 +413,93 @@ const KW_TIP_W = 220;
 const KW_TIP_GAP = 10;
 const KW_TIP_MARGIN = 8;
 const KW_TIP_TOOLTIP_BG = '#1a1306';
+// Card preview shown alongside keyword tooltip (first card ref in description)
+const CARD_PREVIEW_SCALE_MAX = 0.5;
+const CARD_PREVIEW_W_MAX = 170; // PREVIEW_W * CARD_PREVIEW_SCALE_MAX (340 * 0.5)
+const CARD_PREVIEW_GAP = 8;
+const MIN_CARD_PREVIEW_W = 80;
+
+/**
+ * DFS-collect all keywords transitively referenced by kw's description.
+ * Returns them in branch-local order: within each branch, a keyword's own
+ * references appear above (before) the keyword itself.
+ * `seen` must be pre-seeded with the root keyword id to prevent cycles.
+ */
+function collectKwStack(kw: Keyword, kwById: Map<string, Keyword>, seen: Set<string>): Keyword[] {
+  const result: Keyword[] = [];
+  const tokens = parseDescription(kw.description, kwById, new Map());
+  for (const t of tokens) {
+    if (t.kind !== 'kw') continue;
+    if (seen.has(t.keyword.id)) continue;
+    seen.add(t.keyword.id);
+    result.push(...collectKwStack(t.keyword, kwById, seen), t.keyword);
+  }
+  return result;
+}
 
 interface KeywordSpanProps {
   keyword: Keyword;
   descBg: string;
   keywords?: Keyword[];
   cards?: CardWithArt[];
-  /** Rendering depth. depth ≥ 1 = display-only (no tooltip) to avoid nested tooltips. */
-  depth?: number;
+  factions?: Faction[];
+  rarities?: Rarity[];
 }
 
-function KeywordSpan({ keyword, descBg, keywords, cards, depth = 0 }: KeywordSpanProps): React.ReactElement {
+/** Tooltip box (visual only — no position, no arrow). Used for nested kw sub-tips. */
+function KwTipBox({ keyword, keywords, cards }: {
+  keyword: Keyword;
+  keywords?: Keyword[];
+  cards?: CardWithArt[];
+}): React.ReactElement {
+  const kwById = useMemo(() => new Map((keywords ?? []).map(k => [k.id, k])), [keywords]);
+  const cardById = useMemo(() => new Map((cards ?? []).map(c => [c.id, c])), [cards]);
+  const tokens = useMemo(
+    () => parseDescription(keyword.description, kwById, cardById),
+    [keyword.description, kwById, cardById],
+  );
+  const displayColor = adaptColorForBg(keyword.color, KW_TIP_TOOLTIP_BG);
+  return (
+    <div className="kw-tip-box" style={{ borderColor: keyword.color }}>
+      <b style={{ color: displayColor }}>
+        <span style={{ display: 'inline-flex', verticalAlign: '-2px', marginRight: 4 }}>
+          <Glyph name={keyword.glyph} size={13}/>
+        </span>
+        {keyword.name}
+      </b>
+      <span>
+        {tokens.map((t, i) => {
+          if (t.kind === 'text') return <React.Fragment key={i}>{t.value}</React.Fragment>;
+          if (t.kind === 'kw') {
+            const kwColor = adaptColorForBg(t.keyword.color, KW_TIP_TOOLTIP_BG);
+            return (
+              <span key={i} className="kw" style={{ color: kwColor }}>
+                <span className="kw-glyph" style={{ color: kwColor }}>
+                  <Glyph name={t.keyword.glyph} size={13}/>
+                </span>
+                <span className="kw-name">{t.keyword.name}</span>
+              </span>
+            );
+          }
+          if (t.kind === 'card') {
+            const cardColor = adaptColorForBg('#d4a017', KW_TIP_TOOLTIP_BG);
+            return (
+              <span key={i} className="card-ref" style={{ color: cardColor }}>
+                <span className="card-ref-name">{t.card.name}</span>
+              </span>
+            );
+          }
+          return null;
+        })}
+      </span>
+    </div>
+  );
+}
+
+function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities }: KeywordSpanProps): React.ReactElement {
   const [tipData, setTipData] = useState<{
     left: number; top: number; arrowLeft: number; below: boolean;
+    cardLeft?: number; cardTop?: number; cardScale?: number;
   } | null>(null);
   const spanRef = useRef<HTMLSpanElement>(null);
   const isTouchPrimary = useMemo(() => window.matchMedia('(pointer: coarse)').matches, []);
@@ -440,18 +514,83 @@ function KeywordSpan({ keyword, descBg, keywords, cards, depth = 0 }: KeywordSpa
     [keyword.description, kwById, cardById],
   );
 
+  // Recursively collect all referenced keywords (DFS, deduplicated)
+  const kwStack = useMemo(() => {
+    const seen = new Set<string>([keyword.id]);
+    return collectKwStack(keyword, kwById, seen);
+  }, [keyword, kwById]);
+
+  // First unique card ref in this keyword's description
+  const firstCard = useMemo(() => {
+    if (!factions?.length || !rarities?.length) return undefined;
+    for (const t of tokens) {
+      if (t.kind === 'card') return t.card;
+    }
+    return undefined;
+  }, [tokens, factions, rarities]);
+
   const computeAndShow = useCallback(() => {
     if (!spanRef.current) return;
     const r = spanRef.current.getBoundingClientRect();
     const cx = r.left + r.width / 2;
-    // Clamp left edge so tooltip stays within viewport
-    const left = Math.max(KW_TIP_MARGIN, Math.min(cx - KW_TIP_W / 2, window.innerWidth - KW_TIP_W - KW_TIP_MARGIN));
-    const arrowLeft = Math.max(10, Math.min(cx - left, KW_TIP_W - 10));
-    // Flip below keyword if there's insufficient space above
-    const below = r.top - KW_TIP_GAP - KW_TIP_MARGIN < 80;
-    const top = below ? r.bottom + KW_TIP_GAP : r.top - KW_TIP_GAP;
-    setTipData({ left, top, arrowLeft, below });
-  }, []);
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // Pick whichever side has more space
+    const spaceAbove = r.top - KW_TIP_GAP;
+    const spaceBelow = vh - r.bottom - KW_TIP_GAP;
+    const below = spaceBelow > spaceAbove;
+    const anchorY = below ? r.bottom + KW_TIP_GAP : r.top - KW_TIP_GAP;
+
+    let tooltipLeft: number;
+    let arrowLeft: number;
+    let cardLeft: number | undefined;
+    let cardTop: number | undefined;
+    let cardScale: number | undefined;
+
+    if (firstCard) {
+      const naturalTipLeft = cx - KW_TIP_W / 2;
+      // Try card on the right
+      const tipLeftR = Math.max(KW_TIP_MARGIN, Math.min(naturalTipLeft, vw - KW_TIP_W - KW_TIP_MARGIN));
+      const cardLeftR = tipLeftR + KW_TIP_W + CARD_PREVIEW_GAP;
+      if (cardLeftR + CARD_PREVIEW_W_MAX <= vw - KW_TIP_MARGIN) {
+        tooltipLeft = tipLeftR;
+        cardLeft = cardLeftR;
+        cardScale = CARD_PREVIEW_SCALE_MAX;
+      } else {
+        // Try card on the left
+        const minTipLeft = CARD_PREVIEW_W_MAX + CARD_PREVIEW_GAP + KW_TIP_MARGIN;
+        const tipLeftL = Math.max(minTipLeft, Math.min(naturalTipLeft, vw - KW_TIP_W - KW_TIP_MARGIN));
+        const cardLeftL = tipLeftL - CARD_PREVIEW_GAP - CARD_PREVIEW_W_MAX;
+        if (cardLeftL >= KW_TIP_MARGIN) {
+          tooltipLeft = tipLeftL;
+          cardLeft = cardLeftL;
+          cardScale = CARD_PREVIEW_SCALE_MAX;
+        } else {
+          // Scale down card to fit
+          const maxCW = Math.floor(vw - 2 * KW_TIP_MARGIN - KW_TIP_W - CARD_PREVIEW_GAP);
+          if (maxCW >= MIN_CARD_PREVIEW_W) {
+            cardScale = maxCW / PREVIEW_W;
+            tooltipLeft = Math.max(KW_TIP_MARGIN, Math.min(naturalTipLeft, vw - KW_TIP_W - KW_TIP_MARGIN));
+            cardLeft = tooltipLeft + KW_TIP_W + CARD_PREVIEW_GAP;
+          } else {
+            // Not enough room — skip card preview
+            tooltipLeft = Math.max(KW_TIP_MARGIN, Math.min(naturalTipLeft, vw - KW_TIP_W - KW_TIP_MARGIN));
+          }
+        }
+      }
+      if (cardLeft !== undefined && cardScale !== undefined) {
+        const cH = Math.round(PREVIEW_H * cardScale);
+        cardTop = below ? anchorY : anchorY - cH;
+        cardTop = Math.max(KW_TIP_MARGIN, Math.min(cardTop, vh - cH - KW_TIP_MARGIN));
+      }
+    } else {
+      tooltipLeft = Math.max(KW_TIP_MARGIN, Math.min(cx - KW_TIP_W / 2, vw - KW_TIP_W - KW_TIP_MARGIN));
+    }
+
+    arrowLeft = Math.max(10, Math.min(cx - tooltipLeft, KW_TIP_W - 10));
+    setTipData({ left: tooltipLeft, top: anchorY, arrowLeft, below, cardLeft, cardTop, cardScale });
+  }, [firstCard]);
 
   const hide = useCallback(() => setTipData(null), []);
 
@@ -476,17 +615,49 @@ function KeywordSpan({ keyword, descBg, keywords, cards, depth = 0 }: KeywordSpa
     return () => document.removeEventListener('pointerdown', handler);
   }, [tipData, hide]);
 
-  // depth ≥ 1: display-only span — no tooltip to avoid nested tooltips
-  if (depth > 0) {
-    return (
-      <span className="kw" style={{ color: displayColor }}>
-        <span className="kw-glyph" style={{ color: displayColor }}>
+  // Inline (display-only) renderers for tokens inside the main tooltip box
+  const renderTokensInTip = (toks: ReturnType<typeof parseDescription>) =>
+    toks.map((t, i) => {
+      if (t.kind === 'text') return <React.Fragment key={i}>{t.value}</React.Fragment>;
+      if (t.kind === 'kw') {
+        const kwColor = adaptColorForBg(t.keyword.color, KW_TIP_TOOLTIP_BG);
+        return (
+          <span key={i} className="kw" style={{ color: kwColor }}>
+            <span className="kw-glyph" style={{ color: kwColor }}>
+              <Glyph name={t.keyword.glyph} size={13}/>
+            </span>
+            <span className="kw-name">{t.keyword.name}</span>
+          </span>
+        );
+      }
+      if (t.kind === 'card') {
+        const cardColor = adaptColorForBg('#d4a017', KW_TIP_TOOLTIP_BG);
+        return (
+          <span key={i} className="card-ref" style={{ color: cardColor }}>
+            <span className="card-ref-name">{t.card.name}</span>
+          </span>
+        );
+      }
+      return null;
+    });
+
+  const mainTipBox = (
+    <div className="kw-tip-box" role="tooltip" style={{ borderColor: keyword.color }}>
+      <b style={{ color: displayColorInTip }}>
+        <span style={{ display: 'inline-flex', verticalAlign: '-2px', marginRight: 4 }}>
           <Glyph name={keyword.glyph} size={13}/>
         </span>
-        <span className="kw-name">{keyword.name}</span>
-      </span>
-    );
-  }
+        {keyword.name}
+      </b>
+      <span>{renderTokensInTip(tokens)}</span>
+      {/* Arrow points toward the keyword span */}
+      <div
+        className={`kw-tip-box-arrow${tipData?.below ? ' kw-tip-box-arrow--below' : ''}`}
+        aria-hidden="true"
+        style={{ left: tipData?.arrowLeft ?? 110 }}
+      />
+    </div>
+  );
 
   return (
     <span className="kw" style={{ color: displayColor }} ref={spanRef}
@@ -498,38 +669,63 @@ function KeywordSpan({ keyword, descBg, keywords, cards, depth = 0 }: KeywordSpa
       </span>
       <span className="kw-name">{keyword.name}</span>
       {tipData && ReactDOM.createPortal(
-        <div className={`kw-tip-portal${tipData.below ? ' kw-tip-portal--below' : ''}`}
-             role="tooltip"
-             style={{
-               left: tipData.left, top: tipData.top,
-               borderColor: keyword.color,
-               '--kw-tip-arrow': `${tipData.arrowLeft}px`,
-             } as React.CSSProperties}>
-          <b style={{ color: displayColorInTip }}>
-            <span style={{ display: 'inline-flex', verticalAlign: '-2px', marginRight: 4 }}>
-              <Glyph name={keyword.glyph} size={13}/>
-            </span>
-            {keyword.name}
-          </b>
-          <span>
-            {tokens.map((t, i) => {
-              if (t.kind === 'text') return <React.Fragment key={i}>{t.value}</React.Fragment>;
-              if (t.kind === 'kw') return (
-                <KeywordSpan key={i} keyword={t.keyword} descBg={KW_TIP_TOOLTIP_BG}
-                             keywords={keywords} cards={cards} depth={1}/>
-              );
-              if (t.kind === 'card') {
-                const cardColor = adaptColorForBg('#d4a017', KW_TIP_TOOLTIP_BG);
-                return (
-                  <span key={i} className="card-ref" style={{ color: cardColor }}>
-                    <span className="card-ref-name">{t.card.name}</span>
-                  </span>
-                );
-              }
-              return null;
-            })}
-          </span>
-        </div>,
+        <>
+          {/* Tooltip stack: nested keyword boxes + main tooltip box */}
+          <div
+            className={`kw-tip-stack${tipData.below ? ' kw-tip-stack--below' : ''}`}
+            style={{ left: tipData.left, top: tipData.top }}
+          >
+            {tipData.below ? (
+              // Below mode: main first (closest to keyword), nested below
+              <>
+                {mainTipBox}
+                {kwStack.map(kw => (
+                  <KwTipBox key={kw.id} keyword={kw} keywords={keywords} cards={cards}/>
+                ))}
+              </>
+            ) : (
+              // Above mode: nested first (furthest from keyword), main last (closest)
+              <>
+                {kwStack.map(kw => (
+                  <KwTipBox key={kw.id} keyword={kw} keywords={keywords} cards={cards}/>
+                ))}
+                {mainTipBox}
+              </>
+            )}
+          </div>
+
+          {/* Card preview: scaled CardPreview alongside the tooltip stack */}
+          {tipData.cardLeft !== undefined && tipData.cardTop !== undefined &&
+           tipData.cardScale !== undefined && firstCard && factions && rarities && (
+            <div style={{
+              position: 'fixed',
+              left: tipData.cardLeft,
+              top: tipData.cardTop,
+              width: Math.round(PREVIEW_W * tipData.cardScale),
+              height: Math.round(PREVIEW_H * tipData.cardScale),
+              overflow: 'hidden',
+              borderRadius: 6,
+              boxShadow: '0 8px 28px rgba(0,0,0,.8)',
+              pointerEvents: 'none',
+              zIndex: 200,
+            }}>
+              <div style={{
+                transform: `scale(${tipData.cardScale})`,
+                transformOrigin: 'top left',
+                width: PREVIEW_W,
+                height: PREVIEW_H,
+              }}>
+                <CardPreview
+                  card={firstCard}
+                  keywords={keywords ?? []}
+                  factions={factions}
+                  rarities={rarities}
+                  cards={cards}
+                />
+              </div>
+            </div>
+          )}
+        </>,
         document.body
       )}
     </span>
