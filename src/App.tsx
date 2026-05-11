@@ -107,6 +107,7 @@ export default function App(): React.ReactElement {
   const [showOverflow, setShowOverflow] = useState(false);
   const overflowRef = useRef<HTMLDivElement>(null);
   const [viewportW, setViewportW] = useState(() => window.innerWidth);
+  const [viewportH, setViewportH] = useState(() => window.innerHeight);
 
   // Deck / view state
   const decksRef = useRef(decks);
@@ -167,9 +168,12 @@ export default function App(): React.ReactElement {
 
   const closeOverflow = useCallback(() => setShowOverflow(false), []);
 
-  // Track viewport width reactively (handles orientation changes on mobile).
+  // Track viewport dimensions reactively (handles orientation changes on mobile).
   useEffect(() => {
-    const onResize = () => setViewportW(window.innerWidth);
+    const onResize = () => {
+      setViewportW(window.innerWidth);
+      setViewportH(window.innerHeight);
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
@@ -182,11 +186,19 @@ export default function App(): React.ReactElement {
   // Effective card scale.
   // Mobile: fit the full bleed-box (340 + 10 + 8 = 358 px wide) within the
   //         available stage content width (viewport − 32 px h-padding).
-  // Desktop: user zoom × 1.2 boost.
+  // Desktop: user zoom × 1.2 boost, capped so the card never hides the zoom slider.
+  //   Stage vertical chrome: topbar(56) + padding(40) + grid-gaps(54) + meta(22) + eyebrow(14) + zoom-row(32) ≈ 218px
   const isMobile = viewportW <= 767;
+  const cardBleedH = CARD_H + BLEED_TOP + BLEED_BOTTOM;
+  const maxFitScale = Math.max(0.4, (viewportH - 218) / cardBleedH);
+  // Maximum zoom% the current viewport height can accommodate.
+  const maxZoom = isMobile ? 150 : Math.min(150, Math.max(50, Math.floor(maxFitScale / 1.2 * 100)));
+  // effectiveZoom respects the height-derived cap; cardZoom stores the user's preference
+  // so enlarging the window restores the prior zoom.
+  const effectiveZoom = Math.min(cardZoom, maxZoom);
   const cardScale = isMobile
     ? Math.min(1.2, (viewportW - 32) / (CARD_W + BLEED_LEFT + BLEED_RIGHT))
-    : cardZoom / 100 * 1.2;
+    : effectiveZoom / 100 * 1.2;
 
   // Outer div: layout placeholder sized to the full bleed-box.
   // Inner div: absolutely positioned inside, offset so every bleed element
@@ -731,14 +743,14 @@ export default function App(): React.ReactElement {
                   type="range"
                   className="stage-zoom-slider"
                   min={50}
-                  max={150}
+                  max={maxZoom}
                   step={1}
-                  value={cardZoom}
+                  value={effectiveZoom}
                   onChange={e => setCardZoom(Number(e.target.value))}
                   aria-label="Card zoom"
                 />
-                <span className="stage-zoom-value">{cardZoom}%</span>
-                {cardZoom !== 100 && (
+                <span className="stage-zoom-value">{effectiveZoom}%</span>
+                {effectiveZoom !== 100 && (
                   <button
                     type="button"
                     className="stage-zoom-reset"
