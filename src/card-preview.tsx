@@ -498,7 +498,7 @@ function KwTipBox({ keyword, keywords, cards }: {
 
 function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities }: KeywordSpanProps): React.ReactElement {
   const [tipData, setTipData] = useState<{
-    left: number; top: number; arrowLeft: number; below: boolean;
+    left: number; top: number; tipW: number; arrowLeft: number; below: boolean;
     cardLeft?: number; cardTop?: number; cardScale?: number;
   } | null>(null);
   const spanRef = useRef<HTMLSpanElement>(null);
@@ -588,8 +588,11 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities }: K
       tooltipLeft = Math.max(KW_TIP_MARGIN, Math.min(cx - KW_TIP_W / 2, vw - KW_TIP_W - KW_TIP_MARGIN));
     }
 
-    arrowLeft = Math.max(10, Math.min(cx - tooltipLeft, KW_TIP_W - 10));
-    setTipData({ left: tooltipLeft, top: anchorY, arrowLeft, below, cardLeft, cardTop, cardScale });
+    // Clamp tooltip width to remaining horizontal space so it never overflows
+    // the screen edge — the box grows taller to accommodate wrapped text instead.
+    const tipW = Math.min(KW_TIP_W, vw - KW_TIP_MARGIN - tooltipLeft);
+    arrowLeft = Math.max(10, Math.min(cx - tooltipLeft, tipW - 10));
+    setTipData({ left: tooltipLeft, top: anchorY, tipW, arrowLeft, below, cardLeft, cardTop, cardScale });
   }, [firstCard]);
 
   const hide = useCallback(() => setTipData(null), []);
@@ -673,7 +676,7 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities }: K
           {/* Tooltip stack: nested keyword boxes + main tooltip box */}
           <div
             className={`kw-tip-stack${tipData.below ? ' kw-tip-stack--below' : ''}`}
-            style={{ left: tipData.left, top: tipData.top }}
+            style={{ left: tipData.left, top: tipData.top, width: tipData.tipW }}
           >
             {tipData.below ? (
               // Below mode: main first (closest to keyword), nested below
