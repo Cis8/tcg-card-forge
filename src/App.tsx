@@ -87,6 +87,7 @@ export default function App(): React.ReactElement {
   const [toast, setToast]                   = useState<string | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);
+  const fontEmbedCSSRef = useRef<string | null | undefined>(undefined);
   const importFileRef = useRef<HTMLInputElement>(null);
   const [cardZoom, setCardZoom] = useState(100);
   const [leftW, setLeftW] = useState(320);
@@ -434,13 +435,51 @@ export default function App(): React.ReactElement {
     reader.readAsText(file);
   };
 
+  const buildFontEmbedCSS = async (): Promise<string | null> => {
+    if (fontEmbedCSSRef.current !== undefined) return fontEmbedCSSRef.current;
+    const googleFontsUrl = document.querySelector<HTMLLinkElement>('link[href*="fonts.googleapis.com"]')?.href;
+    if (!googleFontsUrl) { fontEmbedCSSRef.current = null; return null; }
+    try {
+      const cssRes = await fetch(googleFontsUrl);
+      if (!cssRes.ok) throw new Error(`${cssRes.status}`);
+      let css = await cssRes.text();
+      const fontUrls = [...css.matchAll(/url\(([^)]+)\)/g)].map(m => m[1].replace(/['"]/g, ''));
+      await Promise.all(fontUrls.map(async (url) => {
+        try {
+          const res = await fetch(url);
+          const blob = await res.blob();
+          const dataUri = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+          css = css.replaceAll(url, dataUri);
+        } catch { /* leave URL as-is if individual font fetch fails */ }
+      }));
+      fontEmbedCSSRef.current = css;
+      return css;
+    } catch (e) {
+      console.warn('Font pre-fetch failed, falling back to skipFonts:', e);
+      fontEmbedCSSRef.current = null;
+      return null;
+    }
+  };
+
   const onExportPng = async () => {
     if (!cardRef.current) { showToast('Export unavailable'); return; }
     showToast('Rendering PNG…');
     try {
+      const fontEmbedCSS = await buildFontEmbedCSS();
       const dataUrl = await htmlToImage.toPng(cardRef.current, {
         pixelRatio: 2,
         backgroundColor: undefined,
+        // Expand canvas to the full bleed-box so cost/stat gems aren't clipped.
+        // Shifting the card content inward by the bleed amounts puts overflowing
+        // elements (anchored at negative coords) within the canvas bounds.
+        width: CARD_W + BLEED_LEFT + BLEED_RIGHT,
+        height: CARD_H + BLEED_TOP + BLEED_BOTTOM,
+        style: { marginLeft: `${BLEED_LEFT}px`, marginTop: `${BLEED_TOP}px` },
+        ...(fontEmbedCSS != null ? { fontEmbedCSS } : { skipFonts: true }),
       });
       const a = document.createElement('a');
       a.download = `${(current.name || 'card').replace(/[^\w-]+/g, '_')}.png`;
