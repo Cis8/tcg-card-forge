@@ -700,8 +700,12 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
       {mobileEditOpen && ReactDOM.createPortal(
         <MobileKeywordOverlay
           keyword={keyword}
+          kwStack={kwStack}
           keywords={keywords}
           cards={cards}
+          firstCard={firstCard}
+          factions={factions}
+          rarities={rarities}
           onEdit={() => { onEditKeyword!(keyword.id); setMobileEditOpen(false); }}
           onClose={() => setMobileEditOpen(false)}
         />,
@@ -853,17 +857,41 @@ export function CardHoverPreview({ children, tag, onEdit, ...previewProps }: Car
   );
 }
 
-function MobileKeywordOverlay({ keyword, keywords, cards, onEdit, onClose }: {
+function MobileKeywordOverlay({ keyword, kwStack, keywords, cards, firstCard, factions, rarities, onEdit, onClose }: {
   keyword: Keyword;
+  kwStack: Keyword[];
   keywords?: Keyword[];
   cards?: CardWithArt[];
+  firstCard?: CardWithArt;
+  factions?: Faction[];
+  rarities?: Rarity[];
   onEdit: () => void;
   onClose: () => void;
 }): React.ReactElement {
+  const cardScale = firstCard && factions?.length && rarities?.length
+    ? Math.min(0.55, (window.innerWidth - 32) / PREVIEW_W)
+    : undefined;
   return (
     <div className="card-ref-overlay" onClick={onClose}>
       <div className="card-ref-overlay-inner kw-mobile-overlay" onClick={e => e.stopPropagation()}>
-        <KwTipBox keyword={keyword} keywords={keywords} cards={cards}/>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <div className="kw-tip-stack kw-tip-stack--mobile">
+            {kwStack.map(kw => (
+              <KwTipBox key={kw.id} keyword={kw} keywords={keywords} cards={cards}/>
+            ))}
+            <KwTipBox keyword={keyword} keywords={keywords} cards={cards}/>
+          </div>
+          {firstCard && cardScale !== undefined && factions && rarities && (
+            <ScaledCardPreview
+              scale={cardScale}
+              card={firstCard}
+              keywords={keywords ?? []}
+              factions={factions}
+              rarities={rarities}
+              cards={cards}
+            />
+          )}
+        </div>
         <div className="card-ref-overlay-actions">
           <button className="btn btn-primary btn-sm" onClick={onEdit}>Edit keyword</button>
           <button className="btn btn-sm" onClick={onClose}>Close</button>
