@@ -94,7 +94,7 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
   ),
   wing: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-      <path fillRule="evenodd" d="M3.2 17.7c1.7-5.9 5.8-10.4 12.4-13.4 2.3-1.1 4.8.8 4.5 3.2-.5 4.1-3 7.7-7.4 10.8-3.4 2.4-7.1 3.9-11.2 4.5-.8.1-1.5-.5-1.5-1.3 0-.5.1-.9.2-1.3zM8.5 15.4c1.4-1 2.9-2.6 4.1-4.5.3-.4.8-.5 1.2-.2.4.3.5.8.2 1.2-1.2 2.1-2.8 3.8-4.4 5-.4.3-.9.3-1.3 0-.4-.3-.4-.9.2-1.5zM11.5 16.6c1-.7 2-1.7 3-2.9.3-.4.8-.4 1.2-.1.4.3.5.8.2 1.2-1 1.4-2.2 2.5-3.4 3.3-.4.2-.9.1-1.1-.3-.3-.4-.2-.9.1-1.2zM14.3 17.2c.7-.4 1.4-1 2-1.7.3-.3.8-.4 1.1-.1.4.3.4.8.1 1.1-.7.9-1.5 1.6-2.3 2-.4.2-.8.1-1-.3-.2-.4-.1-.7.1-1z"/>
+      <path d="M3 21 C3 17 5 11 9 7 C13 3 19 2 22 4 C19 5 17 7 15 10 C19 8 22 10 21 14 C19 13 17 15 16 18 L3 21Z"/>
     </svg>
   ),
   star: () => (
@@ -221,8 +221,11 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
   ),
   crown: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-      <path d="M2 18L5 9l4 4 3-8 3 8 4-4 3 9H2z"/>
-      <rect x="2" y="19" width="20" height="3" rx="1"/>
+      <path d="M3 18 L5 10 L8 14 L12 4 L16 14 L19 10 L21 18 Z"/>
+      <rect x="2" y="18" width="20" height="3.5" rx="1"/>
+      <circle cx="5" cy="9" r="1.8"/>
+      <circle cx="12" cy="3.5" r="1.8"/>
+      <circle cx="19" cy="9" r="1.8"/>
     </svg>
   ),
   anchor: () => (
@@ -328,12 +331,8 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
 
   // vampire
   vampire: () => (
-    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor"
-         strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5.2 8.6c2.2-1.7 4.8-2.6 6.8-2.6s4.6.9 6.8 2.6"/>
-      <path d="M6 10.2c1.6 2.4 3.3 4.4 6 7.8 2.7-3.4 4.4-5.4 6-7.8"/>
-      <path d="M8.3 10.3l1.5 6.3 2.2-4.8 2.2 4.8 1.5-6.3"/>
-      <path d="M7.5 15.1c1.5.9 2.8 1.3 4.5 1.3s3-.4 4.5-1.3"/>
+    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+      <path d="M2 9 C5 6 9 8 12 8 C15 8 19 6 22 9 L21 14 L18 14 L16 21 L14 14 L10 14 L8 21 L6 14 L3 14 Z"/>
     </svg>
   ),
 
@@ -365,15 +364,12 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
     </svg>
   ),
 
-  // bleeding — drop with drips below
+  // bleeding — diagonal slash with blood drops
   bleed: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-      {/* main blood drop */}
-      <path d="M12 3c-2.5 3.5-6 7-6 10a6 6 0 0 0 12 0c0-3-3.5-6.5-6-10z"/>
-      {/* drips */}
-      <line x1="9" y1="19" x2="8" y2="22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-      <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-      <line x1="15" y1="19" x2="16" y2="22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      <path d="M7 3 L11 3 L16 19 L12 19 Z"/>
+      <path d="M12 20 C12 20 10.5 22 11.5 23 C12 23.5 13 23.5 13.5 23 C14 22 12 20 12 20Z"/>
+      <path d="M14.5 20 C14.5 20 13.5 21.5 14 22 C14.5 22.5 15.5 22.5 16 22 C16.5 21.5 14.5 20 14.5 20Z"/>
     </svg>
   ),
 };
