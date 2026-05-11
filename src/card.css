@@ -367,7 +367,7 @@
   flex-direction: column;
   gap: 4px;
   width: 220px;
-  pointer-events: none;
+  pointer-events: auto;
   z-index: 200;
   transform: translateY(-100%);
   animation: tip-in .12s ease-out;

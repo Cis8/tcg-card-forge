@@ -744,6 +744,7 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
             style={{ left: tipData.left, top: tipData.top, width: tipData.tipW }}
             onMouseEnter={cancelHide}
             onMouseLeave={scheduleHide}
+            onClick={e => e.stopPropagation()}
           >
             {tipData.below ? (
               <>
@@ -779,7 +780,7 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onE
             }}
             onMouseEnter={cancelHide}
             onMouseLeave={scheduleHide}
-            onClick={onEditCard ? () => { onEditCard(firstCard.id); hide(); } : undefined}>
+            onClick={onEditCard ? (e) => { e.stopPropagation(); onEditCard(firstCard.id); hide(); } : e => e.stopPropagation()}>
               <ScaledCardPreview
                 scale={tipData.cardScale}
                 card={firstCard}
