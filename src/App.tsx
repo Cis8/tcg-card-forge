@@ -719,11 +719,12 @@ export default function App(): React.ReactElement {
                           void settingsService.saveCurrentCardId(id);
                         }
                       }}
+                      onEditKeyword={(kwId) => { setInitialKeywordEditing(kwId); setShowKeywords(true); }}
                     />
                   </div>
                 </div>
               </div>
-              <div className="stage-eyebrow">Live preview · hover keywords for rules · click card refs to edit</div>
+              <div className="stage-eyebrow">Live preview · hover keywords for rules · click keywords or card refs to edit</div>
               <div className="stage-zoom-control">
                 <span className="stage-zoom-label">Zoom</span>
                 <input

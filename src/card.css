@@ -1011,3 +1011,11 @@
   from { opacity: 0; transform: scale(.96); }
   to   { opacity: 1; transform: scale(1); }
 }
+.kw-mobile-overlay .kw-tip-box {
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 48px));
+  font-size: 13px;
+}
+.kw-mobile-overlay .kw-tip-box b {
+  font-size: 12.5px;
+}

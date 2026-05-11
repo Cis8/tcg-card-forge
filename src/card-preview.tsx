@@ -18,6 +18,7 @@ interface CardPreviewProps {
   attackColor?: string;
   healthColor?: string;
   onEditCard?: (cardId: string) => void;
+  onEditKeyword?: (kwId: string) => void;
   /** When true, suppresses the authoring placeholder and its associated spacing (used during PNG export). */
   hidePlaceholder?: boolean;
 }
@@ -183,6 +184,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
                               costShape = 'rhombus', attackShape = 'gem', healthShape = 'heart',
                               costColor = '#5dbce5', attackColor = '#7c8a99', healthColor = '#b21625',
                               onEditCard,
+                              onEditKeyword,
                               hidePlaceholder = false,
                             }: CardPreviewProps): React.ReactElement {
   const frame: FrameVariant =
@@ -300,7 +302,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
                       if (t.kind === 'card') {
                         return <CardRefSpan key={i} card={t.card} factions={factions} rarities={rarities} keywords={keywords} cards={cards ?? []} descBg={descEffectiveBg} onEditCard={onEditCard}/>;
                       }
-                      return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg} keywords={keywords} cards={cards} factions={factions} rarities={rarities}/>;
+                      return <KeywordSpan key={i} keyword={t.keyword} descBg={descEffectiveBg} keywords={keywords} cards={cards} factions={factions} rarities={rarities} onEditKeyword={onEditKeyword}/>;
                     })}
               </p>
             )}
@@ -453,6 +455,7 @@ interface KeywordSpanProps {
   cards?: CardWithArt[];
   factions?: Faction[];
   rarities?: Rarity[];
+  onEditKeyword?: (kwId: string) => void;
 }
 
 /** Tooltip box (visual only — no position, no arrow). Used for nested kw sub-tips. */
@@ -505,11 +508,12 @@ function KwTipBox({ keyword, keywords, cards }: {
   );
 }
 
-function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities }: KeywordSpanProps): React.ReactElement {
+function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities, onEditKeyword }: KeywordSpanProps): React.ReactElement {
   const [tipData, setTipData] = useState<{
     left: number; top: number; tipW: number; arrowLeft: number; below: boolean;
     cardLeft?: number; cardTop?: number; cardScale?: number;
   } | null>(null);
+  const [mobileEditOpen, setMobileEditOpen] = useState(false);
   const spanRef = useRef<HTMLSpanElement>(null);
   const isTouchPrimary = useMemo(() => window.matchMedia('(pointer: coarse)').matches, []);
 
@@ -671,15 +675,38 @@ function KeywordSpan({ keyword, descBg, keywords, cards, factions, rarities }: K
     </div>
   );
 
+  const handleClick = isTouchPrimary
+    ? (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (onEditKeyword) {
+          setMobileEditOpen(true);
+        } else {
+          tipData ? hide() : computeAndShow();
+        }
+      }
+    : onEditKeyword
+      ? () => onEditKeyword(keyword.id)
+      : undefined;
+
   return (
-    <span className="kw" style={{ color: displayColor }} ref={spanRef}
+    <span className="kw" style={{ color: displayColor, ...(onEditKeyword && !isTouchPrimary ? { cursor: 'pointer' } : {}) }} ref={spanRef}
           onMouseEnter={isTouchPrimary ? undefined : computeAndShow}
           onMouseLeave={isTouchPrimary ? undefined : hide}
-          onClick={isTouchPrimary ? (e) => { e.stopPropagation(); tipData ? hide() : computeAndShow(); } : undefined}>
+          onClick={handleClick}>
       <span className="kw-glyph" style={{ color: displayColor }}>
         <Glyph name={keyword.glyph} size={13}/>
       </span>
       <span className="kw-name">{keyword.name}</span>
+      {mobileEditOpen && ReactDOM.createPortal(
+        <MobileKeywordOverlay
+          keyword={keyword}
+          keywords={keywords}
+          cards={cards}
+          onEdit={() => { onEditKeyword!(keyword.id); setMobileEditOpen(false); }}
+          onClose={() => setMobileEditOpen(false)}
+        />,
+        document.body
+      )}
       {tipData && ReactDOM.createPortal(
         <>
           {/* Tooltip stack: nested keyword boxes + main tooltip box */}
@@ -823,6 +850,26 @@ export function CardHoverPreview({ children, tag, onEdit, ...previewProps }: Car
         document.body
       )}
     </Tag>
+  );
+}
+
+function MobileKeywordOverlay({ keyword, keywords, cards, onEdit, onClose }: {
+  keyword: Keyword;
+  keywords?: Keyword[];
+  cards?: CardWithArt[];
+  onEdit: () => void;
+  onClose: () => void;
+}): React.ReactElement {
+  return (
+    <div className="card-ref-overlay" onClick={onClose}>
+      <div className="card-ref-overlay-inner kw-mobile-overlay" onClick={e => e.stopPropagation()}>
+        <KwTipBox keyword={keyword} keywords={keywords} cards={cards}/>
+        <div className="card-ref-overlay-actions">
+          <button className="btn btn-primary btn-sm" onClick={onEdit}>Edit keyword</button>
+          <button className="btn btn-sm" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
