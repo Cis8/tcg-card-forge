@@ -92,9 +92,14 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
       <path d="M5 4h14l-1 5a6 6 0 0 1-5 5.9V19h3v2H8v-2h3v-4.1A6 6 0 0 1 6 9L5 4z"/>
     </svg>
   ),
+  // wing — powerful feathered angelic wing for flight
   wing: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-      <path d="M3 21 C3 17 5 11 9 7 C13 3 19 2 22 4 C19 5 17 7 15 10 C19 8 22 10 21 14 C19 13 17 15 16 18 L3 21Z"/>
+      {/* Il Path è stato completamente ridisegnato per creare un'ala d'angelo stilizzata.
+        1. Una forte curva superiore definisce la struttura portante ("braccio" dell'ala).
+        2. Una serie di curve più piccole e definite (piume fustellate) creano la trama inferiore.
+      */}
+      <path d="M4,16 C6,8 14,3 20,4 C18,6 16,9 17,12 C16.1,12.9 15.7,13.2 15.5,13.5 A1.5,1.5 0,0,1 12.5,15.5 A1.5,1.5 0,0,1 9.5,17.5 A1.5,1.5 0,0,1 6.5,19.5 C5.5,19.5 4,18 4,16 Z" />
     </svg>
   ),
   star: () => (
@@ -219,13 +224,21 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
       <line x1="9" y1="11" x2="15" y2="11"/>
     </svg>
   ),
+  // crown — regal crown with straight vertical outer edges
   crown: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-      <path d="M3 18 L5 10 L8 14 L12 4 L16 14 L19 10 L21 18 Z"/>
+      {/* La base della corona: i lati (M4 18 a L4 10 e L20 10 a L20 18) ora sono perfettamente verticali.
+          Le valli interne scendono simmetricamente a X=8 e X=16. */}
+      <path d="M4 18 L4 10 L8 14 L12 4 L16 14 L20 10 L20 18 Z"/>
+      
+      {/* La fascia di base inferiore, inalterata per dare peso e stabilità */}
       <rect x="2" y="18" width="20" height="3.5" rx="1"/>
-      <circle cx="5" cy="9" r="1.8"/>
+      
+      {/* Sfere decorative: le due laterali sono state traslate esternamente (da X=5 a X=4 e da X=19 a X=20) 
+          per centrarle perfettamente sulle nuove punte verticali */}
+      <circle cx="4" cy="9" r="1.8"/>
       <circle cx="12" cy="3.5" r="1.8"/>
-      <circle cx="19" cy="9" r="1.8"/>
+      <circle cx="20" cy="9" r="1.8"/>
     </svg>
   ),
   anchor: () => (
@@ -329,10 +342,10 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
     </svg>
   ),
 
-  // vampire
+  // vampire — aggressive upper jaw with prominent fangs and a snarling gumline
   vampire: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-      <path d="M2 9 C5 6 9 8 12 8 C15 8 19 6 22 9 L21 14 L18 14 L16 21 L14 14 L10 14 L8 21 L6 14 L3 14 Z"/>
+    <path d="M 2 10 C 7 4, 10 9, 12 9 C 14 9, 17 4, 22 10 L 20 12 L 17 22 L 15 13 L 13 16 L 12 13 L 11 16 L 9 13 L 7 22 L 4 12 Z"/>
     </svg>
   ),
 
@@ -364,12 +377,17 @@ export const GLYPHS: Record<GlyphName, () => React.ReactElement> = {
     </svg>
   ),
 
-  // bleeding — diagonal slash with blood drops
+  // bleeding — dynamic diagonal slash with anatomically correct blood drops
   bleed: () => (
     <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-      <path d="M7 3 L11 3 L16 19 L12 19 Z"/>
-      <path d="M12 20 C12 20 10.5 22 11.5 23 C12 23.5 13 23.5 13.5 23 C14 22 12 20 12 20Z"/>
-      <path d="M14.5 20 C14.5 20 13.5 21.5 14 22 C14.5 22.5 15.5 22.5 16 22 C16.5 21.5 14.5 20 14.5 20Z"/>
+      {/* Il Taglio: Forma a sciabolata/artiglio, più spessa al centro e affilata alle estremità */}
+      <path d="M 21 3 C 21 3 14 5.5 6 15 C 4.5 16.8 3 19 3 19 C 3 19 5.8 17.8 8.5 16 C 14.5 12.5 19.5 6.5 21 3 Z" />
+      
+      {/* Goccia Grande: Cade dalla parte inferiore del taglio */}
+      <path d="M 10 16 C 10 16 7.5 19 7.5 21 A 2.5 2.5 0 0 0 12.5 21 C 12.5 19 10 16 10 16 Z" />
+      
+      {/* Goccia Piccola: Leggermente sfalsata in alto a destra */}
+      <path d="M 16 12 C 16 12 14.5 14.5 14.5 16 A 1.5 1.5 0 0 0 17.5 16 C 17.5 14.5 16 12 16 12 Z" />
     </svg>
   ),
 };
