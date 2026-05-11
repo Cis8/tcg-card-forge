@@ -70,11 +70,11 @@ interface DeckCardRowProps {
 
 function DeckCardRow({ card, cards, factions, rarities, keywords, quantity, maxCopies, globalSettings, onAdd, onRemove }: DeckCardRowProps): React.ReactElement {
   const faction = factions.find(f => f.id === card.faction) ?? factions[0];
-  const { font, costShape, attackShape, healthShape, costColor, attackColor, healthColor } = globalSettings;
+  const { costShape, attackShape, healthShape, costColor, attackColor, healthColor } = globalSettings;
   return (
     <CardHoverPreview
       card={card} cards={cards} factions={factions} rarities={rarities} keywords={keywords}
-      font={font} costShape={costShape} attackShape={attackShape} healthShape={healthShape}
+      font={card.font ?? globalSettings.font} costShape={costShape} attackShape={attackShape} healthShape={healthShape}
       costColor={costColor} attackColor={attackColor} healthColor={healthColor}
     >
       <div className="deck-card-row">
@@ -110,7 +110,8 @@ interface DeckPickerCardProps {
 
 function DeckPickerCard({ card, cards, factions, rarities, keywords, quantity, maxCopies, globalSettings, onAdd, onLongPress }: DeckPickerCardProps): React.ReactElement {
   const atMax = quantity >= maxCopies;
-  const { font, costShape, attackShape, healthShape, costColor, attackColor, healthColor } = globalSettings;
+  const { costShape, attackShape, healthShape, costColor, attackColor, healthColor } = globalSettings;
+  const font = card.font ?? globalSettings.font;
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPress = useRef(false);
@@ -234,7 +235,7 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
 
   const previewProps = {
     factions, rarities, keywords, cards,
-    font: globalSettings.font,
+    font: touchPreviewCard?.font ?? globalSettings.font,
     costShape: globalSettings.costShape,
     attackShape: globalSettings.attackShape,
     healthShape: globalSettings.healthShape,

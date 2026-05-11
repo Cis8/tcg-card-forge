@@ -184,6 +184,7 @@ export function Collection({
                                       globalSettings={globalSettings}
                                       active={c.id === currentId}
                                       onPick={() => onPick(c.id)}
+                                      onClose={onClose}
                                       onDelete={() => onDelete(c.id)}
                                       onExport={() => onExportCard(c)}/>
                     ))}
@@ -209,27 +210,41 @@ interface CollectionCardProps {
   globalSettings: GlobalSettings;
   active: boolean;
   onPick: () => void;
+  onClose: () => void;
   onDelete: () => void;
   onExport: () => void;
 }
 
-function CollectionCard({ card, factions, rarities, keywords, cards, globalSettings, active, onPick, onDelete, onExport }: CollectionCardProps): React.ReactElement {
-  const { font, costShape, attackShape, healthShape, costColor, attackColor, healthColor } = globalSettings;
+function CollectionCard({ card, factions, rarities, keywords, cards, globalSettings, active, onPick, onClose, onDelete, onExport }: CollectionCardProps): React.ReactElement {
+  const { costShape, attackShape, healthShape, costColor, attackColor, healthColor } = globalSettings;
+  const handleEdit = () => { onPick(); onClose(); };
+  const mobileActions = (
+    <>
+      <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); onExport(); onClose(); }}>
+        <Glyph name="download" size={12}/> Export JSON
+      </button>
+      <button className="btn btn-sm btn-danger" onClick={(e) => { e.stopPropagation(); onDelete(); onClose(); }}>
+        <Glyph name="trash" size={12}/> Delete
+      </button>
+    </>
+  );
   return (
     <div className={`coll-card ${active ? 'on' : ''}`} onClick={onPick}>
       <CardHoverPreview
         card={card} factions={factions} rarities={rarities} keywords={keywords} cards={cards}
-        font={font} costShape={costShape} attackShape={attackShape} healthShape={healthShape}
+        font={card.font ?? globalSettings.font} costShape={costShape} attackShape={attackShape} healthShape={healthShape}
         costColor={costColor} attackColor={attackColor} healthColor={healthColor}
+        onEdit={handleEdit}
+        mobileActions={mobileActions}
       >
         <CardThumbnail card={card} factions={factions} rarities={rarities}/>
       </CardHoverPreview>
-      <button type="button" className="coll-card-export"
+      <button type="button" className="coll-card-export coll-card-desktop-only"
               title="Export card as JSON"
               onClick={(e) => { e.stopPropagation(); onExport(); }}>
         <Glyph name="download" size={12}/>
       </button>
-      <button type="button" className="coll-card-del"
+      <button type="button" className="coll-card-del coll-card-desktop-only"
               title="Delete"
               onClick={(e) => { e.stopPropagation(); onDelete(); }}>
         <Glyph name="trash" size={12}/>

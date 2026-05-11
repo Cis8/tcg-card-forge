@@ -1,5 +1,5 @@
 import type { ISettingsRepository } from '../storage/ISettingsRepository';
-import type { GlobalSettings, Faction, Rarity, Keyword, Deck } from '../types';
+import type { GlobalSettings, CardStyleDefaults, Faction, Rarity, Keyword, Deck } from '../types';
 import { normalizeDeckSettings, DECK_SETTINGS_DEFAULTS } from '../deck-utils';
 
 export class SettingsService {
@@ -67,10 +67,21 @@ export class SettingsService {
       ...rawDS,
     });
 
+    const rawCD = (raw.cardDefaults ?? {}) as Partial<CardStyleDefaults>;
+    const cardDefaults: CardStyleDefaults = {
+      ...fallback.cardDefaults,
+      // migrate legacy globalSettings.font → cardDefaults.font
+      font: rawCD.font ?? (raw.font as CardStyleDefaults['font']) ?? fallback.cardDefaults.font,
+      ...(rawCD.pattern  ? { pattern:  rawCD.pattern  } : {}),
+      ...(rawCD.frame    ? { frame:    rawCD.frame    } : {}),
+      ...(rawCD.descGlyph !== undefined ? { descGlyph: rawCD.descGlyph } : {}),
+    };
+
     return {
       ...fallback,
       ...raw,
       deckSettings,
+      cardDefaults,
     };
   }
 }

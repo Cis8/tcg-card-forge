@@ -282,8 +282,8 @@
      translateY(-2px) which shifts the card up over the row above it. */
   .coll-card:hover { transform: none; }
 
-  /* Delete button: always visible on touch (no :hover needed) */
-  .coll-card-del { opacity: 1; }
+  /* Delete/export buttons move into the tap overlay on touch devices */
+  .coll-card-desktop-only { display: none; }
 
   /* ── Modal header: allow wrapping on very small screens ── */
   .modal-header { flex-wrap: wrap; gap: 8px; padding: 12px 14px; }

@@ -78,7 +78,12 @@
 .card-frame-inscribed .card-frame {
   background:
     repeating-linear-gradient(45deg, rgba(216,178,90,.04) 0 2px, transparent 2px 12px),
-    var(--card-frame-fill);
+    radial-gradient(ellipse 110% 80% at 50% 0%,
+      color-mix(in srgb, var(--theme-bg-2) 70%, transparent) 0%,
+      transparent 60%),
+    linear-gradient(160deg, var(--theme-bg-0) 0%,
+      color-mix(in srgb, var(--theme-bg-1) 80%, #000) 50%,
+      var(--theme-bg-0) 100%);
 }
 
 /* Rarity-tinted glow under the card */

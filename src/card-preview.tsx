@@ -812,6 +812,8 @@ export interface CardHoverPreviewProps extends CardPreviewProps {
   tag?: 'div' | 'span';
   /** Already-bound action for this specific card reference (click on desktop, Edit button on mobile). */
   onEdit?: () => void;
+  /** Extra action buttons rendered in the mobile overlay (after Edit, before Close). */
+  mobileActions?: React.ReactNode;
 }
 
 const PREVIEW_W = 340; // native card width
@@ -830,7 +832,7 @@ function ScaledCardPreview({ scale, ...previewProps }: CardPreviewProps & { scal
   );
 }
 
-export function CardHoverPreview({ children, tag, onEdit, ...previewProps }: CardHoverPreviewProps): React.ReactElement {
+export function CardHoverPreview({ children, tag, onEdit, mobileActions, ...previewProps }: CardHoverPreviewProps): React.ReactElement {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -888,6 +890,7 @@ export function CardHoverPreview({ children, tag, onEdit, ...previewProps }: Car
         <MobileCardOverlay
           previewProps={previewProps}
           onEdit={onEdit}
+          mobileActions={mobileActions}
           onClose={() => setMobileOpen(false)}
         />,
         document.body
@@ -949,9 +952,10 @@ function MobileKeywordOverlay({ keyword, kwStack, keywords, cards, firstCard, fa
   );
 }
 
-function MobileCardOverlay({ previewProps, onEdit, onClose }: {
+function MobileCardOverlay({ previewProps, onEdit, mobileActions, onClose }: {
   previewProps: CardPreviewProps;
   onEdit?: () => void;
+  mobileActions?: React.ReactNode;
   onClose: () => void;
 }): React.ReactElement {
   const scale = Math.min(
@@ -969,6 +973,7 @@ function MobileCardOverlay({ previewProps, onEdit, onClose }: {
               Edit card
             </button>
           )}
+          {mobileActions}
           <button className="btn btn-sm" onClick={onClose}>Close</button>
         </div>
       </div>

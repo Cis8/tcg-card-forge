@@ -11,6 +11,7 @@ import type {
   Rarity,
   Keyword,
   GlobalSettings,
+  CardStyleDefaults,
   FrameVariant,
 } from '../types';
 import { normalizeDeckSettings, DECK_SETTINGS_DEFAULTS } from '../deck-utils';
@@ -158,10 +159,19 @@ export class ExportService {
 
     const rawGS = isObject(raw['globalSettings']) ? raw['globalSettings'] : {};
     const rawDS = isObject(rawGS['deckSettings']) ? rawGS['deckSettings'] : {};
+    const rawCD = isObject(rawGS['cardDefaults']) ? (rawGS['cardDefaults'] as Partial<CardStyleDefaults>) : {};
+    const cardDefaults: CardStyleDefaults = {
+      ...globalSettingsFallback.cardDefaults,
+      font: rawCD.font ?? (rawGS['font'] as CardStyleDefaults['font']) ?? globalSettingsFallback.cardDefaults.font,
+      ...(rawCD.pattern   ? { pattern:  rawCD.pattern  } : {}),
+      ...(rawCD.frame     ? { frame:    rawCD.frame    } : {}),
+      ...(rawCD.descGlyph !== undefined ? { descGlyph: rawCD.descGlyph } : {}),
+    };
     const globalSettings: GlobalSettings = {
       ...globalSettingsFallback,
       ...rawGS,
       deckSettings: normalizeDeckSettings({ ...DECK_SETTINGS_DEFAULTS, ...rawDS }),
+      cardDefaults,
     };
 
     const cards = (isArray(raw['cards']) ? raw['cards'] : [])

@@ -20,7 +20,7 @@ import { useBatchPngExport } from './hooks/useBatchPngExport';
 import type { BatchPngExportOptions } from './hooks/useBatchPngExport';
 
 import { Glyph } from './glyphs';
-import type { Card, CardWithArt, Deck, DeckSettings, Faction, Rarity, Keyword, GlobalSettings } from './types';
+import type { Card, CardWithArt, Deck, DeckSettings, Faction, Rarity, Keyword, GlobalSettings, CardStyleDefaults } from './types';
 import {
   generateId, DECK_SETTINGS_DEFAULTS, normalizeDeckSettings, deleteCardFromDecks, affectedDeckNames, normalizeDeck,
 } from './deck-utils';
@@ -40,6 +40,13 @@ function deckIdFromHash(): string | null {
   try { return decodeURIComponent(m[1]); } catch { return null; }
 }
 
+const CARD_STYLE_DEFAULTS: CardStyleDefaults = {
+  pattern:  'damask',
+  frame:    'ornate',
+  descGlyph: 'faction',
+  font:     'cinzel',
+};
+
 const GLOBAL_SETTINGS_DEFAULTS: GlobalSettings = {
   font: 'cinzel',
   costShape:   'rhombus',
@@ -49,25 +56,31 @@ const GLOBAL_SETTINGS_DEFAULTS: GlobalSettings = {
   attackColor: '#7c8a99',
   healthColor: '#b21625',
   deckSettings: DECK_SETTINGS_DEFAULTS,
+  cardDefaults: CARD_STYLE_DEFAULTS,
 };
 
-const BLANK_CARD = (factions: Faction[], rarities: Rarity[]): CardWithArt => ({
-  id: generateId('c'),
-  type: 'unit',
-  name: '',
-  subtype: '',
-  faction: factions[0]?.id ?? 'fire',
-  pattern: 'damask',
-  rarity: rarities[0]?.id ?? 'common',
-  frame: 'ornate',
-  cost: 1,
-  attack: 1,
-  health: 1,
-  description: '',
-  flavor: '',
-  artId: null,
-  artHandle: null,
-});
+const BLANK_CARD = (factions: Faction[], rarities: Rarity[], gs?: GlobalSettings): CardWithArt => {
+  const d = gs?.cardDefaults ?? CARD_STYLE_DEFAULTS;
+  return {
+    id: generateId('c'),
+    type: 'unit',
+    name: '',
+    subtype: '',
+    faction: factions[0]?.id ?? 'fire',
+    pattern: d.pattern,
+    rarity: rarities[0]?.id ?? 'common',
+    frame: d.frame,
+    font: d.font,
+    cost: 1,
+    attack: 1,
+    health: 1,
+    description: '',
+    flavor: '',
+    artId: null,
+    artHandle: null,
+    descGlyph: d.descGlyph,
+  };
+};
 
 export default function App(): React.ReactElement {
   const { cardService, settingsService, exportService, imageService, cardRepo, settingsRepo } = useServices();
@@ -135,8 +148,8 @@ export default function App(): React.ReactElement {
       const normalizedGS = settingsService.normalizeGlobalSettings(gs, GLOBAL_SETTINGS_DEFAULTS);
       // Find current card from loaded cards, or create blank
       const currentCard = currentCardId
-        ? (loadedCards.find(c => c.id === currentCardId) ?? BLANK_CARD(loadedFactions, loadedRarities))
-        : (loadedCards[0] ?? BLANK_CARD(loadedFactions, loadedRarities));
+        ? (loadedCards.find(c => c.id === currentCardId) ?? BLANK_CARD(loadedFactions, loadedRarities, normalizedGS))
+        : (loadedCards[0] ?? BLANK_CARD(loadedFactions, loadedRarities, normalizedGS));
       // Normalize decks
       const validCardIds = new Set(loadedCards.map(c => c.id));
       const normalizedDecks = loadedDecks.map(d => normalizeDeck(d, validCardIds, normalizedGS.deckSettings));
@@ -291,7 +304,7 @@ export default function App(): React.ReactElement {
   };
 
   const onNewCard = () => {
-    const blank = BLANK_CARD(factions, rarities);
+    const blank = BLANK_CARD(factions, rarities, globalSettings);
     dispatch({ type: 'SET_CURRENT', payload: blank });
     setShowCollection(false);
     showToast('New card');
@@ -367,6 +380,17 @@ export default function App(): React.ReactElement {
 
   const setGlobalSetting = (k: keyof GlobalSettings, v: string) =>
     onGlobalSettingsChange({ ...globalSettings, [k]: v });
+
+  const setCardDefault = (field: keyof CardStyleDefaults, value: string) => {
+    const nextDefaults = { ...globalSettings.cardDefaults, [field]: value };
+    const nextGS: GlobalSettings = { ...globalSettings, cardDefaults: nextDefaults };
+    if (field === 'font') nextGS.font = value as GlobalSettings['font'];
+    onGlobalSettingsChange(nextGS);
+    const labels: Record<keyof CardStyleDefaults, string> = {
+      pattern: 'pattern', frame: 'border style', descGlyph: 'watermark', font: 'font',
+    };
+    showToast(`Default ${labels[field]} set`);
+  };
 
   const setDeckSetting = (k: keyof DeckSettings, v: number) => {
     const nextDeckSettings = normalizeDeckSettings({ ...globalSettings.deckSettings, [k]: v });
@@ -703,7 +727,7 @@ export default function App(): React.ReactElement {
                       cards={cards}
                       factions={factions}
                       rarities={rarities}
-                      font={globalSettings.font}
+                      font={current.font ?? globalSettings.font}
                       costShape={globalSettings.costShape}
                       attackShape={globalSettings.attackShape}
                       healthShape={globalSettings.healthShape}
@@ -766,6 +790,7 @@ export default function App(): React.ReactElement {
             onManageRarities={() => setShowRarities(true)}
             globalSettings={globalSettings}
             onGlobalSettingChange={setGlobalSetting}
+            onSetCardDefault={setCardDefault}
           />
         </>
       ) : deckEditorContent}
@@ -872,7 +897,7 @@ export default function App(): React.ReactElement {
               cards={cards}
               factions={factions}
               rarities={rarities}
-              font={globalSettings.font}
+              font={batchExport.cardToRender.font ?? globalSettings.font}
               costShape={globalSettings.costShape}
               attackShape={globalSettings.attackShape}
               healthShape={globalSettings.healthShape}

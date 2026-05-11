@@ -7,7 +7,7 @@ import { Glyph, RarityShape } from './glyphs';
 import { GlyphPicker } from './glyph-picker';
 import { confirmDestructiveAction } from './confirm';
 import { ReferencePicker, insertToken } from './reference-picker';
-import type { Card, CardWithArt, ImageHandle, Keyword, Faction, Rarity, GlobalSettings, DeckSettings, ThematicGlyphName, DescGlyph } from './types';
+import type { Card, CardWithArt, ImageHandle, Keyword, Faction, Rarity, GlobalSettings, CardStyleDefaults, DeckSettings, ThematicGlyphName, DescGlyph, FontVariant } from './types';
 
 interface FieldProps {
   label: string;
@@ -30,16 +30,22 @@ interface SegProps {
   options: SegOption[];
   onChange: (v: string) => void;
   columns?: number;
+  defaultValue?: string;
+  onSetDefault?: (v: string) => void;
 }
 
-const Seg = ({ value, options, onChange, columns }: SegProps): React.ReactElement => (
+const Seg = ({ value, options, onChange, columns, defaultValue, onSetDefault }: SegProps): React.ReactElement => (
   <div className="seg" style={columns ? { gridTemplateColumns: `repeat(${columns},1fr)` } : undefined}>
     {options.map(o => {
       const v = typeof o === 'object' ? o.value : o;
       const l = typeof o === 'object' ? o.label : o;
+      const isDefault = onSetDefault && v === defaultValue;
       return (
-        <button type="button" key={v} className={`seg-btn ${value === v ? 'on' : ''}`}
-                onClick={() => onChange(v)}>{l}</button>
+        <button type="button" key={v}
+                className={`seg-btn ${value === v ? 'on' : ''} ${isDefault ? 'dflt' : ''}`}
+                title={onSetDefault ? 'Click to select · Double-click to set as default' : undefined}
+                onClick={() => onChange(v)}
+                onDoubleClick={onSetDefault ? () => onSetDefault(v) : undefined}>{l}</button>
       );
     })}
   </div>
@@ -271,18 +277,25 @@ const KeywordInlinePicker = ({ keywords, onManage }: KeywordInlinePickerProps): 
 interface PatternPickerProps {
   value: string;
   onChange: (v: string) => void;
+  defaultValue?: string;
+  onSetDefault?: (v: string) => void;
 }
 
-const PatternPicker = ({ value, onChange }: PatternPickerProps): React.ReactElement => (
+const PatternPicker = ({ value, onChange, defaultValue, onSetDefault }: PatternPickerProps): React.ReactElement => (
   <div className="pattern-row">
-    {PATTERNS.map(p => (
-      <button type="button" key={p}
-              className={`pattern-chip ${value === p ? 'on' : ''}`}
-              onClick={() => onChange(p)} title={p}>
-        <span className={`pattern-thumb pattern-thumb-${p}`}/>
-        <span className="pattern-chip-label">{p}</span>
-      </button>
-    ))}
+    {PATTERNS.map(p => {
+      const isDefault = onSetDefault && p === defaultValue;
+      return (
+        <button type="button" key={p}
+                className={`pattern-chip ${value === p ? 'on' : ''} ${isDefault ? 'dflt' : ''}`}
+                title={onSetDefault ? `${p} · Double-click to set as default` : p}
+                onClick={() => onChange(p)}
+                onDoubleClick={onSetDefault ? () => onSetDefault(p) : undefined}>
+          <span className={`pattern-thumb pattern-thumb-${p}`}/>
+          <span className="pattern-chip-label">{p}</span>
+        </button>
+      );
+    })}
   </div>
 );
 
@@ -500,15 +513,20 @@ interface DescriptionBoxFieldProps {
   card: CardWithArt;
   factions: Faction[];
   onChange: (patch: Partial<CardWithArt>) => void;
+  defaultDescGlyph?: DescGlyph;
+  onSetDefaultDescGlyph?: (v: DescGlyph) => void;
 }
 
-function DescriptionBoxField({ card, factions, onChange }: DescriptionBoxFieldProps): React.ReactElement {
+function glyphToMode(g: DescGlyph | undefined): GlyphWatermarkMode {
+  if (g === 'none') return 'none';
+  if (!g || g === 'faction') return 'faction';
+  return 'custom';
+}
+
+function DescriptionBoxField({ card, factions, onChange, defaultDescGlyph, onSetDefaultDescGlyph }: DescriptionBoxFieldProps): React.ReactElement {
   const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
 
-  const mode: GlyphWatermarkMode =
-    card.descGlyph === 'none' ? 'none'
-    : !card.descGlyph || card.descGlyph === 'faction' ? 'faction'
-    : 'custom';
+  const mode: GlyphWatermarkMode = glyphToMode(card.descGlyph);
 
   const customGlyph: ThematicGlyphName =
     mode === 'custom' ? (card.descGlyph as ThematicGlyphName) : factionRaw.glyph;
@@ -520,6 +538,16 @@ function DescriptionBoxField({ card, factions, onChange }: DescriptionBoxFieldPr
     if (m === 'faction') onChange({ descGlyph: 'faction' });
     if (m === 'custom')  onChange({ descGlyph: customGlyph });
   };
+
+  const handleSetDefaultMode = onSetDefaultDescGlyph
+    ? (m: string) => {
+        if (m === 'none')    onSetDefaultDescGlyph('none');
+        if (m === 'faction') onSetDefaultDescGlyph('faction');
+        if (m === 'custom')  onSetDefaultDescGlyph(customGlyph);
+      }
+    : undefined;
+
+  const defaultMode = defaultDescGlyph !== undefined ? glyphToMode(defaultDescGlyph) : undefined;
 
   return (
     <>
@@ -548,6 +576,8 @@ function DescriptionBoxField({ card, factions, onChange }: DescriptionBoxFieldPr
             { value: 'custom',  label: 'Custom' },
           ]}
           onChange={handleModeChange}
+          defaultValue={defaultMode}
+          onSetDefault={handleSetDefaultMode}
         />
         {mode === 'custom' && (
           <div style={{ marginTop: 8 }}>
@@ -571,9 +601,11 @@ interface RightPanelProps {
   onManageRarities: () => void;
   globalSettings: GlobalSettings;
   onGlobalSettingChange: (k: keyof GlobalSettings, v: string) => void;
+  onSetCardDefault?: (field: keyof CardStyleDefaults, value: string) => void;
 }
 
-export function RightPanel({ card, onChange, factions, rarities, onManageFactions, onManageRarities, globalSettings, onGlobalSettingChange }: RightPanelProps): React.ReactElement {
+export function RightPanel({ card, onChange, factions, rarities, onManageFactions, onManageRarities, globalSettings, onGlobalSettingChange, onSetCardDefault }: RightPanelProps): React.ReactElement {
+  const cd = globalSettings.cardDefaults;
   return (
     <aside className="rail rail-right">
       <header className="rail-header">
@@ -595,7 +627,10 @@ export function RightPanel({ card, onChange, factions, rarities, onManageFaction
           <ArtUploader artHandle={card.artHandle ?? null} onChange={(handle) => onChange({ artId: handle?.id ?? null, artHandle: handle })}/>
         </Field>
         <Field label="Card pattern" hint="Texture overlay on the card frame">
-          <PatternPicker value={card.pattern} onChange={(v) => onChange({ pattern: v as Card['pattern'] })}/>
+          <PatternPicker value={card.pattern}
+                         onChange={(v) => onChange({ pattern: v as Card['pattern'] })}
+                         defaultValue={cd?.pattern}
+                         onSetDefault={onSetCardDefault ? (v) => onSetCardDefault('pattern', v) : undefined}/>
         </Field>
         <Field label="Rarity">
           <RarityPicker rarities={rarities} value={card.rarity}
@@ -609,9 +644,24 @@ export function RightPanel({ card, onChange, factions, rarities, onManageFaction
                  { value: 'classic',   label: 'Classic' },
                  { value: 'inscribed', label: 'Inscribed' },
                ]}
-               onChange={(v) => onChange({ frame: v as Card['frame'] })}/>
+               onChange={(v) => onChange({ frame: v as Card['frame'] })}
+               defaultValue={cd?.frame}
+               onSetDefault={onSetCardDefault ? (v) => onSetCardDefault('frame', v) : undefined}/>
         </Field>
-        <DescriptionBoxField card={card} factions={factions} onChange={onChange}/>
+        <Field label="Font set" hint="Per-card font — double-click to set as default for new cards">
+          <Seg value={card.font ?? globalSettings.font}
+               options={[
+                 { value: 'cinzel',  label: 'Cinzel' },
+                 { value: 'fell',    label: 'IM Fell' },
+                 { value: 'trajan',  label: 'Decorative' },
+               ]}
+               onChange={(v) => onChange({ font: v as FontVariant })}
+               defaultValue={cd?.font}
+               onSetDefault={onSetCardDefault ? (v) => { onChange({ font: v as FontVariant }); onSetCardDefault('font', v); } : undefined}/>
+        </Field>
+        <DescriptionBoxField card={card} factions={factions} onChange={onChange}
+                             defaultDescGlyph={cd?.descGlyph}
+                             onSetDefaultDescGlyph={onSetCardDefault ? (v) => onSetCardDefault('descGlyph', v) : undefined}/>
       </div>
 
       {/* ── Global settings ─────────────────────────────────────────── */}
@@ -620,15 +670,6 @@ export function RightPanel({ card, onChange, factions, rarities, onManageFaction
             <span className="rail-global-title">Global Settings</span>
             <span className="rail-global-badge">All cards</span>
           </div>
-          <Field label="Font set">
-            <Seg value={globalSettings.font}
-                 options={[
-                   { value: 'cinzel',  label: 'Cinzel' },
-                   { value: 'fell',    label: 'IM Fell' },
-                   { value: 'trajan',  label: 'Decorative' },
-                 ]}
-                 onChange={(v) => onGlobalSettingChange('font', v)}/>
-          </Field>
           <Field label="Cost gem">
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <SmartColorPicker value={globalSettings.costColor} onChange={(v) => onGlobalSettingChange('costColor', v)} label="Color"/>

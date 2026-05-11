@@ -41,6 +41,14 @@ export type StatShape    = 'gem' | 'shield' | 'circle' | 'rhombus' | 'heart';
  */
 export type DescGlyph = 'none' | 'faction' | ThematicGlyphName;
 
+/** Per-card style defaults applied when creating new cards. */
+export interface CardStyleDefaults {
+  pattern: PatternName;
+  frame: FrameVariant;
+  descGlyph: DescGlyph;
+  font: FontVariant;
+}
+
 export interface Card {
   id: string;
   type: CardType;
@@ -50,6 +58,8 @@ export interface Card {
   pattern: PatternName;
   rarity?: string; // undefined = Token (no rarity symbol rendered)
   frame: FrameVariant; // card-specific border style
+  /** Per-card font override. Falls back to globalSettings.font when absent. */
+  font?: FontVariant;
   cost: number;
   // Optional: only present for units; spells omit these.
   attack?: number;
@@ -115,7 +125,7 @@ export interface Keyword {
 
 /** Settings that apply globally to every card in the collection. */
 export interface GlobalSettings {
-  font: FontVariant;
+  font: FontVariant;       // fallback font for cards without a per-card font
   costShape: StatShape;    // shape for cost gem
   attackShape: StatShape;  // shape for attack gem
   healthShape: StatShape;  // shape for health gem
@@ -123,6 +133,7 @@ export interface GlobalSettings {
   attackColor: string;     // hex rim color for attack gem
   healthColor: string;     // hex rim color for health gem
   deckSettings: DeckSettings;
+  cardDefaults: CardStyleDefaults;
 }
 
 /** Gameplay rules applying to all decks. Nested inside GlobalSettings. */
