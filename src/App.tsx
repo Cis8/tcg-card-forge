@@ -304,6 +304,10 @@ export default function App(): React.ReactElement {
       setShowCollection(false);
       setMobileTab('preview');
       settingsService.saveCurrentCardId(id);
+      if (appView.kind === 'deck-editor') {
+        setAppView({ kind: 'card-editor' });
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
     }
   };
 
@@ -798,6 +802,7 @@ export default function App(): React.ReactElement {
         factions={factions}
         rarities={rarities}
         keywords={keywords}
+        globalSettings={globalSettings}
         onClose={() => setShowCollection(false)}
         onPick={onPickFromCollection}
         onDelete={onDeleteFromCollection}

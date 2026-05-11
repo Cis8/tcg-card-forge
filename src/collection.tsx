@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { CardThumbnail } from './card-thumbnail';
+import { CardHoverPreview } from './card-preview';
 import { CollectionFilterBar } from './collection-filter-bar';
 import { Glyph } from './glyphs';
-import type { CardWithArt, Faction, Keyword, Rarity } from './types';
+import type { CardWithArt, Faction, GlobalSettings, Keyword, Rarity } from './types';
 import {
   type CollectionFilters,
   createEmptyFilters,
@@ -45,6 +46,7 @@ interface CollectionProps {
   factions: Faction[];
   rarities: Rarity[];
   keywords: Keyword[];
+  globalSettings: GlobalSettings;
   onClose: () => void;
   onPick: (id: string) => void;
   onDelete: (id: string) => void;
@@ -54,7 +56,7 @@ interface CollectionProps {
 }
 
 export function Collection({
-  open, cards, currentId, factions, rarities, keywords,
+  open, cards, currentId, factions, rarities, keywords, globalSettings,
   onClose, onPick, onDelete, onNew, onExportCard, onExportAllPng,
 }: CollectionProps): React.ReactElement | null {
   const [filters, setFilters] = useState<CollectionFilters>(createEmptyFilters);
@@ -178,6 +180,8 @@ export function Collection({
                     {rows[vRow.index].map(c => (
                       <CollectionCard key={c.id} card={c}
                                       factions={factions} rarities={rarities}
+                                      keywords={keywords} cards={cards}
+                                      globalSettings={globalSettings}
                                       active={c.id === currentId}
                                       onPick={() => onPick(c.id)}
                                       onDelete={() => onDelete(c.id)}
@@ -200,16 +204,26 @@ interface CollectionCardProps {
   card: CardWithArt;
   factions: Faction[];
   rarities: Rarity[];
+  keywords: Keyword[];
+  cards: CardWithArt[];
+  globalSettings: GlobalSettings;
   active: boolean;
   onPick: () => void;
   onDelete: () => void;
   onExport: () => void;
 }
 
-function CollectionCard({ card, factions, rarities, active, onPick, onDelete, onExport }: CollectionCardProps): React.ReactElement {
+function CollectionCard({ card, factions, rarities, keywords, cards, globalSettings, active, onPick, onDelete, onExport }: CollectionCardProps): React.ReactElement {
+  const { font, costShape, attackShape, healthShape, costColor, attackColor, healthColor } = globalSettings;
   return (
     <div className={`coll-card ${active ? 'on' : ''}`} onClick={onPick}>
-      <CardThumbnail card={card} factions={factions} rarities={rarities}/>
+      <CardHoverPreview
+        card={card} factions={factions} rarities={rarities} keywords={keywords} cards={cards}
+        font={font} costShape={costShape} attackShape={attackShape} healthShape={healthShape}
+        costColor={costColor} attackColor={attackColor} healthColor={healthColor}
+      >
+        <CardThumbnail card={card} factions={factions} rarities={rarities}/>
+      </CardHoverPreview>
       <button type="button" className="coll-card-export"
               title="Export card as JSON"
               onClick={(e) => { e.stopPropagation(); onExport(); }}>

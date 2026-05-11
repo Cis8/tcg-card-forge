@@ -177,7 +177,7 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
   const [mobileTab, setMobileTab] = useState<'cards' | 'stats'>('cards');
   const [touchPreviewCard, setTouchPreviewCard] = useState<CardWithArt | null>(null);
 
-  const filteredCards = useMemo(() => sortCardsByCost(applyFilters(cards, filters) as CardWithArt[]), [cards, filters]);
+  const filteredCards = useMemo(() => sortCardsByCost(applyFilters(cards.filter(c => c.rarity != null), filters) as CardWithArt[]), [cards, filters]);
 
   const pickerScrollRef = useRef<HTMLDivElement>(null);
   const { cols: pickerCols, colTemplate, itemH, gap: pickerGap, padH, padV } = usePickerGrid(pickerScrollRef);
