@@ -359,15 +359,19 @@
     max-height: 35dvh;
   }
 
-  /* Each card slot: fill the 1fr column, clipped to scaled card height */
+  /* Each card slot: sized to the full bleed-box height so cost/stat gems are not clipped.
+     Height = (CARD_H + BLEED_TOP + BLEED_BOTTOM) × scale = (488 + 12 + 8) × 0.46 ≈ 233.7 */
   .deck-picker-card-wrap {
     width: 100%;
-    height: 225px;
-    overflow: hidden;
+    height: 234px;
   }
 
-  /* Scale full 340×488 CardPreview down to fit the 225px slot */
+  /* Scale full 340×488 CardPreview down; offset by the scaled bleed amounts so the
+     cost gem (top: -12, left: -10) and stat gems (bottom: -8) remain fully visible. */
   .deck-picker-card-inner {
+    position: absolute;
+    top: 6px;  /* BLEED_TOP × 0.46 = 12 × 0.46 ≈ 5.5, rounded up */
+    left: 5px; /* BLEED_LEFT × 0.46 = 10 × 0.46 ≈ 4.6, rounded up */
     transform: scale(0.46);
     transform-origin: top left;
     width: 340px;
