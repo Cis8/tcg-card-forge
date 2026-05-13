@@ -384,6 +384,7 @@
   .deck-name-input    { font-size: 16px; }
   .deck-desc-input    { font-size: 16px; }
   .coll-filter-search { font-size: 16px; }
+  .ref-picker-search  { font-size: 16px; }
 
   /* Hover preview portal: hide on touch devices (hover doesn't apply) */
   .card-preview-hover-portal { display: none; }

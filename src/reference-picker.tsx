@@ -114,7 +114,7 @@ export function ReferencePicker({
               )}
               <div className="ref-picker-card-grid">
                 {filteredCards.map(c => (
-                  <CardHoverPreview key={c.id} card={c} {...previewProps}>
+                  <CardHoverPreview key={c.id} card={c} enableTouchPreview={false} {...previewProps}>
                     <button
                       type="button"
                       className="ref-picker-card-item"
