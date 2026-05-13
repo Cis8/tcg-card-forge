@@ -24,7 +24,9 @@ function pickerMetrics(containerW: number) {
     // Mobile: 1fr so card wraps fill the column width (wrap handles overflow+scale).
     // Desktop: auto so each column is sized to the card's natural 340px width.
     colTemplate: mobile ? `repeat(${cols}, 1fr)` : `repeat(${cols}, auto)`,
-    itemH:   mobile ? 225 : 488,
+    // Mobile: (488 + 12 + 8) × 0.46 ≈ 233.7 → 234 — includes bleed-box (cost & stat gems).
+    // Desktop: natural card height; gem bleeds are visible in the row gaps.
+    itemH:   mobile ? 234 : 488,
     gap:     mobile ? 8   : 16,
     padH:    mobile ? 8   : 24,
     padV:    mobile ? 8   : 16,
