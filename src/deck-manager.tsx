@@ -90,7 +90,7 @@ export function DeckManager({ open, decks, cards, factions, deckSettings, onClos
 
   const handleDelete = (id: string) => {
     const deck = decks.find(d => d.id === id);
-    if (!confirmDestructiveAction(`Delete deck "${deck?.name || 'this deck'}"?`)) return;
+    if (!confirmDestructiveAction(`Delete deck "${deck?.name || 'this deck'}" permanently?`)) return;
     onChange(decks.filter(d => d.id !== id));
   };
 

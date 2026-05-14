@@ -88,9 +88,24 @@ function DeckCardRow({ card, cards, factions, rarities, keywords, quantity, maxC
         <span className="deck-card-row-cost">{card.cost}</span>
         <span className="deck-card-row-name">{card.name || 'Untitled'}</span>
         <div className="deck-card-row-qty">
-          <button type="button" className="qty-btn" onClick={onRemove} title="Remove one">−</button>
+          <button
+            type="button"
+            className="qty-btn"
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            title="Remove one"
+          >
+            −
+          </button>
           <span className="qty-value">×{quantity}</span>
-          <button type="button" className="qty-btn" onClick={onAdd} disabled={quantity >= maxCopies} title="Add one">+</button>
+          <button
+            type="button"
+            className="qty-btn"
+            onClick={(e) => { e.stopPropagation(); onAdd(); }}
+            disabled={quantity >= maxCopies}
+            title="Add one"
+          >
+            +
+          </button>
         </div>
       </div>
     </CardHoverPreview>
@@ -482,4 +497,3 @@ export function DeckEditor({ deck, cards, factions, rarities, keywords, globalSe
     </>
   );
 }
-
