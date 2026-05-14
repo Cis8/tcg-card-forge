@@ -517,6 +517,7 @@ export default function App(): React.ReactElement {
       const fontEmbedCSS = await buildFontEmbedCSS();
       const dataUrl = await htmlToImage.toPng(cardRef.current, {
         pixelRatio: 2,
+        cacheBust: true,
         backgroundColor: undefined,
         // Expand canvas to the full bleed-box so cost/stat gems aren't clipped.
         // Shifting the card content inward by the bleed amounts puts overflowing
@@ -524,7 +525,7 @@ export default function App(): React.ReactElement {
         width: CARD_W + BLEED_LEFT + BLEED_RIGHT,
         height: CARD_H + BLEED_TOP + BLEED_BOTTOM,
         style: { marginLeft: `${BLEED_LEFT}px`, marginTop: `${BLEED_TOP}px` },
-        ...(fontEmbedCSS != null ? { fontEmbedCSS } : { skipFonts: true }),
+        ...(fontEmbedCSS != null ? { fontEmbedCSS } : {}),
       });
       const a = document.createElement('a');
       a.download = `${(current.name || 'card').replace(/[^\w-]+/g, '_')}.png`;
@@ -904,6 +905,7 @@ export default function App(): React.ReactElement {
               costColor={globalSettings.costColor}
               attackColor={globalSettings.attackColor}
               healthColor={globalSettings.healthColor}
+              hidePlaceholder
             />
           )}
         </div>

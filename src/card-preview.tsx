@@ -216,7 +216,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
   const nameFit = useCardNameFit(card.name || 'Untitled', font, namePlateRef);
 
   return (
-    <div className={`card-shell card-frame-${frame} card-font-${font}`}
+    <div className={`card-shell card-frame-${frame} card-font-${font}${hidePlaceholder ? ' card-export-render' : ''}`}
          style={{
            '--rarity-color': rarity?.color ?? 'transparent', '--rarity-deep': rarityDeep,
            '--rarity-glow': rarityGlow,
