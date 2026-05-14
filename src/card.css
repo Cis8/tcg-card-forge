@@ -320,6 +320,25 @@
 .card-shell.card-export-render .card-frame::after {
   content: none;
 }
+.card-shell.card-export-render .card-frame {
+  box-shadow:
+    0 0 0 1px #0a0703,
+    0 0 0 3px var(--gold-deep),
+    inset 0 0 0 1px rgba(255, 240, 180, .2),
+    inset 0 0 0 2px #d8b25a,
+    inset 0 0 0 3px var(--gold-deep),
+    var(--shadow-card);
+}
+.card-shell.card-export-render .name-plate-inner,
+.card-shell.card-export-render .art-window,
+.card-shell.card-export-render .type-plate,
+.card-shell.card-export-render .text-box {
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,.62),
+    inset 0 0 0 2px var(--gold-deep),
+    inset 0 0 0 3px var(--gold-2),
+    inset 0 0 0 4px var(--gold-deep);
+}
 .card-shell.card-export-render .card-pattern,
 .card-shell.card-export-render .art-grain {
   mix-blend-mode: normal;
