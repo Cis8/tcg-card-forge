@@ -324,6 +324,11 @@
 .card-shell.card-export-render .art-grain {
   mix-blend-mode: normal;
 }
+/* Suppress the outer rarity glow: its negative inset + blur filter can render
+   as an opaque rectangle artifact in html-to-image's SVG pipeline on Safari. */
+.card-shell.card-export-render::after {
+  display: none;
+}
 
 /* Splash art image (when user uploaded a PNG) */
 .art-image {

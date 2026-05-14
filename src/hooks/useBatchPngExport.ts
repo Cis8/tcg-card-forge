@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { RefObject } from 'react';
 import * as htmlToImage from 'html-to-image';
 import type { CardWithArt, Faction } from '../types';
+import { preEmbedBlobImages } from '../export-utils';
 
 // Must match App.tsx constants
 const CARD_W = 340, CARD_H = 488;
@@ -100,16 +101,23 @@ export function useBatchPngExport(batchRenderRef: RefObject<HTMLDivElement | nul
 
       try {
         const fontEmbedCSS = fontCSSRef.current;
-        const dataUrl = await htmlToImage.toPng(el, {
-          pixelRatio: 2,
-          cacheBust: true,
-          backgroundColor: undefined,
-          width: CARD_W + BLEED_LEFT + BLEED_RIGHT,
-          height: CARD_H + BLEED_TOP + BLEED_BOTTOM,
-          style: { marginLeft: `${BLEED_LEFT}px`, marginTop: `${BLEED_TOP}px` },
-          filter: (node) => !(node as Element).classList?.contains('desc-placeholder'),
-          ...(fontEmbedCSS != null ? { fontEmbedCSS } : {}),
-        });
+        // Pre-embed blob: art images as data URIs — same Safari fix as onExportPng.
+        const restoreImages = await preEmbedBlobImages(el);
+        let dataUrl: string;
+        try {
+          dataUrl = await htmlToImage.toPng(el, {
+            pixelRatio: 2,
+            cacheBust: false, // true breaks blob: URL art on all browsers
+            backgroundColor: undefined,
+            width: CARD_W + BLEED_LEFT + BLEED_RIGHT,
+            height: CARD_H + BLEED_TOP + BLEED_BOTTOM,
+            style: { marginLeft: `${BLEED_LEFT}px`, marginTop: `${BLEED_TOP}px` },
+            filter: (node) => !(node as Element).classList?.contains('desc-placeholder'),
+            ...(fontEmbedCSS != null ? { fontEmbedCSS } : {}),
+          });
+        } finally {
+          restoreImages();
+        }
 
         if (cancelRef.current) return;
         capturedRef.current.push({ card: cardToRender, dataUrl });

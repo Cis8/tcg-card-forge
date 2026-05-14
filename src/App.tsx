@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback, useReducer } from 'react';
 import { flushSync } from 'react-dom';
 import * as htmlToImage from 'html-to-image';
+import { preEmbedBlobImages } from './export-utils';
 
 import { DEFAULT_FACTIONS, DEFAULT_RARITIES, DEFAULT_KEYWORDS } from './data';
 import { CardPreview } from './card-preview';
@@ -515,23 +516,32 @@ export default function App(): React.ReactElement {
     flushSync(() => setIsExporting(true));
     try {
       const fontEmbedCSS = await buildFontEmbedCSS();
-      const dataUrl = await htmlToImage.toPng(cardRef.current, {
-        pixelRatio: 2,
-        cacheBust: true,
-        backgroundColor: undefined,
-        // Expand canvas to the full bleed-box so cost/stat gems aren't clipped.
-        // Shifting the card content inward by the bleed amounts puts overflowing
-        // elements (anchored at negative coords) within the canvas bounds.
-        width: CARD_W + BLEED_LEFT + BLEED_RIGHT,
-        height: CARD_H + BLEED_TOP + BLEED_BOTTOM,
-        style: { marginLeft: `${BLEED_LEFT}px`, marginTop: `${BLEED_TOP}px` },
-        ...(fontEmbedCSS != null ? { fontEmbedCSS } : {}),
-      });
-      const a = document.createElement('a');
-      a.download = `${(current.name || 'card').replace(/[^\w-]+/g, '_')}.png`;
-      a.href = dataUrl;
-      a.click();
-      showToast('PNG saved');
+      // Pre-convert any blob: art URLs to data URIs so that Safari/iOS can
+      // capture them via html-to-image (blob: URLs with cache-bust query params
+      // are invalid; even without cache-bust Safari may fail to fetch them
+      // inside the html-to-image canvas pipeline).
+      const restoreImages = await preEmbedBlobImages(cardRef.current);
+      try {
+        const dataUrl = await htmlToImage.toPng(cardRef.current, {
+          pixelRatio: 2,
+          cacheBust: false, // true breaks blob: URL art on all browsers
+          backgroundColor: undefined,
+          // Expand canvas to the full bleed-box so cost/stat gems aren't clipped.
+          // Shifting the card content inward by the bleed amounts puts overflowing
+          // elements (anchored at negative coords) within the canvas bounds.
+          width: CARD_W + BLEED_LEFT + BLEED_RIGHT,
+          height: CARD_H + BLEED_TOP + BLEED_BOTTOM,
+          style: { marginLeft: `${BLEED_LEFT}px`, marginTop: `${BLEED_TOP}px` },
+          ...(fontEmbedCSS != null ? { fontEmbedCSS } : {}),
+        });
+        const a = document.createElement('a');
+        a.download = `${(current.name || 'card').replace(/[^\w-]+/g, '_')}.png`;
+        a.href = dataUrl;
+        a.click();
+        showToast('PNG saved');
+      } finally {
+        restoreImages();
+      }
     } catch (e) {
       console.error(e);
       showToast('Export failed');
