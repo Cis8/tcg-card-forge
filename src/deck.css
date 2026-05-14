@@ -47,6 +47,15 @@
 }
 
 .deck-del-btn {
+  position: static;
+  top: auto;
+  right: auto;
+  width: auto;
+  height: auto;
+  opacity: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: rgba(255, 230, 180, 0.3);
