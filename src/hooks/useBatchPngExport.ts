@@ -102,12 +102,13 @@ export function useBatchPngExport(batchRenderRef: RefObject<HTMLDivElement | nul
         const fontEmbedCSS = fontCSSRef.current;
         const dataUrl = await htmlToImage.toPng(el, {
           pixelRatio: 2,
+          cacheBust: true,
           backgroundColor: undefined,
           width: CARD_W + BLEED_LEFT + BLEED_RIGHT,
           height: CARD_H + BLEED_TOP + BLEED_BOTTOM,
           style: { marginLeft: `${BLEED_LEFT}px`, marginTop: `${BLEED_TOP}px` },
           filter: (node) => !(node as Element).classList?.contains('desc-placeholder'),
-          ...(fontEmbedCSS != null ? { fontEmbedCSS } : { skipFonts: true }),
+          ...(fontEmbedCSS != null ? { fontEmbedCSS } : {}),
         });
 
         if (cancelRef.current) return;
