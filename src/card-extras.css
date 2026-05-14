@@ -395,8 +395,13 @@
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 10px;
 }
+.ref-picker-card-grid > * {
+  min-width: 0;
+}
 .ref-picker-card-item {
   appearance: none;
+  display: block;
+  width: 100%;
   background: none;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -409,4 +414,13 @@
 .ref-picker-card-item:hover {
   border-color: var(--gold-3);
   box-shadow: 0 4px 14px rgba(0,0,0,.45);
+}
+.ref-picker-card-item .coll-card-meta {
+  min-width: 0;
+}
+.ref-picker-card-item .coll-card-name {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

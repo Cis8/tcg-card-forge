@@ -814,6 +814,8 @@ export interface CardHoverPreviewProps extends CardPreviewProps {
   onEdit?: () => void;
   /** Extra action buttons rendered in the mobile overlay (after Edit, before Close). */
   mobileActions?: React.ReactNode;
+  /** Enable tap-to-open centered preview overlay on touch-primary devices. */
+  enableTouchPreview?: boolean;
 }
 
 const PREVIEW_W = 340; // native card width
@@ -832,7 +834,7 @@ function ScaledCardPreview({ scale, ...previewProps }: CardPreviewProps & { scal
   );
 }
 
-export function CardHoverPreview({ children, tag, onEdit, mobileActions, ...previewProps }: CardHoverPreviewProps): React.ReactElement {
+export function CardHoverPreview({ children, tag, onEdit, mobileActions, enableTouchPreview = true, ...previewProps }: CardHoverPreviewProps): React.ReactElement {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -855,13 +857,13 @@ export function CardHoverPreview({ children, tag, onEdit, mobileActions, ...prev
   const hide = useCallback(() => setPos(null), []);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
-    if (isTouchPrimary) {
+    if (isTouchPrimary && enableTouchPreview) {
       e.stopPropagation();
       setMobileOpen(v => !v);
     } else {
       onEdit?.();
     }
-  }, [isTouchPrimary, onEdit]);
+  }, [enableTouchPreview, isTouchPrimary, onEdit]);
 
   const Tag = tag ?? 'div';
   return (
@@ -886,7 +888,7 @@ export function CardHoverPreview({ children, tag, onEdit, mobileActions, ...prev
       )}
 
       {/* Mobile: centered overlay on tap */}
-      {mobileOpen && ReactDOM.createPortal(
+      {mobileOpen && enableTouchPreview && ReactDOM.createPortal(
         <MobileCardOverlay
           previewProps={previewProps}
           onEdit={onEdit}
