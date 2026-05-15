@@ -381,6 +381,14 @@ export function LeftPanel({ card, onChange, keywords, cards, factions, rarities,
   const cursorPosRef = useRef<number>(0);
   const [showRefPicker, setShowRefPicker] = useState(false);
 
+  const handleTypeChange = (nextType: Card['type']) => {
+    if (nextType !== 'environment' && card.cost === undefined) {
+      onChange({ type: nextType, cost: 0 });
+      return;
+    }
+    onChange({ type: nextType });
+  };
+
   const handleRefInsert = (token: string) => {
     onChange({ description: insertToken(card.description ?? '', cursorPosRef.current, token) });
     setShowRefPicker(false);
@@ -409,10 +417,7 @@ export function LeftPanel({ card, onChange, keywords, cards, factions, rarities,
         <Field label="Type">
           <Seg value={card.type} columns={3}
                options={[{ value: 'unit', label: 'Unit' }, { value: 'spell', label: 'Spell' }, { value: 'environment', label: 'Environment' }]}
-               onChange={(v) => {
-                 const type = v as Card['type'];
-                 onChange(type !== 'environment' && card.cost == null ? { type, cost: 0 } : { type });
-               }}/>
+               onChange={(v) => handleTypeChange(v as Card['type'])}/>
         </Field>
         <Field label="Name">
           <input className="text-input" type="text" value={card.name}
@@ -425,7 +430,7 @@ export function LeftPanel({ card, onChange, keywords, cards, factions, rarities,
                  onChange={(e) => onChange({ subtype: e.target.value })}/>
         </Field>
         <Field label="Cost" hint="Mana cost to cast">
-          {isEnvironment && card.cost == null ? (
+          {isEnvironment && card.cost === undefined ? (
             <button type="button" className="btn btn-sm" onClick={() => onChange({ cost: 0 })}>
               Add cost
             </button>
@@ -433,8 +438,8 @@ export function LeftPanel({ card, onChange, keywords, cards, factions, rarities,
             <Stepper value={card.cost ?? 0} min={0} max={99}
                      onChange={(v) => onChange({ cost: v })}/>
           )}
-          {isEnvironment && card.cost != null && (
-            <button type="button" className="btn btn-sm btn-ghost" style={{ marginTop: 8 }} onClick={() => onChange({ cost: undefined })}>
+          {isEnvironment && card.cost !== undefined && (
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => onChange({ cost: undefined })}>
               No cost
             </button>
           )}
