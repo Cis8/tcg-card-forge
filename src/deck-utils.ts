@@ -118,7 +118,7 @@ export function sortCardsByCost<T extends Card>(cards: T[]): T[] {
     const aToken = a.rarity == null;
     const bToken = b.rarity == null;
     if (aToken !== bToken) return aToken ? 1 : -1;
-    return a.cost - b.cost;
+    return (a.cost ?? 0) - (b.cost ?? 0);
   });
 }
 

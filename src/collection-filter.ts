@@ -54,8 +54,9 @@ export function applyFilters(
     if (factions.length > 0 && !factions.includes(card.faction)) return false;
 
     if (costs.length > 0) {
+      const cost = card.cost ?? 0;
       const matchesCost = costs.some(c =>
-        c === COST_PLUS_THRESHOLD ? card.cost >= COST_PLUS_THRESHOLD : card.cost === c
+        c === COST_PLUS_THRESHOLD ? cost >= COST_PLUS_THRESHOLD : cost === c
       );
       if (!matchesCost) return false;
     }
