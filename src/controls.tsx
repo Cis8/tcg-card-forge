@@ -376,6 +376,7 @@ interface LeftPanelProps {
 
 export function LeftPanel({ card, onChange, keywords, cards, factions, rarities, globalSettings, onOpenKeywords, deckSettings, onDeckSettingChange }: LeftPanelProps): React.ReactElement {
   const isUnit = card.type === 'unit';
+  const isEnvironment = card.type === 'environment';
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const cursorPosRef = useRef<number>(0);
   const [showRefPicker, setShowRefPicker] = useState(false);
@@ -406,9 +407,12 @@ export function LeftPanel({ card, onChange, keywords, cards, factions, rarities,
       </header>
       <div className="rail-body">
         <Field label="Type">
-          <Seg value={card.type} columns={2}
-               options={[{ value: 'unit', label: 'Unit' }, { value: 'spell', label: 'Spell' }]}
-               onChange={(v) => onChange({ type: v as Card['type'] })}/>
+          <Seg value={card.type} columns={3}
+               options={[{ value: 'unit', label: 'Unit' }, { value: 'spell', label: 'Spell' }, { value: 'environment', label: 'Environment' }]}
+               onChange={(v) => {
+                 const type = v as Card['type'];
+                 onChange(type !== 'environment' && card.cost == null ? { type, cost: 0 } : { type });
+               }}/>
         </Field>
         <Field label="Name">
           <input className="text-input" type="text" value={card.name}
@@ -421,8 +425,19 @@ export function LeftPanel({ card, onChange, keywords, cards, factions, rarities,
                  onChange={(e) => onChange({ subtype: e.target.value })}/>
         </Field>
         <Field label="Cost" hint="Mana cost to cast">
-          <Stepper value={card.cost ?? 0} min={0} max={99}
-                   onChange={(v) => onChange({ cost: v })}/>
+          {isEnvironment && card.cost == null ? (
+            <button type="button" className="btn btn-sm" onClick={() => onChange({ cost: 0 })}>
+              Add cost
+            </button>
+          ) : (
+            <Stepper value={card.cost ?? 0} min={0} max={99}
+                     onChange={(v) => onChange({ cost: v })}/>
+          )}
+          {isEnvironment && card.cost != null && (
+            <button type="button" className="btn btn-sm btn-ghost" style={{ marginTop: 8 }} onClick={() => onChange({ cost: undefined })}>
+              No cost
+            </button>
+          )}
         </Field>
         {isUnit && (
           <div className="row-2">

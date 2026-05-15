@@ -1,6 +1,6 @@
 // types.ts — shared TypeScript interfaces for all TCG data entities.
 
-export type CardType = 'unit' | 'spell';
+export type CardType = 'unit' | 'spell' | 'environment';
 
 export type PatternName = 'plain' | 'damask' | 'lattice' | 'rays' | 'scales';
 
@@ -60,7 +60,8 @@ export interface Card {
   frame: FrameVariant; // card-specific border style
   /** Per-card font override. Falls back to globalSettings.font when absent. */
   font?: FontVariant;
-  cost: number;
+  // Optional for environment cards.
+  cost?: number;
   // Optional: only present for units; spells omit these.
   attack?: number;
   health?: number;

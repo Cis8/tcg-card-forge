@@ -14,6 +14,7 @@ export function CardThumbnail({ card, factions, rarities }: CardThumbnailProps):
   const factionRaw = factions.find(f => f.id === card.faction) ?? factions[0];
   const faction = deriveFaction(factionRaw);
   const rarity = card.rarity ? rarities.find(r => r.id === card.rarity) : undefined;
+  const showCost = card.type !== 'environment' || card.cost != null;
   return (
     <>
       <div className="coll-card-art" style={{
@@ -28,7 +29,7 @@ export function CardThumbnail({ card, factions, rarities }: CardThumbnailProps):
             <Glyph name={factionRaw.glyph} size={56}/>
           </div>
         )}
-        <div className="coll-card-cost">{card.cost ?? 0}</div>
+        {showCost && <div className="coll-card-cost">{card.cost ?? 0}</div>}
         {card.type === 'unit' && (
           <div className="coll-card-stats">
             <span>{card.attack ?? 0}</span>

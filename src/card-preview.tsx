@@ -196,6 +196,8 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
   const rarityDeep = rarity ? deriveRarityDeep(rarity.color) : 'transparent';
   const rarityGlow = rarity ? deriveRarityGlow(rarity.color) : 'transparent';
   const isUnit = card.type === 'unit';
+  const showCostGem = card.type !== 'environment' || card.cost != null;
+  const cardTypeLabel = card.type === 'unit' ? 'Unit' : card.type === 'environment' ? 'Environment' : 'Spell';
 
   const kwById = useMemo(() => {
     const m = new Map<string, Keyword>();
@@ -273,7 +275,7 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
         <div className="type-plate">
           <span className="type-glyph"><Glyph name={factionRaw.glyph} size={14}/></span>
           <span className="type-label">
-            {isUnit ? 'Unit' : 'Spell'}
+            {cardTypeLabel}
             {card.subtype ? <span className="type-sub"> · {card.subtype.split(',').map(s => s.trim()).join(' · ')}</span> : null}
           </span>
           <span className="type-glyph"><Glyph name={factionRaw.glyph} size={14}/></span>
@@ -317,9 +319,11 @@ export function CardPreview({ card, keywords, factions, rarities, cards,
 
       </div>
 
-      <div className="cost-gem">
-        <StatGem variant={costShape} rimColor={costColor} value={card.cost ?? 0} size={64}/>
-      </div>
+      {showCostGem && (
+        <div className="cost-gem">
+          <StatGem variant={costShape} rimColor={costColor} value={card.cost ?? 0} size={64}/>
+        </div>
+      )}
 
       {isUnit && (
         <>

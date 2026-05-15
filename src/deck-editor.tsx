@@ -85,7 +85,7 @@ function DeckCardRow({ card, cards, factions, rarities, keywords, quantity, maxC
             <Glyph name={faction.glyph} size={13} />
           </span>
         )}
-        <span className="deck-card-row-cost">{card.cost}</span>
+        <span className="deck-card-row-cost">{card.cost ?? '—'}</span>
         <span className="deck-card-row-name">{card.name || 'Untitled'}</span>
         <div className="deck-card-row-qty">
           <button
